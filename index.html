@@ -1,57 +1,219 @@
-<nav>
-    <ul class="main-menu">
-        <li><button onclick="showSection('home')">Home</button></li>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MHBC App</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Replace with your actual icon when you have one -->
+    <link rel="apple-touch-icon" href="https://placehold.co/180x180/png?text=MHBC">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="MHBC App">
+</head>
+<body>
+    <header>
+        <h1>Maxwell Hill Baptist Church</h1>
+    </header>
+    
+    <nav>
+        <ul class="main-menu">
+            <li><button onclick="showSection('home')">Home</button></li>
+            
+            <li class="has-submenu">
+                <button class="menu-toggle">About</button>
+                <ul class="submenu">
+                    <li><button onclick="showSection('our-story')">Our Story</button></li>
+                </ul>
+            </li>
+            
+            <li class="has-submenu">
+                <button class="menu-toggle">Our Beliefs</button>
+                <ul class="submenu">
+                    <li><button onclick="showSection('what-kind')">What Kind of Church Are We</button></li>
+                    <li><button onclick="showSection('statement')">Statement of Faith</button></li>
+                </ul>
+            </li>
+            
+            <li class="has-submenu">
+                <button class="menu-toggle">Ministry</button>
+                <ul class="submenu">
+                    <li><button onclick="showSection('mens')">Men's Ministry</button></li>
+                    <li><button onclick="showSection('womens')">Women's Ministry</button></li>
+                    <li><button onclick="showSection('silver')">Silver Saints Ministry</button></li>
+                    <li><button onclick="showSection('care')">C.A.R.E. Groups</button></li>
+                    <li><button onclick="showSection('nursery')">Nursery</button></li>
+                    <li><button onclick="showSection('toddlers')">Toddlers</button></li>
+                    <li><button onclick="showSection('elementary')">Elementary</button></li>
+                    <li><button onclick="showSection('trac')">TRAC (Middle & High School)</button></li>
+                </ul>
+            </li>
+            
+            <li class="has-submenu">
+                <button class="menu-toggle">Positions and Policies</button>
+                <ul class="submenu">
+                    <li><button onclick="showSection('marriage')">Marriage</button></li>
+                </ul>
+            </li>
+            
+            <li><button onclick="showSection('bulletins')">Bulletins</button></li>
+            <li><button onclick="showSection('documents')">Documents</button></li>
+            
+            <li class="has-submenu">
+                <button class="menu-toggle">Watch Live</button>
+                <ul class="submenu">
+                    <li><button onclick="showSection('sunday')">Sunday Services</button></li>
+                    <li><button onclick="showSection('wednesday')">Wednesday Services</button></li>
+                    <li><button onclick="showSection('watch-live')">Live Streams</button></li>
+                </ul>
+            </li>
+            
+            <li><button onclick="showSection('give')">Give</button></li>
+            <li><button onclick="showSection('bible')">Bible</button></li>
+            <li><button onclick="showSection('contact')">Contact</button></li>
+        </ul>
+    </nav>
+    
+    <main>
+        <section id="home" class="active">
+            <h2>A Church That is Diligent in the Word</h2>
+            <h2>Determined in Our Walk - Delighted in Our Worship</h2>
+            <h3>WEEKLY SERVICE TIMES</h3>
+            <h4>Sunday 9:30 am – Worship Service</h4>
+            <h4>Wednesday 7:00 pm – Midweek Service</h4>
+        </section>
         
-        <li class="has-submenu">
-            <button class="menu-toggle">About</button>
-            <ul class="submenu">
-                <li><button onclick="showSection('our-story')">Our Story</button></li>
+        <section id="our-story">
+            <h2>Our Story</h2>
+            <p>Maxwell Hill Baptist Church is a Bible based church located on the hill above Beckley West Virginia not directly affiliated with the Baptist denomination.</p>
+            <p>The history of Maxwell Hill Baptist Church is rich in memories from its rural beginning until now. The story of the church is one of a people who loved the Lord and dedicated themselves to build a central place of worship as dictated by the needs of the community. The community has transformed from a small rural setting to a modern, well developed suburb of a small city. The history of the church reveals its adaptability to change and growth, as well as its resolve to remain steadfast in God’s principles. The message has always been the Gospel of Jesus Christ.</p>
+            <!-- ... rest of Our Story content as previously provided ... -->
+            <p>As the story of Maxwell Hill continues, we witness what Christ is doing in and through our church and we want to give all glory to God for what He has done and is doing.</p>
+        </section>
+        
+        <section id="what-kind">
+            <h2>What Kind of Church Are We</h2>
+            <h3>OUR PURPOSE</h3>
+            <p>In light of Matthew 28:18-19 the purpose of MHBC is to honor and glorify God by spreading the good news of Jesus Christ and discipling those that God saves for the work of the ministry.</p>
+            <h3>OUR VISION</h3>
+            <p>Just as families have various characteristics and traits that make them unique, so do churches. It is our desire to develop a character within our church that is honoring to our Lord and is conducive to healthy spiritual growth. We have developed a vision statement that we believe embodies the character of our church: To be diligent in The Word, delighted in our worship, and determined in our walk. It is in the spirit of this statement that we seek to minister to the Body of Christ.</p>
+            <!-- ... rest of What Kind of Church content ... -->
+        </section>
+        
+        <section id="statement">
+            <h2>Statement of Faith</h2>
+            <h3>The Godhead</h3>
+            <p>We believe in one Triune God, eternally existing in three persons – Father, Son, and Holy Spirit...</p>
+            <!-- ... rest of Statement of Faith content ... -->
+        </section>
+        
+        <section id="mens">
+            <h2>Men’s Ministry</h2>
+            <p>The Men’s Ministry meets together randomly throughout the year for ministry directly focused on their needs...</p>
+            <!-- ... rest of Men's Ministry content ... -->
+        </section>
+        
+        <section id="womens">
+            <h2>Women’s Ministry</h2>
+            <p>The Women’s Ministry meets together for ministry directly focused on their needs...</p>
+            <!-- ... rest of Women's Ministry content ... -->
+        </section>
+        
+        <section id="silver">
+            <h2>Silver Saints Ministry</h2>
+            <p>The Seniors ministry meets together randomly throughout the year...</p>
+            <!-- ... rest of Silver Saints content ... -->
+        </section>
+        
+        <section id="care">
+            <h2>C.A.R.E. Groups</h2>
+            <p>C.A.R.E. Group Ministry is a time for the adults of the church to come together...</p>
+            <!-- ... rest of C.A.R.E. Groups content ... -->
+        </section>
+        
+        <section id="nursery">
+            <h2>Nursery</h2>
+            <p>Well equipped and well staffed, are available for children during most church services...</p>
+            <!-- ... rest of Nursery content ... -->
+        </section>
+        
+        <section id="toddlers">
+            <h2>Toddlers</h2>
+            <p>To give love and instruction to these young ones about God, Jesus & the Bible...</p>
+            <!-- ... rest of Toddlers content ... -->
+        </section>
+        
+        <section id="elementary">
+            <h2>Elementary</h2>
+            <p>To give love and instruction to these young ones about God, Jesus & the Bible...</p>
+            <!-- ... rest of Elementary content ... -->
+        </section>
+        
+        <section id="trac">
+            <h2>Middle & High School Ministry (Teens Revolving Around Christ)</h2>
+            <p>While not exclusively teens (since 6th graders are included)...</p>
+            <!-- ... rest of TRAC content ... -->
+        </section>
+        
+        <section id="marriage">
+            <h2>Marriage</h2>
+            <h3>Belief on Marriage</h3>
+            <ul>
+                <li>We believe God sanctions marriage; and that it has only one meaning...</li>
+                <!-- ... rest of Marriage content ... -->
             </ul>
-        </li>
+        </section>
         
-        <li class="has-submenu">
-            <button class="menu-toggle">Our Beliefs</button>
-            <ul class="submenu">
-                <li><button onclick="showSection('what-kind')">What Kind of Church Are We</button></li>
-                <li><button onclick="showSection('statement')">Statement of Faith</button></li>
-            </ul>
-        </li>
+        <section id="bulletins">
+            <h2>Bulletins</h2>
+            <p>View and download recent church bulletins on the website:</p>
+            <a href="https://maxwellhillbaptistchurch.com/bulletins/" target="_blank" rel="noopener">Open Bulletins Page</a>
+        </section>
         
-        <li class="has-submenu">
-            <button class="menu-toggle">Ministry</button>
-            <ul class="submenu">
-                <li><button onclick="showSection('mens')">Men's Ministry</button></li>
-                <li><button onclick="showSection('womens')">Women's Ministry</button></li>
-                <li><button onclick="showSection('silver')">Silver Saints Ministry</button></li>
-                <li><button onclick="showSection('care')">C.A.R.E. Groups</button></li>
-                <li><button onclick="showSection('nursery')">Nursery</button></li>
-                <li><button onclick="showSection('toddlers')">Toddlers</button></li>
-                <li><button onclick="showSection('elementary')">Elementary</button></li>
-                <li><button onclick="showSection('trac')">TRAC (Middle & High School)</button></li>
-            </ul>
-        </li>
+        <section id="documents">
+            <h2>Documents</h2>
+            <p>Please visit the church website for any available documents:</p>
+            <a href="https://maxwellhillbaptistchurch.com/" target="_blank" rel="noopener">Church Website</a>
+        </section>
         
-        <li class="has-submenu">
-            <button class="menu-toggle">Positions and Policies</button>
-            <ul class="submenu">
-                <li><button onclick="showSection('marriage')">Marriage</button></li>
-            </ul>
-        </li>
+        <section id="sunday">
+            <h2>Sunday Services</h2>
+            <div id="sunday-videos"></div>
+        </section>
         
-        <li><button onclick="showSection('bulletins')">Bulletins</button></li>
-        <li><button onclick="showSection('documents')">Documents</button></li>
+        <section id="wednesday">
+            <h2>Wednesday Services</h2>
+            <div id="wednesday-videos"></div>
+        </section>
         
-        <li class="has-submenu">
-            <button class="menu-toggle">Watch Live</button>
-            <ul class="submenu">
-                <li><button onclick="showSection('sunday')">Sunday Services</button></li>
-                <li><button onclick="showSection('wednesday')">Wednesday Services</button></li>
-                <li><button onclick="showSection('watch-live')">Live Streams</button></li>
-            </ul>
-        </li>
+        <section id="watch-live">
+            <h2>Live Streams</h2>
+            <p>Watch live and recent streams on the church's YouTube channel:</p>
+            <a href="https://www.youtube.com/@maxwellhillbaptistchurch9695/streams" target="_blank" rel="noopener">YouTube Live & Streams</a>
+        </section>
         
-        <li><button onclick="showSection('give')">Give</button></li>
-        <li><button onclick="showSection('bible')">Bible</button></li>
-        <li><button onclick="showSection('contact')">Contact</button></li>
-    </ul>
-</nav>
+        <section id="give">
+            <h2>Give</h2>
+            <p>Support the ministry through secure online giving:</p>
+            <a href="https://give.tithe.ly/?formId=f0356db3-ffa6-4cb7-9dde-2e9e6fc508ff&usedQrCode=true" target="_blank" rel="noopener" class="give-button">Give Now via Tithe.ly</a>
+        </section>
+        
+        <section id="bible">
+            <h2>Bible</h2>
+            <p>Access the online Bible reader to select books and chapters:</p>
+            <a href="https://www.bible.com/bible/2692/GEN.1.NASB2020" target="_blank" rel="noopener" class="bible-link">Open Bible App (NASB2020)</a>
+            <p>You can navigate to any book, chapter, or version within the reader.</p>
+        </section>
+        
+        <section id="contact">
+            <h2>Contact & Location</h2>
+            <p>Address: 301 Teel Road, Beckley, WV 25801</p>
+            <p>Phone: <a href="tel:3042530366">304.253.0366</a></p>
+            <p><a href="https://www.google.com/maps/search/?api=1&query=301+Teel+Road%2C+Beckley%2C+WV+25801" target="_blank" rel="noopener">View on Google Maps</a></p>
+        </section>
+    </main>
+    
+    <script src="app.js"></script>
+</body>
+</html>
