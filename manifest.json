@@ -1,0 +1,20 @@
+{
+    "short_name": "MHBC",
+    "name": "Maxwell Hill Baptist Church App",
+    "icons": [
+        {
+            "src": "https://placehold.co/192x192/png?text=MHBC",
+            "type": "image/png",
+            "sizes": "192x192"
+        },
+        {
+            "src": "https://placehold.co/512x512/png?text=MHBC",
+            "type": "image/png",
+            "sizes": "512x512"
+        }
+    ],
+    "start_url": "/",
+    "background_color": "#ffffff",
+    "display": "standalone",
+    "theme_color": "#007bff"
+}
