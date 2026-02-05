@@ -1,12 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MHBC App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MHBC App</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <!-- For PWA installation on iPhone, add apple touch icon -->
+    <link rel="apple-touch-icon" href="https://placehold.co/180x180/png?text=MHBC"> <!-- Replace with actual icon -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="MHBC App">
 </head>
 <body>
-  <h1>MHBC App</h1>
-  <p>This confirms the app entry point is working.</p>
+    <header>
+        <h1>Maxwell Hill Baptist Church</h1>
+    </header>
+    
+    <main>
+        <section id="home" class="active">
+            <h2>Welcome</h2>
+            <p>A Church That is Diligent in the Word. Determined in Our Walk - Delighted in Our Worship.</p>
+            <p>We believe that nothing is more important than someone’s relationship with Jesus. Our mission is to help people follow Jesus and to take their next step on their journey of faith. No matter where you are on that journey, we are here to walk beside you. We hope that at Maxwell Hill Baptist Church, you will discover a community of people just like you who will support, encourage, and love you as we follow Jesus.</p>
+            <h3>Weekly Service Times</h3>
+            <ul>
+                <li>Sunday 9:30 am – Worship Service</li>
+                <li>Wednesday 7:00 pm – Midweek Service</li>
+            </ul>
+        </section>
+        
+        <section id="sunday">
+            <h2>Sunday Services</h2>
+            <div id="sunday-videos"></div>
+        </section>
+        
+        <section id="wednesday">
+            <h2>Wednesday Night Services</h2>
+            <div id="wednesday-videos"></div>
+        </section>
+        
+        <section id="contact">
+            <h2>Contact & Location</h2>
+            <p>Address: 301 Teel Road, Beckley, WV 25801</p>
+            <p>Phone: <a href="tel:3042530366">304.253.0366</a></p>
+            <p><a href="https://www.google.com/maps/search/?api=1&query=301+Teel+Road%2C+Beckley%2C+WV+25801" target="_blank">View on Map</a></p>
+        </section>
+    </main>
+    
+    <nav>
+        <button onclick="showSection('home')">Home</button>
+        <button onclick="showSection('sunday')">Sunday</button>
+        <button onclick="showSection('wednesday')">Wednesday</button>
+        <button onclick="showSection('contact')">Contact</button>
+    </nav>
+    
+    <script src="app.js"></script>
 </body>
 </html>
