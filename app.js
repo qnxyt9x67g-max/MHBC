@@ -1,57 +1,54 @@
-// Navigation
+// Show/hide sections
 function showSection(sectionId) {
     document.querySelectorAll('section').forEach(sec => {
         sec.classList.remove('active');
     });
     document.getElementById(sectionId).classList.add('active');
+    
+    // Close all menus when selecting an item
+    document.querySelectorAll('.has-submenu').forEach(item => {
+        item.classList.remove('open');
+    });
 }
 
-// Data structure for videos
-// Note: Automatic fetching from YouTube requires API keys, which are not used here to avoid paid services or backend.
-// Manually paste video details here. Use YouTube embed URLs or video IDs.
-// Example: For a video https://www.youtube.com/watch?v=VIDEO_ID, embed is https://www.youtube.com/embed/VIDEO_ID
-
+// Video data - add more embeds as needed
 const sundayVideos = [
     { title: 'Recent Sunday Service', url: 'https://www.youtube.com/embed/jzHaWseMX30' },
     { title: 'Previous Sunday Service', url: 'https://www.youtube.com/embed/OhkuBvoPX8A' },
-    // Add more: { title: 'Title', url: 'https://www.youtube.com/embed/VIDEO_ID' },
+    // Add more here: { title: '...', url: 'https://www.youtube.com/embed/...' }
 ];
 
 const wednesdayVideos = [
-    // No specific Wednesday videos found; add manually if available
-    // { title: 'Wednesday Service', url: 'https://www.youtube.com/embed/VIDEO_ID' },
+    // Add Wednesday service embeds when available
 ];
 
-// Render videos
+// Render embedded videos
 function renderVideos(containerId, videos) {
     const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    container.innerHTML = ''; // clear previous
     videos.forEach(video => {
         const div = document.createElement('div');
-        div.classList.add('video-item');
+        div.className = 'video-item';
         div.innerHTML = `
             <h3>${video.title}</h3>
-            <iframe src="${video.url}" frameborder="0" allowfullscreen></iframe>
+            <iframe src="${video.url}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         `;
         container.appendChild(div);
     });
 }
 
+// Menu toggle behavior (mobile-friendly)
 document.addEventListener('DOMContentLoaded', () => {
+    // Initial load
     showSection('home');
     renderVideos('sunday-videos', sundayVideos);
     renderVideos('wednesday-videos', wednesdayVideos);
-});
 
-// For PWA: Register service worker if needed, but omitted as no backend
-// If you want offline, add a service-worker.js and register here.
-// Add this after your existing code
-
-document.addEventListener('DOMContentLoaded', () => {
-    // ... your existing code (showSection home, render videos) ...
-
-    // Close all submenus when clicking/tapping anywhere outside
+    // Close menus when clicking outside
     document.addEventListener('click', function(e) {
-        if (!e.target.closest('.has-submenu')) {
+        if (!e.target.closest('.has-submenu') && !e.target.classList.contains('menu-toggle')) {
             document.querySelectorAll('.has-submenu').forEach(item => {
                 item.classList.remove('open');
             });
@@ -61,20 +58,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Toggle submenus on tap/click
     document.querySelectorAll('.menu-toggle').forEach(toggle => {
         toggle.addEventListener('click', function(e) {
-            e.preventDefault();          // prevent any default behavior
-            e.stopPropagation();         // stop bubbling so document click doesn't close it immediately
+            e.preventDefault();
+            e.stopPropagation();
 
-            const parentLi = this.closest('.has-submenu');
-            const isOpen = parentLi.classList.contains('open');
+            const parent = this.closest('.has-submenu');
+            const isOpen = parent.classList.contains('open');
 
-            // Close all other submenus first
+            // Close all others
             document.querySelectorAll('.has-submenu').forEach(item => {
                 item.classList.remove('open');
             });
 
-            // Toggle the clicked one
+            // Toggle current
             if (!isOpen) {
-                parentLi.classList.add('open');
+                parent.classList.add('open');
             }
         });
     });
