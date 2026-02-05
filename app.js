@@ -44,3 +44,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // For PWA: Register service worker if needed, but omitted as no backend
 // If you want offline, add a service-worker.js and register here.
+// Add this after your existing code
+
+document.addEventListener('DOMContentLoaded', () => {
+    // ... your existing code (showSection home, render videos) ...
+
+    // Close all submenus when clicking/tapping anywhere outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.has-submenu')) {
+            document.querySelectorAll('.has-submenu').forEach(item => {
+                item.classList.remove('open');
+            });
+        }
+    });
+
+    // Toggle submenus on tap/click
+    document.querySelectorAll('.menu-toggle').forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();          // prevent any default behavior
+            e.stopPropagation();         // stop bubbling so document click doesn't close it immediately
+
+            const parentLi = this.closest('.has-submenu');
+            const isOpen = parentLi.classList.contains('open');
+
+            // Close all other submenus first
+            document.querySelectorAll('.has-submenu').forEach(item => {
+                item.classList.remove('open');
+            });
+
+            // Toggle the clicked one
+            if (!isOpen) {
+                parentLi.classList.add('open');
+            }
+        });
+    });
+});
