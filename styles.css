@@ -13,6 +13,57 @@ header {
     padding: 1em;
 }
 
+nav {
+    background-color: #fff;
+    border-bottom: 1px solid #ccc;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+}
+
+nav li {
+    position: relative;
+    display: inline-block;
+}
+
+nav button, nav a {
+    background: none;
+    border: none;
+    padding: 1em;
+    cursor: pointer;
+    font-size: 1em;
+    text-decoration: none;
+    color: #333;
+}
+
+nav ul ul {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+
+nav ul ul li {
+    display: block;
+}
+
+nav li:hover > ul {
+    display: block;
+}
+
+nav ul ul button {
+    width: 100%;
+    text-align: left;
+}
+
 main {
     padding: 1em;
 }
@@ -23,24 +74,6 @@ section {
 
 section.active {
     display: block;
-}
-
-nav {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    background-color: #fff;
-    border-top: 1px solid #ccc;
-    display: flex;
-    justify-content: space-around;
-}
-
-nav button {
-    background: none;
-    border: none;
-    padding: 1em;
-    cursor: pointer;
-    font-size: 1em;
 }
 
 .video-item {
@@ -56,6 +89,9 @@ nav button {
 @media (min-width: 600px) {
     .video-item iframe {
         height: 315px;
+    }
+    nav ul {
+        justify-content: center;
     }
 }
 
