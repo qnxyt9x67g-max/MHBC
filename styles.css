@@ -1,5 +1,5 @@
 /* ============================================================
-   MHBC APP STYLES — Navy & Gold Church Mobile App
+   MHBC APP STYLES — Navy & Gold Church Mobile App v2
    ============================================================ */
 
 :root {
@@ -11,15 +11,12 @@
   --gold-light:  #e8c97a;
   --gold-dim:    #8a6f2e;
   --white:       #ffffff;
-  --off-white:   #f0ebe0;
-  --gray:        #8a96a8;
-  --gray-light:  #c4ccd8;
   --text:        #dce6f5;
   --text-dim:    #7a8fa8;
   --border:      rgba(201,168,76,0.18);
   --radius:      14px;
   --radius-sm:   8px;
-  --nav-height:  72px;
+  --nav-height:  68px;
   --header-height: 60px;
 }
 
@@ -30,32 +27,30 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
+html {
   height: 100%;
-  overflow: hidden;
+  background: var(--navy);
+}
+
+body {
+  min-height: 100%;
   background: var(--navy);
   color: var(--text);
   font-family: 'Lato', sans-serif;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
-}
-
-/* ---- STATUS BAR ---- */
-.status-bar-spacer {
-  height: env(safe-area-inset-top, 0px);
-  background: var(--navy);
+  padding-top: var(--header-height);
+  padding-bottom: var(--nav-height);
 }
 
 /* ---- HEADER ---- */
 .app-header {
   position: fixed;
-  top: env(safe-area-inset-top, 0);
-  left: 0; right: 0;
+  top: 0; left: 0; right: 0;
   height: var(--header-height);
   background: var(--navy);
   border-bottom: 1px solid var(--border);
-  z-index: 100;
-  backdrop-filter: blur(10px);
+  z-index: 200;
 }
 
 .header-inner {
@@ -111,7 +106,6 @@ html, body {
   padding: 5px 12px;
   border-radius: 20px;
   cursor: pointer;
-  animation: pulse-badge 2s infinite;
 }
 
 .live-dot {
@@ -126,43 +120,28 @@ html, body {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.2; }
 }
-@keyframes pulse-badge {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(211,47,47,0.4); }
-  50% { box-shadow: 0 0 0 6px rgba(211,47,47,0); }
-}
 
-/* ---- PAGE CONTAINER ---- */
-.page-container {
-  position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + var(--header-height));
-  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--nav-height));
-  left: 0; right: 0;
-  overflow: hidden;
+/* ---- PAGE WRAPPER ---- */
+.page-wrapper {
+  position: relative;
+  width: 100%;
 }
 
 /* ---- PAGES ---- */
 .page {
-  position: absolute;
-  inset: 0;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(20px);
-  transition: opacity 0.28s ease, transform 0.28s ease;
-  padding-bottom: 24px;
+  display: none;
+  width: 100%;
+  padding-bottom: 20px;
 }
 
 .page.active {
-  opacity: 1;
-  pointer-events: all;
-  transform: translateX(0);
+  display: block;
 }
 
 /* ---- HERO CARD ---- */
 .hero-card {
   position: relative;
-  height: 200px;
+  height: 190px;
   margin: 14px 14px 0;
   border-radius: var(--radius);
   overflow: hidden;
@@ -179,12 +158,12 @@ html, body {
 }
 
 .hero-overlay::after {
-  content: '✛';
+  content: '✝';
   position: absolute;
   right: 18px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 100px;
+  font-size: 90px;
   color: rgba(201,168,76,0.12);
   line-height: 1;
 }
@@ -197,7 +176,7 @@ html, body {
   justify-content: center;
   height: 100%;
   padding: 0 22px;
-  gap: 4px;
+  gap: 6px;
 }
 
 .hero-tagline {
@@ -206,7 +185,6 @@ html, body {
   font-weight: 600;
   color: var(--gold-light);
   line-height: 1.4;
-  letter-spacing: 0.01em;
 }
 
 /* ---- SECTION LABEL ---- */
@@ -235,10 +213,6 @@ html, body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 14px 16px;
-}
-
-.info-card.full-width {
-  margin: 0 14px;
 }
 
 .info-icon {
@@ -281,14 +255,12 @@ html, body {
   color: var(--text);
   font-family: 'Lato', sans-serif;
   font-size: 12px;
-  font-weight: 400;
   cursor: pointer;
-  transition: all 0.15s ease;
+  -webkit-appearance: none;
 }
 
 .quick-btn:active {
   background: var(--navy-light);
-  transform: scale(0.96);
 }
 
 .quick-icon {
@@ -306,15 +278,9 @@ html, body {
   padding: 16px;
   margin: 0 14px;
   cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.location-card:active {
-  background: var(--navy-light);
 }
 
 .location-pin { font-size: 24px; }
-
 .location-text { flex: 1; }
 
 .location-title {
@@ -382,12 +348,9 @@ html, body {
   text-decoration: none;
   color: var(--text);
   border-bottom: 1px solid rgba(201,168,76,0.08);
-  transition: background 0.15s;
 }
 
 .link-row:last-child { border-bottom: none; }
-
-.link-row:active { background: var(--navy-light); }
 
 .link-icon {
   width: 28px;
@@ -396,26 +359,18 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 16px;
   flex-shrink: 0;
   text-align: center;
   line-height: 28px;
 }
 
-.link-icon.gold { background: rgba(201,168,76,0.15); color: var(--gold); font-size: 16px; }
-.link-icon.yt-red { background: rgba(211,47,47,0.15); color: #ef5350; font-size: 16px; }
-.link-icon.fb-blue { background: rgba(66,103,178,0.2); color: #7090d0; font-size: 15px; font-family: serif; }
+.link-icon.gold { background: rgba(201,168,76,0.15); color: var(--gold); }
+.link-icon.yt-red { background: rgba(211,47,47,0.15); color: #ef5350; }
+.link-icon.fb-blue { background: rgba(66,103,178,0.2); color: #7090d0; font-size: 15px; font-family: serif; font-weight: 700; }
 
-.link-label {
-  flex: 1;
-  font-size: 14px;
-}
-
-.link-arrow {
-  font-size: 22px;
-  color: var(--text-dim);
-}
+.link-label { flex: 1; font-size: 14px; }
+.link-arrow { font-size: 22px; color: var(--text-dim); }
 
 /* ---- YOUTUBE EMBED ---- */
 .youtube-embed-container {
@@ -434,10 +389,6 @@ html, body {
 }
 
 /* ---- BIBLE ---- */
-.bible-picker {
-  padding: 0 0 4px;
-}
-
 .pill-row {
   display: flex;
   gap: 8px;
@@ -455,7 +406,7 @@ html, body {
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s;
+  -webkit-appearance: none;
 }
 
 .pill.active {
@@ -479,8 +430,8 @@ html, body {
   font-family: 'Lato', sans-serif;
   font-size: 14px;
   padding: 10px 12px;
-  appearance: none;
   -webkit-appearance: none;
+  appearance: none;
   cursor: pointer;
 }
 
@@ -488,7 +439,7 @@ html, body {
   display: block;
   margin: 12px 14px 0;
   width: calc(100% - 28px);
-  padding: 14px;
+  padding: 16px;
   background: var(--gold);
   color: var(--navy);
   font-family: 'Playfair Display', serif;
@@ -497,34 +448,7 @@ html, body {
   border: none;
   border-radius: var(--radius);
   cursor: pointer;
-  transition: all 0.15s;
-}
-
-.open-bible-btn:active {
-  background: var(--gold-light);
-  transform: scale(0.98);
-}
-
-.bible-frame-wrapper {
-  margin: 12px 14px 0;
-  border-radius: var(--radius);
-  overflow: hidden;
-  border: 1px solid var(--border);
-}
-
-.bible-note {
-  background: var(--navy-mid);
-  padding: 10px 14px;
-  font-size: 12px;
-  color: var(--text-dim);
-  border-bottom: 1px solid var(--border);
-}
-
-.bible-frame-wrapper iframe {
-  width: 100%;
-  height: 340px;
-  display: block;
-  background: #fff;
+  -webkit-appearance: none;
 }
 
 /* ---- GIVE PAGE ---- */
@@ -549,7 +473,6 @@ html, body {
   font-size: 12px;
   color: var(--gold-dim);
   margin-top: 10px;
-  letter-spacing: 0.05em;
 }
 
 .give-btn-main {
@@ -564,13 +487,6 @@ html, body {
   text-align: center;
   text-decoration: none;
   border-radius: var(--radius);
-  transition: all 0.15s;
-  letter-spacing: 0.01em;
-}
-
-.give-btn-main:active {
-  background: var(--gold-light);
-  transform: scale(0.98);
 }
 
 .give-note {
@@ -613,26 +529,19 @@ html, body {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.05em;
-  transition: all 0.15s;
-}
-
-.contact-directions-btn:active {
-  background: rgba(201,168,76,0.15);
 }
 
 /* ---- BOTTOM NAV ---- */
 .bottom-nav {
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  height: var(--nav-height);
   background: var(--navy);
   border-top: 1px solid var(--border);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-around;
-  z-index: 100;
-  backdrop-filter: blur(12px);
+  z-index: 200;
 }
 
 .nav-btn {
@@ -642,16 +551,15 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 10px 4px 0;
+  padding: 8px 4px;
   background: none;
   border: none;
   color: var(--text-dim);
   font-family: 'Lato', sans-serif;
   font-size: 10px;
-  font-weight: 400;
   cursor: pointer;
-  transition: color 0.15s;
-  height: var(--nav-height);
+  -webkit-appearance: none;
+  height: 100%;
 }
 
 .nav-btn.active {
@@ -661,18 +569,8 @@ html, body {
 .nav-icon {
   font-size: 22px;
   line-height: 1;
-  transition: transform 0.15s;
-}
-
-.nav-btn.active .nav-icon {
-  transform: translateY(-2px);
 }
 
 .nav-label {
   letter-spacing: 0.04em;
 }
-
-/* ---- SCROLLBAR ---- */
-.page::-webkit-scrollbar { width: 3px; }
-.page::-webkit-scrollbar-track { background: transparent; }
-.page::-webkit-scrollbar-thumb { background: var(--navy-light); border-radius: 2px; }
