@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -15,14 +16,12 @@
 </head>
 <body>
 
-  <!-- STATUS BAR SPACER -->
-  <div class="status-bar-spacer"></div>
-
   <!-- HEADER -->
+
   <header class="app-header">
     <div class="header-inner">
       <div class="header-logo">
-        <div class="logo-cross">✛</div>
+        <div class="logo-cross">✝</div>
         <div class="header-titles">
           <span class="header-title">Maxwell Hill</span>
           <span class="header-sub">Baptist Church</span>
@@ -35,357 +34,349 @@
   </header>
 
   <!-- PAGES -->
-  <main class="page-container">
 
-    <!-- HOME PAGE -->
-    <section class="page active" id="page-home">
-      <div class="hero-card">
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-          <p class="hero-tagline">Diligent in the Word</p>
-          <p class="hero-tagline">Determined in Our Walk</p>
-          <p class="hero-tagline">Delighted in Our Worship</p>
-        </div>
+  <div class="page-wrapper">
+
+```
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <div class="hero-card">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <p class="hero-tagline">Diligent in the Word</p>
+      <p class="hero-tagline">Determined in Our Walk</p>
+      <p class="hero-tagline">Delighted in Our Worship</p>
+    </div>
+  </div>
+
+  <div class="section-label">SERVICE TIMES</div>
+  <div class="card-row">
+    <div class="info-card">
+      <div class="info-icon">☀️</div>
+      <div class="info-text">
+        <div class="info-title">Sunday Morning</div>
+        <div class="info-sub">Worship Service · 9:30 AM</div>
       </div>
-
-      <div class="section-label">SERVICE TIMES</div>
-      <div class="card-row">
-        <div class="info-card">
-          <div class="info-icon">☀️</div>
-          <div class="info-text">
-            <div class="info-title">Sunday Morning</div>
-            <div class="info-sub">Worship Service · 9:30 AM</div>
-          </div>
-        </div>
-        <div class="info-card">
-          <div class="info-icon">🌙</div>
-          <div class="info-text">
-            <div class="info-title">Wednesday Evening</div>
-            <div class="info-sub">Midweek Service · 7:00 PM</div>
-          </div>
-        </div>
+    </div>
+    <div class="info-card">
+      <div class="info-icon">🌙</div>
+      <div class="info-text">
+        <div class="info-title">Wednesday Evening</div>
+        <div class="info-sub">Midweek Service · 7:00 PM</div>
       </div>
+    </div>
+  </div>
 
-      <div class="section-label">QUICK ACCESS</div>
-      <div class="quick-grid">
-        <button class="quick-btn" onclick="showPage('watch')">
-          <span class="quick-icon">▶️</span>
-          <span>Watch Live</span>
-        </button>
-        <button class="quick-btn" onclick="showPage('bible')">
-          <span class="quick-icon">📖</span>
-          <span>Read Bible</span>
-        </button>
-        <button class="quick-btn" onclick="showPage('give')">
-          <span class="quick-icon">🤝</span>
-          <span>Give</span>
-        </button>
-        <button class="quick-btn" onclick="openExternal('https://maxwellhillbaptistchurch.com/bulletins/')">
-          <span class="quick-icon">📋</span>
-          <span>Bulletins</span>
-        </button>
-        <button class="quick-btn" onclick="openExternal('https://www.google.com/maps/search/?api=1&query=301+Teel+Road+Beckley+WV+25801')">
-          <span class="quick-icon">📍</span>
-          <span>Directions</span>
-        </button>
-        <button class="quick-btn" onclick="openExternal('https://maxwellhillbaptistchurch.com/documents/')">
-          <span class="quick-icon">📄</span>
-          <span>Documents</span>
-        </button>
-      </div>
+  <div class="section-label">QUICK ACCESS</div>
+  <div class="quick-grid">
+    <button class="quick-btn" onclick="showPage('watch')">
+      <span class="quick-icon">▶️</span>
+      <span>Watch Live</span>
+    </button>
+    <button class="quick-btn" onclick="showPage('bible')">
+      <span class="quick-icon">📖</span>
+      <span>Read Bible</span>
+    </button>
+    <button class="quick-btn" onclick="showPage('give')">
+      <span class="quick-icon">🤝</span>
+      <span>Give</span>
+    </button>
+    <button class="quick-btn" onclick="window.open('https://maxwellhillbaptistchurch.com/bulletins/','_blank')">
+      <span class="quick-icon">📋</span>
+      <span>Bulletins</span>
+    </button>
+    <button class="quick-btn" onclick="window.open('https://www.google.com/maps/search/?api=1&query=301+Teel+Road+Beckley+WV+25801','_blank')">
+      <span class="quick-icon">📍</span>
+      <span>Directions</span>
+    </button>
+    <button class="quick-btn" onclick="window.open('https://maxwellhillbaptistchurch.com/documents/','_blank')">
+      <span class="quick-icon">📄</span>
+      <span>Documents</span>
+    </button>
+  </div>
 
-      <div class="section-label">LOCATION</div>
-      <div class="location-card" onclick="openExternal('https://www.google.com/maps/search/?api=1&query=301+Teel+Road+Beckley+WV+25801')">
-        <div class="location-pin">📍</div>
-        <div class="location-text">
-          <div class="location-title">301 Teel Road</div>
-          <div class="location-sub">Beckley, WV 25801</div>
-          <div class="location-phone">📞 304-253-0366</div>
-        </div>
-        <div class="location-arrow">›</div>
-      </div>
+  <div class="section-label">LOCATION</div>
+  <div class="location-card" onclick="window.open('https://www.google.com/maps/search/?api=1&query=301+Teel+Road+Beckley+WV+25801','_blank')">
+    <div class="location-pin">📍</div>
+    <div class="location-text">
+      <div class="location-title">301 Teel Road</div>
+      <div class="location-sub">Beckley, WV 25801</div>
+      <div class="location-phone">📞 304-253-0366</div>
+    </div>
+    <div class="location-arrow">›</div>
+  </div>
 
-      <div class="footer-note">© Maxwell Hill Baptist Church · Beckley, WV</div>
-    </section>
+  <div class="footer-note">© Maxwell Hill Baptist Church · Beckley, WV</div>
+</div>
 
-    <!-- WATCH PAGE -->
-    <section class="page" id="page-watch">
-      <div class="page-title-bar">
-        <h2 class="page-title">Watch & Listen</h2>
-      </div>
+<!-- WATCH PAGE -->
+<div class="page" id="page-watch">
+  <div class="page-title-bar">
+    <h2 class="page-title">Watch &amp; Listen</h2>
+  </div>
 
-      <div class="section-label">YOUTUBE CHANNEL</div>
-      <div class="youtube-embed-container">
-        <iframe
-          id="ytFrame"
-          src="https://www.youtube.com/embed?listType=user_uploads&list=maxwellhillbaptistchurch9695&rel=0"
-          title="Maxwell Hill Baptist Church YouTube"
-          frameborder="0"
-          allowfullscreen
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
-        </iframe>
-      </div>
+  <div class="section-label">YOUTUBE CHANNEL</div>
+  <div class="youtube-embed-container">
+    <iframe
+      src="https://www.youtube.com/embed?listType=user_uploads&list=maxwellhillbaptistchurch9695&rel=0"
+      title="Maxwell Hill Baptist Church YouTube"
+      frameborder="0"
+      allowfullscreen
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+    </iframe>
+  </div>
 
-      <div class="section-label">LINKS</div>
-      <div class="link-list">
-        <a class="link-row" href="https://www.youtube.com/@maxwellhillbaptistchurch9695" target="_blank">
-          <span class="link-icon yt-red">▶</span>
-          <span class="link-label">YouTube Channel</span>
-          <span class="link-arrow">›</span>
-        </a>
-        <a class="link-row" href="https://www.youtube.com/@maxwellhillbaptistchurch9695/streams" target="_blank">
-          <span class="link-icon yt-red">📡</span>
-          <span class="link-label">Live Streams</span>
-          <span class="link-arrow">›</span>
-        </a>
-        <a class="link-row" href="https://www.facebook.com/MaxwellHillChurch/" target="_blank">
-          <span class="link-icon fb-blue">f</span>
-          <span class="link-label">Facebook Page</span>
-          <span class="link-arrow">›</span>
-        </a>
-      </div>
-    </section>
+  <div class="section-label">LINKS</div>
+  <div class="link-list">
+    <a class="link-row" href="https://www.youtube.com/@maxwellhillbaptistchurch9695" target="_blank">
+      <span class="link-icon yt-red">▶</span>
+      <span class="link-label">YouTube Channel</span>
+      <span class="link-arrow">›</span>
+    </a>
+    <a class="link-row" href="https://www.youtube.com/@maxwellhillbaptistchurch9695/streams" target="_blank">
+      <span class="link-icon yt-red">📡</span>
+      <span class="link-label">Live Streams</span>
+      <span class="link-arrow">›</span>
+    </a>
+    <a class="link-row" href="https://www.facebook.com/MaxwellHillChurch/" target="_blank">
+      <span class="link-icon fb-blue">f</span>
+      <span class="link-label">Facebook Page</span>
+      <span class="link-arrow">›</span>
+    </a>
+  </div>
+  <div class="footer-note">© Maxwell Hill Baptist Church · Beckley, WV</div>
+</div>
 
-    <!-- BIBLE PAGE -->
-    <section class="page" id="page-bible">
-      <div class="page-title-bar">
-        <h2 class="page-title">Read the Bible</h2>
-      </div>
+<!-- BIBLE PAGE -->
+<div class="page" id="page-bible">
+  <div class="page-title-bar">
+    <h2 class="page-title">Read the Bible</h2>
+  </div>
 
-      <div class="bible-picker">
-        <div class="section-label">TRANSLATION</div>
-        <div class="pill-row">
-          <button class="pill active" data-trans="111" data-code="NIV">NIV</button>
-          <button class="pill" data-trans="1" data-code="KJV">KJV</button>
-          <button class="pill" data-trans="59" data-code="ESV">ESV</button>
-          <button class="pill" data-trans="2692" data-code="NASB">NASB</button>
-        </div>
+  <div class="section-label">TRANSLATION</div>
+  <div class="pill-row">
+    <button class="pill active" data-trans="111" data-code="NIV">NIV</button>
+    <button class="pill" data-trans="1" data-code="KJV">KJV</button>
+    <button class="pill" data-trans="59" data-code="ESV">ESV</button>
+    <button class="pill" data-trans="2692" data-code="NASB">NASB</button>
+  </div>
 
-        <div class="section-label">BOOK & CHAPTER</div>
-        <div class="bible-selects">
-          <select id="bibleBook" class="bible-select">
-            <option value="GEN">Genesis</option>
-            <option value="EXO">Exodus</option>
-            <option value="LEV">Leviticus</option>
-            <option value="NUM">Numbers</option>
-            <option value="DEU">Deuteronomy</option>
-            <option value="JOS">Joshua</option>
-            <option value="JDG">Judges</option>
-            <option value="RUT">Ruth</option>
-            <option value="1SA">1 Samuel</option>
-            <option value="2SA">2 Samuel</option>
-            <option value="1KI">1 Kings</option>
-            <option value="2KI">2 Kings</option>
-            <option value="1CH">1 Chronicles</option>
-            <option value="2CH">2 Chronicles</option>
-            <option value="EZR">Ezra</option>
-            <option value="NEH">Nehemiah</option>
-            <option value="EST">Esther</option>
-            <option value="JOB">Job</option>
-            <option value="PSA">Psalms</option>
-            <option value="PRO">Proverbs</option>
-            <option value="ECC">Ecclesiastes</option>
-            <option value="SNG">Song of Solomon</option>
-            <option value="ISA">Isaiah</option>
-            <option value="JER">Jeremiah</option>
-            <option value="LAM">Lamentations</option>
-            <option value="EZK">Ezekiel</option>
-            <option value="DAN">Daniel</option>
-            <option value="HOS">Hosea</option>
-            <option value="JOL">Joel</option>
-            <option value="AMO">Amos</option>
-            <option value="OBA">Obadiah</option>
-            <option value="JON">Jonah</option>
-            <option value="MIC">Micah</option>
-            <option value="NAM">Nahum</option>
-            <option value="HAB">Habakkuk</option>
-            <option value="ZEP">Zephaniah</option>
-            <option value="HAG">Haggai</option>
-            <option value="ZEC">Zechariah</option>
-            <option value="MAL">Malachi</option>
-            <option value="MAT">Matthew</option>
-            <option value="MRK">Mark</option>
-            <option value="LUK">Luke</option>
-            <option value="JHN" selected>John</option>
-            <option value="ACT">Acts</option>
-            <option value="ROM">Romans</option>
-            <option value="1CO">1 Corinthians</option>
-            <option value="2CO">2 Corinthians</option>
-            <option value="GAL">Galatians</option>
-            <option value="EPH">Ephesians</option>
-            <option value="PHP">Philippians</option>
-            <option value="COL">Colossians</option>
-            <option value="1TH">1 Thessalonians</option>
-            <option value="2TH">2 Thessalonians</option>
-            <option value="1TI">1 Timothy</option>
-            <option value="2TI">2 Timothy</option>
-            <option value="TIT">Titus</option>
-            <option value="PHM">Philemon</option>
-            <option value="HEB">Hebrews</option>
-            <option value="JAS">James</option>
-            <option value="1PE">1 Peter</option>
-            <option value="2PE">2 Peter</option>
-            <option value="1JN">1 John</option>
-            <option value="2JN">2 John</option>
-            <option value="3JN">3 John</option>
-            <option value="JUD">Jude</option>
-            <option value="REV">Revelation</option>
-          </select>
-          <select id="bibleChapter" class="bible-select">
-            <!-- populated by JS -->
-          </select>
-        </div>
+  <div class="section-label">BOOK &amp; CHAPTER</div>
+  <div class="bible-selects">
+    <select id="bibleBook" class="bible-select">
+      <option value="GEN">Genesis</option>
+      <option value="EXO">Exodus</option>
+      <option value="LEV">Leviticus</option>
+      <option value="NUM">Numbers</option>
+      <option value="DEU">Deuteronomy</option>
+      <option value="JOS">Joshua</option>
+      <option value="JDG">Judges</option>
+      <option value="RUT">Ruth</option>
+      <option value="1SA">1 Samuel</option>
+      <option value="2SA">2 Samuel</option>
+      <option value="1KI">1 Kings</option>
+      <option value="2KI">2 Kings</option>
+      <option value="1CH">1 Chronicles</option>
+      <option value="2CH">2 Chronicles</option>
+      <option value="EZR">Ezra</option>
+      <option value="NEH">Nehemiah</option>
+      <option value="EST">Esther</option>
+      <option value="JOB">Job</option>
+      <option value="PSA">Psalms</option>
+      <option value="PRO">Proverbs</option>
+      <option value="ECC">Ecclesiastes</option>
+      <option value="SNG">Song of Solomon</option>
+      <option value="ISA">Isaiah</option>
+      <option value="JER">Jeremiah</option>
+      <option value="LAM">Lamentations</option>
+      <option value="EZK">Ezekiel</option>
+      <option value="DAN">Daniel</option>
+      <option value="HOS">Hosea</option>
+      <option value="JOL">Joel</option>
+      <option value="AMO">Amos</option>
+      <option value="OBA">Obadiah</option>
+      <option value="JON">Jonah</option>
+      <option value="MIC">Micah</option>
+      <option value="NAM">Nahum</option>
+      <option value="HAB">Habakkuk</option>
+      <option value="ZEP">Zephaniah</option>
+      <option value="HAG">Haggai</option>
+      <option value="ZEC">Zechariah</option>
+      <option value="MAL">Malachi</option>
+      <option value="MAT">Matthew</option>
+      <option value="MRK">Mark</option>
+      <option value="LUK">Luke</option>
+      <option value="JHN" selected>John</option>
+      <option value="ACT">Acts</option>
+      <option value="ROM">Romans</option>
+      <option value="1CO">1 Corinthians</option>
+      <option value="2CO">2 Corinthians</option>
+      <option value="GAL">Galatians</option>
+      <option value="EPH">Ephesians</option>
+      <option value="PHP">Philippians</option>
+      <option value="COL">Colossians</option>
+      <option value="1TH">1 Thessalonians</option>
+      <option value="2TH">2 Thessalonians</option>
+      <option value="1TI">1 Timothy</option>
+      <option value="2TI">2 Timothy</option>
+      <option value="TIT">Titus</option>
+      <option value="PHM">Philemon</option>
+      <option value="HEB">Hebrews</option>
+      <option value="JAS">James</option>
+      <option value="1PE">1 Peter</option>
+      <option value="2PE">2 Peter</option>
+      <option value="1JN">1 John</option>
+      <option value="2JN">2 John</option>
+      <option value="3JN">3 John</option>
+      <option value="JUD">Jude</option>
+      <option value="REV">Revelation</option>
+    </select>
+    <select id="bibleChapter" class="bible-select">
+    </select>
+  </div>
 
-        <button class="open-bible-btn" id="openBibleBtn">Open in Bible.com →</button>
-      </div>
+  <button class="open-bible-btn" id="openBibleBtn">Open in Bible.com →</button>
+  <div class="footer-note">© Maxwell Hill Baptist Church · Beckley, WV</div>
+</div>
 
-      <div class="bible-frame-wrapper">
-        <div class="bible-note">📖 Tap the button above to read on Bible.com, or use the embedded view below.</div>
-        <iframe
-          id="bibleFrame"
-          src="https://www.bible.com/bible/111/JHN.1.NIV"
-          title="Bible.com"
-          frameborder="0"
-          allowfullscreen>
-        </iframe>
-      </div>
-    </section>
+<!-- GIVE PAGE -->
+<div class="page" id="page-give">
+  <div class="page-title-bar">
+    <h2 class="page-title">Give</h2>
+  </div>
+  <div class="give-hero">
+    <div class="give-scripture">"Each of you should give what you have decided in your heart to give, not reluctantly or under compulsion, for God loves a cheerful giver."</div>
+    <div class="give-ref">— 2 Corinthians 9:7 (NIV)</div>
+  </div>
+  <div class="section-label">ONLINE GIVING</div>
+  <a class="give-btn-main" href="https://give.tithe.ly/?formId=f0356db3-ffa6-4cb7-9dde-2e9e6fc508ff&usedQrCode=true" target="_blank">
+    Give Online Now
+  </a>
+  <div class="give-note">You'll be taken to our secure giving portal powered by Tithe.ly.</div>
 
-    <!-- GIVE PAGE -->
-    <section class="page" id="page-give">
-      <div class="page-title-bar">
-        <h2 class="page-title">Give</h2>
-      </div>
-      <div class="give-hero">
-        <div class="give-scripture">"Each of you should give what you have decided in your heart to give, not reluctantly or under compulsion, for God loves a cheerful giver."</div>
-        <div class="give-ref">— 2 Corinthians 9:7 (NIV)</div>
-      </div>
-      <div class="section-label">ONLINE GIVING</div>
-      <a class="give-btn-main" href="https://give.tithe.ly/?formId=f0356db3-ffa6-4cb7-9dde-2e9e6fc508ff&usedQrCode=true" target="_blank">
-        Give Online Now
-      </a>
-      <div class="give-note">You'll be taken to our secure giving portal powered by Tithe.ly.</div>
+  <div class="section-label">GIVE IN PERSON</div>
+  <div class="info-card" style="margin: 0 14px;">
+    <div class="info-icon">🏛️</div>
+    <div class="info-text">
+      <div class="info-title">Sunday Morning Service</div>
+      <div class="info-sub">Offering taken during the 9:30 AM service</div>
+    </div>
+  </div>
+  <div class="footer-note">© Maxwell Hill Baptist Church · Beckley, WV</div>
+</div>
 
-      <div class="section-label">GIVE IN PERSON</div>
-      <div class="info-card full-width">
-        <div class="info-icon">🏛️</div>
-        <div class="info-text">
-          <div class="info-title">Sunday Morning Service</div>
-          <div class="info-sub">Offering taken during the 9:30 AM service</div>
-        </div>
-      </div>
-    </section>
+<!-- MORE / ABOUT PAGE -->
+<div class="page" id="page-more">
+  <div class="page-title-bar">
+    <h2 class="page-title">About &amp; More</h2>
+  </div>
 
-    <!-- MORE / ABOUT PAGE -->
-    <section class="page" id="page-more">
-      <div class="page-title-bar">
-        <h2 class="page-title">About & More</h2>
-      </div>
+  <div class="section-label">ABOUT THE CHURCH</div>
+  <div class="link-list">
+    <a class="link-row" href="https://maxwellhillbaptistchurch.com/about/" target="_blank">
+      <span class="link-icon gold">🏛️</span>
+      <span class="link-label">About Us</span>
+      <span class="link-arrow">›</span>
+    </a>
+    <a class="link-row" href="https://maxwellhillbaptistchurch.com/our-story/" target="_blank">
+      <span class="link-icon gold">📜</span>
+      <span class="link-label">Our Story</span>
+      <span class="link-arrow">›</span>
+    </a>
+    <a class="link-row" href="https://maxwellhillbaptistchurch.com/our-staff/" target="_blank">
+      <span class="link-icon gold">👤</span>
+      <span class="link-label">Our Staff</span>
+      <span class="link-arrow">›</span>
+    </a>
+  </div>
 
-      <div class="section-label">ABOUT THE CHURCH</div>
-      <div class="link-list">
-        <a class="link-row" href="https://maxwellhillbaptistchurch.com/about/" target="_blank">
-          <span class="link-icon gold">🏛️</span>
-          <span class="link-label">About Us</span>
-          <span class="link-arrow">›</span>
-        </a>
-        <a class="link-row" href="https://maxwellhillbaptistchurch.com/our-story/" target="_blank">
-          <span class="link-icon gold">📜</span>
-          <span class="link-label">Our Story</span>
-          <span class="link-arrow">›</span>
-        </a>
-        <a class="link-row" href="https://maxwellhillbaptistchurch.com/our-staff/" target="_blank">
-          <span class="link-icon gold">👤</span>
-          <span class="link-label">Our Staff</span>
-          <span class="link-arrow">›</span>
-        </a>
-      </div>
+  <div class="section-label">OUR BELIEFS</div>
+  <div class="link-list">
+    <a class="link-row" href="https://maxwellhillbaptistchurch.com/what-kind-of-church-are-we/" target="_blank">
+      <span class="link-icon gold">✝</span>
+      <span class="link-label">What Kind of Church Are We?</span>
+      <span class="link-arrow">›</span>
+    </a>
+    <a class="link-row" href="https://maxwellhillbaptistchurch.com/statement-of-faith/" target="_blank">
+      <span class="link-icon gold">📖</span>
+      <span class="link-label">Statement of Faith</span>
+      <span class="link-arrow">›</span>
+    </a>
+    <a class="link-row" href="https://maxwellhillbaptistchurch.com/marriage/" target="_blank">
+      <span class="link-icon gold">💍</span>
+      <span class="link-label">Our Position on Marriage</span>
+      <span class="link-arrow">›</span>
+    </a>
+  </div>
 
-      <div class="section-label">OUR BELIEFS</div>
-      <div class="link-list">
-        <a class="link-row" href="https://maxwellhillbaptistchurch.com/what-kind-of-church-are-we/" target="_blank">
-          <span class="link-icon gold">✛</span>
-          <span class="link-label">What Kind of Church Are We?</span>
-          <span class="link-arrow">›</span>
-        </a>
-        <a class="link-row" href="https://maxwellhillbaptistchurch.com/statement-of-faith/" target="_blank">
-          <span class="link-icon gold">📖</span>
-          <span class="link-label">Statement of Faith</span>
-          <span class="link-arrow">›</span>
-        </a>
-        <a class="link-row" href="https://maxwellhillbaptistchurch.com/marriage/" target="_blank">
-          <span class="link-icon gold">💍</span>
-          <span class="link-label">Our Position on Marriage</span>
-          <span class="link-arrow">›</span>
-        </a>
-      </div>
+  <div class="section-label">MINISTRIES</div>
+  <div class="link-list">
+    <a class="link-row" href="https://maxwellhillbaptistchurch.com/mens-ministry/" target="_blank">
+      <span class="link-icon gold">👨</span>
+      <span class="link-label">Men's Ministry</span>
+      <span class="link-arrow">›</span>
+    </a>
+    <a class="link-row" href="https://maxwellhillbaptistchurch.com/womens-ministry/" target="_blank">
+      <span class="link-icon gold">👩</span>
+      <span class="link-label">Women's Ministry</span>
+      <span class="link-arrow">›</span>
+    </a>
+    <a class="link-row" href="https://maxwellhillbaptistchurch.com/silver-saints-ministry/" target="_blank">
+      <span class="link-icon gold">⭐</span>
+      <span class="link-label">Silver Saints Ministry</span>
+      <span class="link-arrow">›</span>
+    </a>
+    <a class="link-row" href="https://maxwellhillbaptistchurch.com/c-a-r-e-groups/" target="_blank">
+      <span class="link-icon gold">🤝</span>
+      <span class="link-label">C.A.R.E. Groups</span>
+      <span class="link-arrow">›</span>
+    </a>
+    <a class="link-row" href="https://maxwellhillbaptistchurch.com/trac/" target="_blank">
+      <span class="link-icon gold">🎓</span>
+      <span class="link-label">TRAC Youth Ministry</span>
+      <span class="link-arrow">›</span>
+    </a>
+    <a class="link-row" href="https://maxwellhillbaptistchurch.com/nursery/" target="_blank">
+      <span class="link-icon gold">👶</span>
+      <span class="link-label">Children's Programs</span>
+      <span class="link-arrow">›</span>
+    </a>
+  </div>
 
-      <div class="section-label">MINISTRIES</div>
-      <div class="link-list">
-        <a class="link-row" href="https://maxwellhillbaptistchurch.com/mens-ministry/" target="_blank">
-          <span class="link-icon gold">👨</span>
-          <span class="link-label">Men's Ministry</span>
-          <span class="link-arrow">›</span>
-        </a>
-        <a class="link-row" href="https://maxwellhillbaptistchurch.com/womens-ministry/" target="_blank">
-          <span class="link-icon gold">👩</span>
-          <span class="link-label">Women's Ministry</span>
-          <span class="link-arrow">›</span>
-        </a>
-        <a class="link-row" href="https://maxwellhillbaptistchurch.com/silver-saints-ministry/" target="_blank">
-          <span class="link-icon gold">⭐</span>
-          <span class="link-label">Silver Saints Ministry</span>
-          <span class="link-arrow">›</span>
-        </a>
-        <a class="link-row" href="https://maxwellhillbaptistchurch.com/c-a-r-e-groups/" target="_blank">
-          <span class="link-icon gold">🤝</span>
-          <span class="link-label">C.A.R.E. Groups</span>
-          <span class="link-arrow">›</span>
-        </a>
-        <a class="link-row" href="https://maxwellhillbaptistchurch.com/trac/" target="_blank">
-          <span class="link-icon gold">🎓</span>
-          <span class="link-label">TRAC Youth Ministry</span>
-          <span class="link-arrow">›</span>
-        </a>
-        <a class="link-row" href="https://maxwellhillbaptistchurch.com/nursery/" target="_blank">
-          <span class="link-icon gold">👶</span>
-          <span class="link-label">Children's Programs</span>
-          <span class="link-arrow">›</span>
-        </a>
-      </div>
+  <div class="section-label">RESOURCES</div>
+  <div class="link-list">
+    <a class="link-row" href="https://maxwellhillbaptistchurch.com/bulletins/" target="_blank">
+      <span class="link-icon gold">📋</span>
+      <span class="link-label">Bulletins</span>
+      <span class="link-arrow">›</span>
+    </a>
+    <a class="link-row" href="https://maxwellhillbaptistchurch.com/documents/" target="_blank">
+      <span class="link-icon gold">📄</span>
+      <span class="link-label">Documents</span>
+      <span class="link-arrow">›</span>
+    </a>
+    <a class="link-row" href="https://maxwellhillbaptistchurch.com/calendar/" target="_blank">
+      <span class="link-icon gold">📅</span>
+      <span class="link-label">Church Calendar</span>
+      <span class="link-arrow">›</span>
+    </a>
+  </div>
 
-      <div class="section-label">RESOURCES</div>
-      <div class="link-list">
-        <a class="link-row" href="https://maxwellhillbaptistchurch.com/bulletins/" target="_blank">
-          <span class="link-icon gold">📋</span>
-          <span class="link-label">Bulletins</span>
-          <span class="link-arrow">›</span>
-        </a>
-        <a class="link-row" href="https://maxwellhillbaptistchurch.com/documents/" target="_blank">
-          <span class="link-icon gold">📄</span>
-          <span class="link-label">Documents</span>
-          <span class="link-arrow">›</span>
-        </a>
-        <a class="link-row" href="https://maxwellhillbaptistchurch.com/calendar/" target="_blank">
-          <span class="link-icon gold">📅</span>
-          <span class="link-label">Church Calendar</span>
-          <span class="link-arrow">›</span>
-        </a>
-      </div>
+  <div class="section-label">CONTACT</div>
+  <div class="contact-card">
+    <div class="contact-row">📍 301 Teel Road, Beckley, WV 25801</div>
+    <div class="contact-row"><a href="tel:3042530366">📞 304-253-0366</a></div>
+    <a class="contact-directions-btn" href="https://www.google.com/maps/search/?api=1&query=301+Teel+Road+Beckley+WV+25801" target="_blank">Get Directions</a>
+  </div>
 
-      <div class="section-label">CONTACT</div>
-      <div class="contact-card">
-        <div class="contact-row">📍 301 Teel Road, Beckley, WV 25801</div>
-        <div class="contact-row"><a href="tel:3042530366">📞 304-253-0366</a></div>
-        <a class="contact-directions-btn" href="https://www.google.com/maps/search/?api=1&query=301+Teel+Road+Beckley+WV+25801" target="_blank">Get Directions</a>
-      </div>
+  <div class="footer-note">© Maxwell Hill Baptist Church · Beckley, WV<br/>Built with ♥ for the MHBC family</div>
+</div>
+```
 
-      <div class="footer-note">Maxwell Hill Baptist Church · Beckley, WV<br/>Built with ♥ for the MHBC family</div>
-    </section>
-
-  </main>
+  </div><!-- end page-wrapper -->
 
   <!-- BOTTOM NAV -->
+
   <nav class="bottom-nav">
     <button class="nav-btn active" data-page="home" onclick="showPage('home')">
       <span class="nav-icon">🏠</span>
@@ -410,5 +401,6 @@
   </nav>
 
   <script src="app.js"></script>
+
 </body>
 </html>
