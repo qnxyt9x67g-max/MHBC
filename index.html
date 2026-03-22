@@ -1,404 +1,414 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MHBC App</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="apple-touch-icon" href="https://placehold.co/180x180/png?text=MHBC">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="MHBC App">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a1628" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MHBC" />
+  <title>Maxwell Hill Baptist Church</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
 </head>
 <body>
-    <header>
-        <h1>Maxwell Hill Baptist Church</h1>
-    </header>
-
-    <nav>
-        <ul class="main-menu">
-            <li><button onclick="showSection('home')">Home</button></li>
-
-            <li class="has-submenu">
-                <button class="menu-toggle" onclick="showSection('about-overview')">About</button>
-                <ul class="submenu">
-                    <li><button onclick="showSection('our-story')">Our Story</button></li>
-                </ul>
-            </li>
-
-            <li class="has-submenu">
-                <button class="menu-toggle" onclick="showSection('beliefs-overview')">Our Beliefs</button>
-                <ul class="submenu">
-                    <li><button onclick="showSection('what-kind')">What Kind of Church Are We</button></li>
-                    <li><button onclick="showSection('statement')">Statement of Faith</button></li>
-                </ul>
-            </li>
-
-            <li class="has-submenu">
-                <button class="menu-toggle" onclick="showSection('ministry-overview')">Ministry</button>
-                <ul class="submenu">
-                    <li><button onclick="showSection('mens')">Men's Ministry</button></li>
-                    <li><button onclick="showSection('womens')">Women's Ministry</button></li>
-                    <li><button onclick="showSection('silver')">Silver Saints Ministry</button></li>
-                    <li><button onclick="showSection('care')">C.A.R.E. Groups</button></li>
-                    <li><button onclick="showSection('nursery')">Nursery</button></li>
-                    <li><button onclick="showSection('toddlers')">Toddlers</button></li>
-                    <li><button onclick="showSection('elementary')">Elementary</button></li>
-                    <li><button onclick="showSection('trac')">TRAC (Middle & High School)</button></li>
-                </ul>
-            </li>
-
-            <li class="has-submenu">
-                <button class="menu-toggle" onclick="showSection('policies-overview')">Positions and Policies</button>
-                <ul class="submenu">
-                    <li><button onclick="showSection('marriage')">Marriage</button></li>
-                </ul>
-            </li>
-
-            <li><button onclick="showSection('bulletins')">Bulletins</button></li>
-            <li><button onclick="showSection('documents')">Documents</button></li>
-
-            <li class="has-submenu">
-                <button class="menu-toggle" onclick="showSection('watch-overview')">Watch Live</button>
-                <ul class="submenu">
-                    <li><button onclick="showSection('sunday')">Sunday Services</button></li>
-                    <li><button onclick="showSection('wednesday')">Wednesday Services</button></li>
-                    <li><button onclick="showSection('watch-live')">Live Streams</button></li>
-                </ul>
-            </li>
-
-            <li><button onclick="showSection('give')">Give</button></li>
-            <li><button onclick="showSection('bible')">Bible</button></li>
-            <li><button onclick="showSection('contact')">Contact</button></li>
-        </ul>
-    </nav>
-
-    <main>
-        <!-- Home -->
-        <section id="home" class="active">
-            <h2>Welcome to Maxwell Hill Baptist Church</h2>
-            <p>A Church That is Diligent in the Word. Determined in Our Walk - Delighted in Our Worship.</p>
-            <h3>Weekly Service Times</h3>
-            <ul>
-                <li>Sunday 9:30 am – Worship Service</li>
-                <li>Wednesday 7:00 pm – Midweek Service</li>
-            </ul>
-        </section>
-
-        <!-- Parent overview pages -->
-        <section id="about-overview">
-            <h2>About</h2>
-            <p>Learn about the history and story of Maxwell Hill Baptist Church.</p>
-        </section>
-
-        <section id="beliefs-overview">
-            <h2>Our Beliefs</h2>
-            <p>Read about who we are as a church and our statement of faith.</p>
-        </section>
-
-        <section id="ministry-overview">
-            <h2>Ministries</h2>
-            <p>Explore the different ministries serving our church family.</p>
-        </section>
-
-        <section id="policies-overview">
-            <h2>Positions and Policies</h2>
-            <p>Our church’s biblical positions on important matters.</p>
-        </section>
-
-        <section id="watch-overview">
-            <h2>Watch Live</h2>
-            <p>View live services and recorded messages.</p>
-        </section>
-
-        <!-- === Our Story === -->
-        <section id="our-story">
-            <h2>Our Story</h2>
-            <p>Maxwell Hill Baptist Church is a Bible based church located on the hill above Beckley West Virginia not directly affiliated with the Baptist denomination.</p>
 
-            <p>The history of Maxwell Hill Baptist Church is rich in memories from its rural beginning until now. The story of the church is one of a people who loved the Lord and dedicated themselves to build a central place of worship as dictated by the needs of the community. The community has transformed from a small rural setting to a modern, well developed suburb of a small city. The history of the church reveals its adaptability to change and growth, as well as its resolve to remain steadfast in God’s principles. The message has always been the Gospel of Jesus Christ.</p>
-
-            <h3>1941</h3>
-            <p>The idea for a church was born in 1941. God used the women of the community to become the founders of the church. Predicated by the need for a central place of worship and a desire to raise their children in the nurture and admonition of the Lord.</p>
-
-            <h3>1942</h3>
-            <p>The Maxwell Hill Baptist Church was officially organized on February 22, 1942, by a council representing the Raleigh Baptist Association. The association received the church into full fellowship later that year. Construction on a new church building began on July 25, 1942, as Dale Dixon plowed the first furrow with a horse owned by Herb Tolley. The building was not fully completed until December 1947, because the war created financial difficulties and many of the needed building supplies were not available. The basement was completed, though, and the first service was held on December 24, 1942.</p>
-
-            <h3>1942 – 1964</h3>
-            <p>The church had three different pastors in the first three years. Aden Brown was the first, followed by Harry L. Stevens, and then succeeded by Henry Smith in 1945. Henry Smith pastored until 1950. Landon Stanley pastored until 1964. During his pastorate, the church debt was retired. The 1960s brought rapid development to Maxwell Hill. In 1964, C.G. Walker replaced Landon Stanley as an interim pastor, agreeing to a one-year term.</p>
-
-            <h3>1965 – 1991</h3>
-            <p>In November of 1965, Clarence Griffith, Sr., a resident of Shady Spring, West Virginia, was selected to be the new full-time pastor. Plans were made in 1967 to construct a new building to facilitate growth. In March of 1977, the church voted to build a gymnasium, and construction was completed in July 1978. In the early part of 1991, Clarence Griffith asked the deacon board to begin the search for a new pastor as his health had deteriorated.</p>
-
-            <h3>1991 – 1994</h3>
-            <p>Pastor Ken began serving in June of 1991 and continues today as our Senior Pastor. Under Pastor Ken’s ministry, the church building was expanded by enlarging the sanctuary and adding several new classrooms in 1994.</p>
-
-            <h3>1995</h3>
-            <p>In 1995, the addition of another member of the pastoral staff was made when Bruce Dick came as the Youth Pastor. Bruce currently oversees the Youth Discipleship Ministry and serves as the coordinator for the Fellowship Center.</p>
-
-            <h3>1998</h3>
-            <p>In 1998, a vision and a purpose statement were established for our church. The purpose statement for the Maxwell Hill Baptist Church is as follows: Our purpose is to honor and glorify God by spreading the good news of Jesus Christ and by discipling those that God saves for the work of the ministry. The vision statement is what we desire to be a Church that is: Diligent in the Word, Delighted in Our Worship, and Determined in our Walk.</p>
-
-            <p>MHBC has endeavored over the years to be true to the message of the Gospel of Jesus Christ. It is our resolve to remain faithful to this simple yet profound truth. We thank God for our existence.</p>
-
-            <p>As the story of Maxwell Hill continues, we witness what Christ is doing in and through our church and we want to give all glory to God for what He has done and is doing.</p>
-
-            <p><a href="https://maxwellhillbaptistchurch.com/our-story/" target="_blank" rel="noopener">View full page →</a></p>
-        </section>
-
-        <!-- === What Kind of Church Are We === -->
-        <section id="what-kind">
-            <h2>What Kind of Church Are We</h2>
-
-            <h3>OUR PURPOSE</h3>
-            <p>In light of Matthew 28:18-19 the purpose of MHBC is to honor and glorify God by spreading the good news of Jesus Christ and discipling those that God saves for the work of the ministry.</p>
-
-            <h3>OUR VISION</h3>
-            <p>Just as families have various characteristics and traits that make them unique, so do churches. It is our desire to develop a character within our church that is honoring to our Lord and is conducive to healthy spiritual growth. We have developed a vision statement that we believe embodies the character of our church: To be diligent in The Word, delighted in our worship, and determined in our walk. It is in the spirit of this statement that we seek to minister to the Body of Christ.</p>
-
-            <ul>
-                <li><strong>To Be Diligent In The Word</strong> – We are, without reservation, committed to the belief that the Bible is the Word of God. It is our conviction that diligence in The Word needs to be reflected, not only in the teaching and preaching ministry, but also in the everyday lives of our people...</li>
-                <li><strong>To Be Delighted In Our Worship</strong> – There are two aspects of this statement. First of all, we want our worship to be delight to our God, secondly, we want our worship to be a delightful experience for the worshippers...</li>
-                <li><strong>To Be Determined In Our Walk</strong> – We want the activities of our ministry to be deliberated and purposeful. We must constantly be evaluating our activities and programs...</li>
-            </ul>
-
-            <p><a href="https://maxwellhillbaptistchurch.com/what-kind-of-church-are-we/" target="_blank" rel="noopener">View full page →</a></p>
-        </section>
-
-        <!-- === Statement of Faith === -->
-        <section id="statement">
-            <h2>Statement of Faith</h2>
-
-            <h3>The Scriptures</h3>
-            <p>We believe the Holy Scriptures of the Old and New Testament to be the verbally inspired Word of God, the final authority for faith and life, inerrant in the original writings, infallible and God-breathed.</p>
-
-            <h3>The Godhead</h3>
-            <p>We believe in one triune God, eternally existing in three persons—Father, Son, and Holy Spirit—co-eternal in being, co-identical in nature, co-equal in power and glory, and having the same attributes and perfections.</p>
-
-            <h3>The Person and Work of Christ</h3>
-            <p>We believe that the Lord Jesus Christ, the eternal Son of God, became man, without ceasing to be God, having been conceived by the Holy Spirit and born of the virgin Mary, in order that He might reveal God and redeem sinful men.</p>
-
-            <p>We believe that the Lord Jesus Christ accomplished our redemption through His death on the cross as a representative, vicarious, substitutionary sacrifice; and that our justification is made sure by His literal, physical resurrection from the dead.</p>
-
-            <h3>The Person and Work of the Holy Spirit</h3>
-            <p>We believe that the Holy Spirit is a person who convicts the world of sin, of righteousness, and of judgment; and, that He is the Supernatural Agent in regeneration, baptizing all believers into the Body of Christ, indwelling and sealing them unto the day of redemption.</p>
-
-            <h3>The Total Depravity of Man</h3>
-            <p>We believe that man was created in the image of God, that he sinned and thereby incurred not only physical death but also spiritual death which is separation from God; and that all human beings are born with a sinful nature...</p>
-
-            <h3>Salvation</h3>
-            <p>We believe that salvation is the gift of God brought to man by grace and received by personal faith in the Lord Jesus Christ, whose precious blood was shed on Calvary for the forgiveness of our sins.</p>
-
-            <h3>The Eternal Security and Assurance of Believers</h3>
-            <p>We believe that all the redeemed, once saved, are kept by God’s power and are thus secure in Christ forever.</p>
-
-            <h3>The Church</h3>
-            <p>We believe that the church, which is the body and the espoused bride of Christ, is a spiritual organism made up of all redeemed persons during this present age.</p>
-
-            <p><a href="https://maxwellhillbaptistchurch.com/statement-of-faith/" target="_blank" rel="noopener">View full page →</a></p>
-        </section>
-
-        <!-- Men's Ministry -->
-        <section id="mens">
-            <h2>Men's Ministry</h2>
-            <p>The Men’s Ministry meets together randomly throughout the year for ministry directly focused on their needs. These are varied from Bible studies, special classes specifically for men, prayer groups, and activities throughout the year.</p>
-
-            <h3>What’s Our Purpose?</h3>
-            <p>Encouraging and Discipling men in their relationship with Christ</p>
-
-            <h3>Who’s it for?</h3>
-            <p>Men of all ages</p>
-
-            <h3>When do they meet?</h3>
-            <p>Check the church bulletin and calendar for ministries available throughout the year.</p>
-
-            <p><a href="https://maxwellhillbaptistchurch.com/mens-ministry/" target="_blank" rel="noopener">View full page →</a></p>
-        </section>
-
-        <!-- Women's Ministry -->
-        <section id="womens">
-            <h2>Women's Ministry</h2>
-            <p>The Women’s Ministry meets together for ministry directly focused on their needs. These are varied from Bible studies, special classes specifically for women, prayer groups and special activities throughout the year. This ministry is led by Jan Roop.</p>
-
-            <h3>What’s Our Purpose?</h3>
-            <p>Studying and applying God’s Word to encourage and edify one another in our daily walk.</p>
-
-            <h3>Who’s it for?</h3>
-            <p>Adult Women</p>
-
-            <h3>When do they meet?</h3>
-            <p>Check the church bulletin and calendar for ministries available throughout the year.</p>
-
-            <p><a href="https://maxwellhillbaptistchurch.com/womens-ministry/" target="_blank" rel="noopener">View full page →</a></p>
-        </section>
-
-        <!-- Silver Saints -->
-        <section id="silver">
-            <h2>Silver Saints Ministry</h2>
-            <p>The Seniors ministry meets together randomly throughout the year for ministry directly focused on their needs.</p>
-
-            <h3>What’s Our Purpose?</h3>
-            <p>Seeing to the needs and discipling those who Christ has as part of our church family.</p>
-
-            <h3>When do they meet?</h3>
-            <p>Check the church bulletin and calendar for ministries available throughout the year.</p>
-
-            <p>Fellowship Breakfast – Once a month, people from the church are invited to meet together on Tuesday morning to eat breakfast and share their lives together. They presently meet at the Airport Restaurant. – 1st Tuesday of Every Month at 8:30am</p>
-
-            <p><a href="https://maxwellhillbaptistchurch.com/silver-saints-ministry/" target="_blank" rel="noopener">View full page →</a></p>
-        </section>
-
-        <!-- C.A.R.E. Groups -->
-        <section id="care">
-            <h2>C.A.R.E. Groups</h2>
-            <p>C.A.R.E. Group Ministry is a time for the adults of the church to come together to share their lives while discussing truths communicated during the worship service...</p>
-
-            <p><strong>C</strong> – Community</p>
-            <p><strong>A</strong> – Accountability</p>
-            <p><strong>R</strong> – Reinforcement</p>
-            <p><strong>E</strong> – Encouragement</p>
-
-            <p>Sunday Mornings – 10:45 – 11:30am</p>
-
-            <p><a href="https://maxwellhillbaptistchurch.com/c-a-r-e-groups/" target="_blank" rel="noopener">View full page →</a></p>
-        </section>
-
-        <!-- Nursery -->
-        <section id="nursery">
-            <h2>Nursery</h2>
-            <p>Well equipped and well staffed nursery facilities are available for children during most church services.</p>
-
-            <h3>Who’s it for?</h3>
-            <p>Children from birth to 2 years</p>
-
-            <h3>When & Where</h3>
-            <ul>
-                <li>Sunday Morning Worship Service – 9:30 – 10:40am</li>
-                <li>Care Group Time - 10:45 – 11:30am</li>
-                <li>Wednesday Night – As Needed – 7:00 – 8:00pm</li>
-            </ul>
-
-            <p><a href="https://maxwellhillbaptistchurch.com/nursery/" target="_blank" rel="noopener">View full page →</a></p>
-        </section>
-
-        <!-- Toddlers -->
-        <section id="toddlers">
-            <h2>Toddlers</h2>
-            <h3>Purpose</h3>
-            <ul>
-                <li>To give love and instruction about God, Jesus & the Bible</li>
-                <li>To help them adjust to being in a classroom setting</li>
-                <li>To help them learn to cooperate and play together</li>
-            </ul>
-
-            <h3>Who’s it for?</h3>
-            <p>Children from 2 years old to Kindergarten</p>
-
-            <p><a href="https://maxwellhillbaptistchurch.com/toddlers/" target="_blank" rel="noopener">View full page →</a></p>
-        </section>
-
-        <!-- Elementary -->
-        <section id="elementary">
-            <h2>Elementary</h2>
-            <h3>Purpose</h3>
-            <ul>
-                <li>To give love and instruction about God, Jesus & the Bible</li>
-                <li>To help them grow in their development with the body of believers</li>
-                <li>To help them learn to be a part of the church family in worship and in service</li>
-            </ul>
-
-            <h3>Who’s it for?</h3>
-            <p>Children from 1st Grade to 5th Grade</p>
-
-            <p><a href="https://maxwellhillbaptistchurch.com/elementary/" target="_blank" rel="noopener">View full page →</a></p>
-        </section>
-
-        <!-- TRAC -->
-        <section id="trac">
-            <h2>TRAC – Middle & High School Ministry</h2>
-            <p>Teens Revolving Around Christ</p>
-
-            <h3>What’s Our Purpose?</h3>
-            <p>To glorify God by providing a ministry for & to MHBC teens through our Root to Fruit philosophy...</p>
-
-            <h3>Who’s it for?</h3>
-            <p>Youth from 6th – 12th grades</p>
-
-            <p><a href="https://maxwellhillbaptistchurch.com/trac/" target="_blank" rel="noopener">View full page →</a></p>
-        </section>
-
-        <!-- Marriage -->
-        <section id="marriage">
-            <h2>Marriage</h2>
-
-            <h3>Belief on Marriage</h3>
-            <ul>
-                <li>We believe God sanctions marriage; and that it has only one meaning. Marriage joins one man and one woman in a single, exclusive union.</li>
-                <li>We believe that God intends sexual intimacy to occur only between a man and a woman who are married to each other.</li>
-                <li>We believe that any form of sexual immorality (adultery, fornication, homosexuality, bisexual conduct, etc.) is sinful and offensive to God.</li>
-                <li>We believe that God offers redemption and restoration to all who confess and forsake their sin...</li>
-            </ul>
-
-            <p><a href="https://maxwellhillbaptistchurch.com/marriage/" target="_blank" rel="noopener">View full page →</a></p>
-        </section>
-
-        <!-- Bulletins -->
-        <section id="bulletins">
-            <h2>Bulletins</h2>
-            <p>View and download the latest bulletins:</p>
-            <a href="https://maxwellhillbaptistchurch.com/bulletins/" target="_blank" rel="noopener noreferrer" class="action-button">Open Bulletins Page</a>
-        </section>
-
-        <!-- Documents -->
-        <section id="documents">
-            <h2>Documents</h2>
-            <p>Church documents and resources:</p>
-            <a href="https://maxwellhillbaptistchurch.com/" target="_blank" rel="noopener noreferrer" class="action-button">Visit Church Website</a>
-        </section>
-
-        <!-- Sunday Services -->
-        <section id="sunday">
-            <h2>Sunday Services</h2>
-            <div id="sunday-videos"></div>
-        </section>
-
-        <!-- Wednesday Services -->
-        <section id="wednesday">
-            <h2>Wednesday Services</h2>
-            <div id="wednesday-videos"></div>
-        </section>
-
-        <!-- Watch Live -->
-        <section id="watch-live">
-            <h2>Live Streams</h2>
-            <p>Watch current and past live streams:</p>
-            <a href="https://www.youtube.com/@maxwellhillbaptistchurch9695/streams" target="_blank" rel="noopener noreferrer" class="action-button">Open YouTube Streams</a>
-        </section>
-
-        <!-- Give -->
-        <section id="give">
-            <h2>Give</h2>
-            <p>Support the ministry through online giving:</p>
-            <a href="https://give.tithe.ly/?formId=f0356db3-ffa6-4cb7-9dde-2e9e6fc508ff&usedQrCode=true" target="_blank" rel="noopener noreferrer" class="action-button">Give Now</a>
-        </section>
-
-        <!-- Bible -->
-        <section id="bible">
-            <h2>Bible</h2>
-            <p>Read the Bible online (NASB2020):</p>
-            <a href="https://www.bible.com/bible/2692/GEN.1.NASB2020" target="_blank" rel="noopener noreferrer" class="action-button">Open Bible Reader</a>
-        </section>
-
-        <!-- Contact -->
-        <section id="contact">
-            <h2>Contact & Location</h2>
-            <p>301 Teel Road<br>Beckley, WV 25801</p>
-            <p>Phone: <a href="tel:3042530366">304-253-0366</a></p>
-            <p><a href="https://www.google.com/maps/search/?api=1&query=301+Teel+Road+Beckley+WV+25801" target="_blank" rel="noopener noreferrer">Get Directions</a></p>
-        </section>
-    </main>
-
-    <script src="app.js"></script>
+  <!-- STATUS BAR SPACER -->
+  <div class="status-bar-spacer"></div>
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <div class="logo-cross">✛</div>
+        <div class="header-titles">
+          <span class="header-title">Maxwell Hill</span>
+          <span class="header-sub">Baptist Church</span>
+        </div>
+      </div>
+      <div class="header-live-badge" id="liveBadge" onclick="showPage('watch')" style="display:none;">
+        <span class="live-dot"></span> LIVE
+      </div>
+    </div>
+  </header>
+
+  <!-- PAGES -->
+  <main class="page-container">
+
+    <!-- HOME PAGE -->
+    <section class="page active" id="page-home">
+      <div class="hero-card">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <p class="hero-tagline">Diligent in the Word</p>
+          <p class="hero-tagline">Determined in Our Walk</p>
+          <p class="hero-tagline">Delighted in Our Worship</p>
+        </div>
+      </div>
+
+      <div class="section-label">SERVICE TIMES</div>
+      <div class="card-row">
+        <div class="info-card">
+          <div class="info-icon">☀️</div>
+          <div class="info-text">
+            <div class="info-title">Sunday Morning</div>
+            <div class="info-sub">Worship Service · 9:30 AM</div>
+          </div>
+        </div>
+        <div class="info-card">
+          <div class="info-icon">🌙</div>
+          <div class="info-text">
+            <div class="info-title">Wednesday Evening</div>
+            <div class="info-sub">Midweek Service · 7:00 PM</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">QUICK ACCESS</div>
+      <div class="quick-grid">
+        <button class="quick-btn" onclick="showPage('watch')">
+          <span class="quick-icon">▶️</span>
+          <span>Watch Live</span>
+        </button>
+        <button class="quick-btn" onclick="showPage('bible')">
+          <span class="quick-icon">📖</span>
+          <span>Read Bible</span>
+        </button>
+        <button class="quick-btn" onclick="showPage('give')">
+          <span class="quick-icon">🤝</span>
+          <span>Give</span>
+        </button>
+        <button class="quick-btn" onclick="openExternal('https://maxwellhillbaptistchurch.com/bulletins/')">
+          <span class="quick-icon">📋</span>
+          <span>Bulletins</span>
+        </button>
+        <button class="quick-btn" onclick="openExternal('https://www.google.com/maps/search/?api=1&query=301+Teel+Road+Beckley+WV+25801')">
+          <span class="quick-icon">📍</span>
+          <span>Directions</span>
+        </button>
+        <button class="quick-btn" onclick="openExternal('https://maxwellhillbaptistchurch.com/documents/')">
+          <span class="quick-icon">📄</span>
+          <span>Documents</span>
+        </button>
+      </div>
+
+      <div class="section-label">LOCATION</div>
+      <div class="location-card" onclick="openExternal('https://www.google.com/maps/search/?api=1&query=301+Teel+Road+Beckley+WV+25801')">
+        <div class="location-pin">📍</div>
+        <div class="location-text">
+          <div class="location-title">301 Teel Road</div>
+          <div class="location-sub">Beckley, WV 25801</div>
+          <div class="location-phone">📞 304-253-0366</div>
+        </div>
+        <div class="location-arrow">›</div>
+      </div>
+
+      <div class="footer-note">© Maxwell Hill Baptist Church · Beckley, WV</div>
+    </section>
+
+    <!-- WATCH PAGE -->
+    <section class="page" id="page-watch">
+      <div class="page-title-bar">
+        <h2 class="page-title">Watch & Listen</h2>
+      </div>
+
+      <div class="section-label">YOUTUBE CHANNEL</div>
+      <div class="youtube-embed-container">
+        <iframe
+          id="ytFrame"
+          src="https://www.youtube.com/embed?listType=user_uploads&list=maxwellhillbaptistchurch9695&rel=0"
+          title="Maxwell Hill Baptist Church YouTube"
+          frameborder="0"
+          allowfullscreen
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+        </iframe>
+      </div>
+
+      <div class="section-label">LINKS</div>
+      <div class="link-list">
+        <a class="link-row" href="https://www.youtube.com/@maxwellhillbaptistchurch9695" target="_blank">
+          <span class="link-icon yt-red">▶</span>
+          <span class="link-label">YouTube Channel</span>
+          <span class="link-arrow">›</span>
+        </a>
+        <a class="link-row" href="https://www.youtube.com/@maxwellhillbaptistchurch9695/streams" target="_blank">
+          <span class="link-icon yt-red">📡</span>
+          <span class="link-label">Live Streams</span>
+          <span class="link-arrow">›</span>
+        </a>
+        <a class="link-row" href="https://www.facebook.com/MaxwellHillChurch/" target="_blank">
+          <span class="link-icon fb-blue">f</span>
+          <span class="link-label">Facebook Page</span>
+          <span class="link-arrow">›</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- BIBLE PAGE -->
+    <section class="page" id="page-bible">
+      <div class="page-title-bar">
+        <h2 class="page-title">Read the Bible</h2>
+      </div>
+
+      <div class="bible-picker">
+        <div class="section-label">TRANSLATION</div>
+        <div class="pill-row">
+          <button class="pill active" data-trans="111" data-code="NIV">NIV</button>
+          <button class="pill" data-trans="1" data-code="KJV">KJV</button>
+          <button class="pill" data-trans="59" data-code="ESV">ESV</button>
+          <button class="pill" data-trans="2692" data-code="NASB">NASB</button>
+        </div>
+
+        <div class="section-label">BOOK & CHAPTER</div>
+        <div class="bible-selects">
+          <select id="bibleBook" class="bible-select">
+            <option value="GEN">Genesis</option>
+            <option value="EXO">Exodus</option>
+            <option value="LEV">Leviticus</option>
+            <option value="NUM">Numbers</option>
+            <option value="DEU">Deuteronomy</option>
+            <option value="JOS">Joshua</option>
+            <option value="JDG">Judges</option>
+            <option value="RUT">Ruth</option>
+            <option value="1SA">1 Samuel</option>
+            <option value="2SA">2 Samuel</option>
+            <option value="1KI">1 Kings</option>
+            <option value="2KI">2 Kings</option>
+            <option value="1CH">1 Chronicles</option>
+            <option value="2CH">2 Chronicles</option>
+            <option value="EZR">Ezra</option>
+            <option value="NEH">Nehemiah</option>
+            <option value="EST">Esther</option>
+            <option value="JOB">Job</option>
+            <option value="PSA">Psalms</option>
+            <option value="PRO">Proverbs</option>
+            <option value="ECC">Ecclesiastes</option>
+            <option value="SNG">Song of Solomon</option>
+            <option value="ISA">Isaiah</option>
+            <option value="JER">Jeremiah</option>
+            <option value="LAM">Lamentations</option>
+            <option value="EZK">Ezekiel</option>
+            <option value="DAN">Daniel</option>
+            <option value="HOS">Hosea</option>
+            <option value="JOL">Joel</option>
+            <option value="AMO">Amos</option>
+            <option value="OBA">Obadiah</option>
+            <option value="JON">Jonah</option>
+            <option value="MIC">Micah</option>
+            <option value="NAM">Nahum</option>
+            <option value="HAB">Habakkuk</option>
+            <option value="ZEP">Zephaniah</option>
+            <option value="HAG">Haggai</option>
+            <option value="ZEC">Zechariah</option>
+            <option value="MAL">Malachi</option>
+            <option value="MAT">Matthew</option>
+            <option value="MRK">Mark</option>
+            <option value="LUK">Luke</option>
+            <option value="JHN" selected>John</option>
+            <option value="ACT">Acts</option>
+            <option value="ROM">Romans</option>
+            <option value="1CO">1 Corinthians</option>
+            <option value="2CO">2 Corinthians</option>
+            <option value="GAL">Galatians</option>
+            <option value="EPH">Ephesians</option>
+            <option value="PHP">Philippians</option>
+            <option value="COL">Colossians</option>
+            <option value="1TH">1 Thessalonians</option>
+            <option value="2TH">2 Thessalonians</option>
+            <option value="1TI">1 Timothy</option>
+            <option value="2TI">2 Timothy</option>
+            <option value="TIT">Titus</option>
+            <option value="PHM">Philemon</option>
+            <option value="HEB">Hebrews</option>
+            <option value="JAS">James</option>
+            <option value="1PE">1 Peter</option>
+            <option value="2PE">2 Peter</option>
+            <option value="1JN">1 John</option>
+            <option value="2JN">2 John</option>
+            <option value="3JN">3 John</option>
+            <option value="JUD">Jude</option>
+            <option value="REV">Revelation</option>
+          </select>
+          <select id="bibleChapter" class="bible-select">
+            <!-- populated by JS -->
+          </select>
+        </div>
+
+        <button class="open-bible-btn" id="openBibleBtn">Open in Bible.com →</button>
+      </div>
+
+      <div class="bible-frame-wrapper">
+        <div class="bible-note">📖 Tap the button above to read on Bible.com, or use the embedded view below.</div>
+        <iframe
+          id="bibleFrame"
+          src="https://www.bible.com/bible/111/JHN.1.NIV"
+          title="Bible.com"
+          frameborder="0"
+          allowfullscreen>
+        </iframe>
+      </div>
+    </section>
+
+    <!-- GIVE PAGE -->
+    <section class="page" id="page-give">
+      <div class="page-title-bar">
+        <h2 class="page-title">Give</h2>
+      </div>
+      <div class="give-hero">
+        <div class="give-scripture">"Each of you should give what you have decided in your heart to give, not reluctantly or under compulsion, for God loves a cheerful giver."</div>
+        <div class="give-ref">— 2 Corinthians 9:7 (NIV)</div>
+      </div>
+      <div class="section-label">ONLINE GIVING</div>
+      <a class="give-btn-main" href="https://give.tithe.ly/?formId=f0356db3-ffa6-4cb7-9dde-2e9e6fc508ff&usedQrCode=true" target="_blank">
+        Give Online Now
+      </a>
+      <div class="give-note">You'll be taken to our secure giving portal powered by Tithe.ly.</div>
+
+      <div class="section-label">GIVE IN PERSON</div>
+      <div class="info-card full-width">
+        <div class="info-icon">🏛️</div>
+        <div class="info-text">
+          <div class="info-title">Sunday Morning Service</div>
+          <div class="info-sub">Offering taken during the 9:30 AM service</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MORE / ABOUT PAGE -->
+    <section class="page" id="page-more">
+      <div class="page-title-bar">
+        <h2 class="page-title">About & More</h2>
+      </div>
+
+      <div class="section-label">ABOUT THE CHURCH</div>
+      <div class="link-list">
+        <a class="link-row" href="https://maxwellhillbaptistchurch.com/about/" target="_blank">
+          <span class="link-icon gold">🏛️</span>
+          <span class="link-label">About Us</span>
+          <span class="link-arrow">›</span>
+        </a>
+        <a class="link-row" href="https://maxwellhillbaptistchurch.com/our-story/" target="_blank">
+          <span class="link-icon gold">📜</span>
+          <span class="link-label">Our Story</span>
+          <span class="link-arrow">›</span>
+        </a>
+        <a class="link-row" href="https://maxwellhillbaptistchurch.com/our-staff/" target="_blank">
+          <span class="link-icon gold">👤</span>
+          <span class="link-label">Our Staff</span>
+          <span class="link-arrow">›</span>
+        </a>
+      </div>
+
+      <div class="section-label">OUR BELIEFS</div>
+      <div class="link-list">
+        <a class="link-row" href="https://maxwellhillbaptistchurch.com/what-kind-of-church-are-we/" target="_blank">
+          <span class="link-icon gold">✛</span>
+          <span class="link-label">What Kind of Church Are We?</span>
+          <span class="link-arrow">›</span>
+        </a>
+        <a class="link-row" href="https://maxwellhillbaptistchurch.com/statement-of-faith/" target="_blank">
+          <span class="link-icon gold">📖</span>
+          <span class="link-label">Statement of Faith</span>
+          <span class="link-arrow">›</span>
+        </a>
+        <a class="link-row" href="https://maxwellhillbaptistchurch.com/marriage/" target="_blank">
+          <span class="link-icon gold">💍</span>
+          <span class="link-label">Our Position on Marriage</span>
+          <span class="link-arrow">›</span>
+        </a>
+      </div>
+
+      <div class="section-label">MINISTRIES</div>
+      <div class="link-list">
+        <a class="link-row" href="https://maxwellhillbaptistchurch.com/mens-ministry/" target="_blank">
+          <span class="link-icon gold">👨</span>
+          <span class="link-label">Men's Ministry</span>
+          <span class="link-arrow">›</span>
+        </a>
+        <a class="link-row" href="https://maxwellhillbaptistchurch.com/womens-ministry/" target="_blank">
+          <span class="link-icon gold">👩</span>
+          <span class="link-label">Women's Ministry</span>
+          <span class="link-arrow">›</span>
+        </a>
+        <a class="link-row" href="https://maxwellhillbaptistchurch.com/silver-saints-ministry/" target="_blank">
+          <span class="link-icon gold">⭐</span>
+          <span class="link-label">Silver Saints Ministry</span>
+          <span class="link-arrow">›</span>
+        </a>
+        <a class="link-row" href="https://maxwellhillbaptistchurch.com/c-a-r-e-groups/" target="_blank">
+          <span class="link-icon gold">🤝</span>
+          <span class="link-label">C.A.R.E. Groups</span>
+          <span class="link-arrow">›</span>
+        </a>
+        <a class="link-row" href="https://maxwellhillbaptistchurch.com/trac/" target="_blank">
+          <span class="link-icon gold">🎓</span>
+          <span class="link-label">TRAC Youth Ministry</span>
+          <span class="link-arrow">›</span>
+        </a>
+        <a class="link-row" href="https://maxwellhillbaptistchurch.com/nursery/" target="_blank">
+          <span class="link-icon gold">👶</span>
+          <span class="link-label">Children's Programs</span>
+          <span class="link-arrow">›</span>
+        </a>
+      </div>
+
+      <div class="section-label">RESOURCES</div>
+      <div class="link-list">
+        <a class="link-row" href="https://maxwellhillbaptistchurch.com/bulletins/" target="_blank">
+          <span class="link-icon gold">📋</span>
+          <span class="link-label">Bulletins</span>
+          <span class="link-arrow">›</span>
+        </a>
+        <a class="link-row" href="https://maxwellhillbaptistchurch.com/documents/" target="_blank">
+          <span class="link-icon gold">📄</span>
+          <span class="link-label">Documents</span>
+          <span class="link-arrow">›</span>
+        </a>
+        <a class="link-row" href="https://maxwellhillbaptistchurch.com/calendar/" target="_blank">
+          <span class="link-icon gold">📅</span>
+          <span class="link-label">Church Calendar</span>
+          <span class="link-arrow">›</span>
+        </a>
+      </div>
+
+      <div class="section-label">CONTACT</div>
+      <div class="contact-card">
+        <div class="contact-row">📍 301 Teel Road, Beckley, WV 25801</div>
+        <div class="contact-row"><a href="tel:3042530366">📞 304-253-0366</a></div>
+        <a class="contact-directions-btn" href="https://www.google.com/maps/search/?api=1&query=301+Teel+Road+Beckley+WV+25801" target="_blank">Get Directions</a>
+      </div>
+
+      <div class="footer-note">Maxwell Hill Baptist Church · Beckley, WV<br/>Built with ♥ for the MHBC family</div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-page="home" onclick="showPage('home')">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-btn" data-page="watch" onclick="showPage('watch')">
+      <span class="nav-icon">▶️</span>
+      <span class="nav-label">Watch</span>
+    </button>
+    <button class="nav-btn" data-page="bible" onclick="showPage('bible')">
+      <span class="nav-icon">📖</span>
+      <span class="nav-label">Bible</span>
+    </button>
+    <button class="nav-btn" data-page="give" onclick="showPage('give')">
+      <span class="nav-icon">🤝</span>
+      <span class="nav-label">Give</span>
+    </button>
+    <button class="nav-btn" data-page="more" onclick="showPage('more')">
+      <span class="nav-icon">☰</span>
+      <span class="nav-label">More</span>
+    </button>
+  </nav>
+
+  <script src="app.js"></script>
 </body>
 </html>
