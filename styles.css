@@ -372,22 +372,6 @@ body {
 .link-label { flex: 1; font-size: 14px; }
 .link-arrow { font-size: 22px; color: var(--text-dim); }
 
-/* ---- YOUTUBE EMBED ---- */
-.youtube-embed-container {
-  margin: 0 14px;
-  border-radius: var(--radius);
-  overflow: hidden;
-  border: 1px solid var(--border);
-  background: #000;
-  aspect-ratio: 16/9;
-}
-
-.youtube-embed-container iframe {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
 /* ---- BIBLE ---- */
 .pill-row {
   display: flex;
@@ -573,4 +557,98 @@ body {
 
 .nav-label {
   letter-spacing: 0.04em;
+}
+
+/* ---- INSTALL CARD ---- */
+.install-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--navy-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin: 0 14px;
+}
+
+.install-qr {
+  flex-shrink: 0;
+  background: white;
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.install-qr img,
+.install-qr canvas {
+  display: block;
+  width: 90px !important;
+  height: 90px !important;
+}
+
+.install-heading {
+  font-family: 'Playfair Display', serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 6px;
+}
+
+.install-row {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.8;
+}
+
+.install-link {
+  display: block;
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--gold);
+  text-decoration: none;
+  word-break: break-all;
+  letter-spacing: 0.02em;
+}
+
+/* ---- YOUTUBE LAUNCH CARD ---- */
+.yt-launch-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #1a0a0a;
+  border: 1px solid rgba(211,47,47,0.4);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  margin: 0 14px;
+  cursor: pointer;
+}
+
+.yt-launch-icon {
+  width: 52px;
+  height: 52px;
+  background: #d32f2f;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.yt-launch-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--white);
+}
+
+.yt-launch-sub {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 3px;
+}
+
+.yt-launch-arrow {
+  font-size: 24px;
+  color: var(--text-dim);
+  margin-left: auto;
 }
