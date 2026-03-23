@@ -10,6 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="MHBC" />
   <title>Maxwell Hill Baptist Church</title>
   <link rel="manifest" href="manifest.json" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <link rel="stylesheet" href="styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
@@ -95,6 +96,17 @@
     </button>
   </div>
 
+  <div class="section-label">INSTALL THIS APP</div>
+  <div class="install-card">
+    <div class="install-qr" id="appQR"></div>
+    <div class="install-info">
+      <div class="install-heading">Add to Your Home Screen</div>
+      <div class="install-row">📱 <strong>iPhone:</strong> Tap Share then "Add to Home Screen"</div>
+      <div class="install-row">🤖 <strong>Android:</strong> Tap the 3 dots then "Add to Home Screen"</div>
+      <a class="install-link" href="https://qnxyt9x67g-max.github.io/MHBC/" target="_blank">qnxyt9x67g-max.github.io/MHBC</a>
+    </div>
+  </div>
+
   <div class="section-label">LOCATION</div>
   <div class="location-card" onclick="window.open('https://www.google.com/maps/search/?api=1&query=301+Teel+Road+Beckley+WV+25801','_blank')">
     <div class="location-pin">📍</div>
@@ -116,14 +128,13 @@
   </div>
 
   <div class="section-label">YOUTUBE CHANNEL</div>
-  <div class="youtube-embed-container">
-    <iframe
-      src="https://www.youtube.com/embed?listType=user_uploads&list=maxwellhillbaptistchurch9695&rel=0"
-      title="Maxwell Hill Baptist Church YouTube"
-      frameborder="0"
-      allowfullscreen
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
-    </iframe>
+  <div class="yt-launch-card" onclick="window.open('https://www.youtube.com/@maxwellhillbaptistchurch9695','_blank')">
+    <div class="yt-launch-icon">▶</div>
+    <div class="yt-launch-text">
+      <div class="yt-launch-title">Maxwell Hill Baptist Church</div>
+      <div class="yt-launch-sub">Tap to open our YouTube channel</div>
+    </div>
+    <div class="yt-launch-arrow">›</div>
   </div>
 
   <div class="section-label">LINKS</div>
@@ -355,7 +366,7 @@
       <span class="link-label">Documents</span>
       <span class="link-arrow">›</span>
     </a>
-    <a class="link-row" href="https://maxwellhillbaptistchurch.com/calendar/" target="_blank">
+    <a class="link-row" href="https://maxwellhillbaptistchurch.com/" target="_blank">
       <span class="link-icon gold">📅</span>
       <span class="link-label">Church Calendar</span>
       <span class="link-arrow">›</span>
