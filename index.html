@@ -121,7 +121,6 @@
       <div class="page-title-bar">
         <h2 class="page-title">Watch &amp; Listen</h2>
       </div>
-
       <div class="section-label">YOUTUBE CHANNEL</div>
       <div class="yt-launch-card" onclick="window.open('https://www.youtube.com/@maxwellhillbaptistchurch9695','_blank')">
         <div class="yt-launch-icon">▶</div>
@@ -131,7 +130,6 @@
         </div>
         <div class="yt-launch-arrow">›</div>
       </div>
-
       <div class="section-label">LINKS</div>
       <div class="link-list">
         <a class="link-row" href="https://www.youtube.com/@maxwellhillbaptistchurch9695" target="_blank">
@@ -158,7 +156,6 @@
       <div class="page-title-bar">
         <h2 class="page-title">Read the Bible</h2>
       </div>
-
       <div class="section-label">TRANSLATION</div>
       <div class="pill-row">
         <button class="pill active" data-trans="111" data-code="NIV">NIV</button>
@@ -166,7 +163,6 @@
         <button class="pill" data-trans="59" data-code="ESV">ESV</button>
         <button class="pill" data-trans="2692" data-code="NASB">NASB</button>
       </div>
-
       <div class="section-label">BOOK &amp; CHAPTER</div>
       <div class="bible-selects">
         <select id="bibleBook" class="bible-select">
@@ -237,10 +233,8 @@
           <option value="JUD">Jude</option>
           <option value="REV">Revelation</option>
         </select>
-        <select id="bibleChapter" class="bible-select">
-        </select>
+        <select id="bibleChapter" class="bible-select"></select>
       </div>
-
       <button class="open-bible-btn" id="openBibleBtn">Open in Bible.com →</button>
       <div class="footer-note">© Maxwell Hill Baptist Church · Beckley, WV</div>
     </div>
@@ -255,11 +249,8 @@
         <div class="give-ref">— 2 Corinthians 9:7 (NIV)</div>
       </div>
       <div class="section-label">ONLINE GIVING</div>
-      <a class="give-btn-main" href="https://give.tithe.ly/?formId=f0356db3-ffa6-4cb7-9dde-2e9e6fc508ff&usedQrCode=true" target="_blank">
-        Give Online Now
-      </a>
+      <a class="give-btn-main" href="https://give.tithe.ly/?formId=f0356db3-ffa6-4cb7-9dde-2e9e6fc508ff&usedQrCode=true" target="_blank">Give Online Now</a>
       <div class="give-note">You'll be taken to our secure giving portal powered by Tithe.ly.</div>
-
       <div class="section-label">GIVE IN PERSON</div>
       <div class="info-card" style="margin: 0 14px;">
         <div class="info-icon">🏛️</div>
@@ -271,12 +262,115 @@
       <div class="footer-note">© Maxwell Hill Baptist Church · Beckley, WV</div>
     </div>
 
+    <!-- CARE GROUPS PAGE -->
+    <div class="page" id="page-care">
+      <div class="page-title-bar">
+        <h2 class="page-title">C.A.R.E. Groups</h2>
+      </div>
+
+      <!-- SCREEN 1: GROUP SELECTION -->
+      <div id="cg-select-screen">
+        <div class="section-label">SELECT YOUR GROUP</div>
+        <div class="cg-group-list">
+          <button class="cg-group-btn" onclick="selectGroup('c101','C101')">
+            <span class="cg-group-icon">🏫</span>
+            <span class="cg-group-name">C101</span>
+            <span class="cg-badge" id="badge-c101" style="display:none;"></span>
+            <span class="cg-arrow">›</span>
+          </button>
+          <button class="cg-group-btn" onclick="selectGroup('narthex','Narthex')">
+            <span class="cg-group-icon">⛪</span>
+            <span class="cg-group-name">Narthex</span>
+            <span class="cg-badge" id="badge-narthex" style="display:none;"></span>
+            <span class="cg-arrow">›</span>
+          </button>
+          <button class="cg-group-btn" onclick="selectGroup('fellowship1','Fellowship Hall 1st Floor')">
+            <span class="cg-group-icon">🏠</span>
+            <span class="cg-group-name">Fellowship Hall 1st Floor</span>
+            <span class="cg-badge" id="badge-fellowship1" style="display:none;"></span>
+            <span class="cg-arrow">›</span>
+          </button>
+          <button class="cg-group-btn" onclick="selectGroup('fellowship2','Fellowship Hall 2nd Floor')">
+            <span class="cg-group-icon">🏠</span>
+            <span class="cg-group-name">Fellowship Hall 2nd Floor</span>
+            <span class="cg-badge" id="badge-fellowship2" style="display:none;"></span>
+            <span class="cg-arrow">›</span>
+          </button>
+        </div>
+        <div class="cg-info-note">Each group requires a room password set by your group leader. Your name and PIN are saved on this device after first login.</div>
+      </div>
+
+      <!-- SCREEN 2: LOGIN -->
+      <div id="cg-login-screen" style="display:none;">
+        <div class="cg-login-header">
+          <button class="cg-back-btn" onclick="showCGScreen('select')">← Back</button>
+          <div class="cg-login-title" id="cg-login-title">C101</div>
+        </div>
+        <div class="cg-login-box">
+          <div class="cg-login-label">Room Password</div>
+          <input type="password" class="cg-input" id="cg-room-password" placeholder="Enter room password" />
+          <div class="cg-login-label">Your Name</div>
+          <input type="text" class="cg-input" id="cg-user-name" placeholder="e.g. John S." />
+          <div class="cg-login-label">Your 4-Digit PIN</div>
+          <input type="password" class="cg-input" id="cg-user-pin" placeholder="Create or enter your PIN" maxlength="4" inputmode="numeric" />
+          <div class="cg-login-note">First time? Create a PIN you'll remember. Returning? Enter your existing PIN.</div>
+          <button class="cg-login-btn" onclick="submitLogin()">Request to Join</button>
+          <div class="cg-login-error" id="cg-login-error"></div>
+        </div>
+      </div>
+
+      <!-- SCREEN 3: PENDING APPROVAL -->
+      <div id="cg-pending-screen" style="display:none;">
+        <div class="cg-login-header">
+          <button class="cg-back-btn" onclick="showCGScreen('select')">← Back</button>
+          <div class="cg-login-title" id="cg-pending-title">C101</div>
+        </div>
+        <div class="cg-pending-box">
+          <div class="cg-pending-icon">⏳</div>
+          <div class="cg-pending-msg">Your request to join has been sent! Your group leader will approve you shortly. Check back in a few minutes.</div>
+          <button class="cg-login-btn" onclick="checkApproval()">Check Again</button>
+        </div>
+      </div>
+
+      <!-- SCREEN 4: CHAT -->
+      <div id="cg-chat-screen" style="display:none;">
+        <div class="cg-chat-header">
+          <button class="cg-back-btn" onclick="leaveChat()">← Back</button>
+          <div class="cg-chat-title" id="cg-chat-title">C101</div>
+          <button class="cg-admin-btn" id="cg-admin-btn" onclick="showAdminPanel()" style="display:none;">⚙️</button>
+        </div>
+        <div class="cg-messages" id="cg-messages">
+          <div class="cg-loading">Loading messages...</div>
+        </div>
+        <div class="cg-input-bar">
+          <input type="text" class="cg-msg-input" id="cg-msg-input" placeholder="Type a message..." />
+          <button class="cg-send-btn" onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+
+      <!-- SCREEN 5: ADMIN PANEL -->
+      <div id="cg-admin-screen" style="display:none;">
+        <div class="cg-login-header">
+          <button class="cg-back-btn" onclick="showCGScreen('chat')">← Back to Chat</button>
+          <div class="cg-login-title">Admin Panel</div>
+        </div>
+        <div class="section-label">PENDING REQUESTS</div>
+        <div id="admin-pending-list" class="cg-member-list">
+          <div class="cg-loading">Loading...</div>
+        </div>
+        <div class="section-label">APPROVED MEMBERS</div>
+        <div id="admin-approved-list" class="cg-member-list">
+          <div class="cg-loading">Loading...</div>
+        </div>
+      </div>
+
+    </div>
+
     <!-- MORE / ABOUT PAGE -->
     <div class="page" id="page-more">
       <div class="page-title-bar">
         <h2 class="page-title">About &amp; More</h2>
       </div>
-
       <div class="section-label">ABOUT THE CHURCH</div>
       <div class="link-list">
         <a class="link-row" href="https://maxwellhillbaptistchurch.com/about/" target="_blank">
@@ -295,7 +389,6 @@
           <span class="link-arrow">›</span>
         </a>
       </div>
-
       <div class="section-label">OUR BELIEFS</div>
       <div class="link-list">
         <a class="link-row" href="https://maxwellhillbaptistchurch.com/what-kind-of-church-are-we/" target="_blank">
@@ -314,7 +407,6 @@
           <span class="link-arrow">›</span>
         </a>
       </div>
-
       <div class="section-label">MINISTRIES</div>
       <div class="link-list">
         <a class="link-row" href="https://maxwellhillbaptistchurch.com/mens-ministry/" target="_blank">
@@ -334,7 +426,7 @@
         </a>
         <a class="link-row" href="https://maxwellhillbaptistchurch.com/c-a-r-e-groups/" target="_blank">
           <span class="link-icon gold">🤝</span>
-          <span class="link-label">C.A.R.E. Groups</span>
+          <span class="link-label">C.A.R.E. Groups Info</span>
           <span class="link-arrow">›</span>
         </a>
         <a class="link-row" href="https://maxwellhillbaptistchurch.com/trac/" target="_blank">
@@ -348,7 +440,6 @@
           <span class="link-arrow">›</span>
         </a>
       </div>
-
       <div class="section-label">RESOURCES</div>
       <div class="link-list">
         <a class="link-row" href="https://maxwellhillbaptistchurch.com/bulletins/" target="_blank">
@@ -367,14 +458,12 @@
           <span class="link-arrow">›</span>
         </a>
       </div>
-
       <div class="section-label">CONTACT</div>
       <div class="contact-card">
         <div class="contact-row">📍 301 Teel Road, Beckley, WV 25801</div>
         <div class="contact-row"><a href="tel:3042530366">📞 304-253-0366</a></div>
         <a class="contact-directions-btn" href="https://www.google.com/maps/search/?api=1&query=301+Teel+Road+Beckley+WV+25801" target="_blank">Get Directions</a>
       </div>
-
       <div class="footer-note">© Maxwell Hill Baptist Church · Beckley, WV<br/>Built with ♥ for the MHBC family</div>
     </div>
 
@@ -394,9 +483,10 @@
       <span class="nav-icon">📖</span>
       <span class="nav-label">Bible</span>
     </button>
-    <button class="nav-btn" data-page="give" onclick="showPage('give')">
-      <span class="nav-icon">🤝</span>
-      <span class="nav-label">Give</span>
+    <button class="nav-btn" data-page="care" onclick="showPage('care')">
+      <span class="nav-icon">💬</span>
+      <span class="nav-label">Groups</span>
+      <span class="nav-badge" id="nav-badge-care" style="display:none;"></span>
     </button>
     <button class="nav-btn" data-page="more" onclick="showPage('more')">
       <span class="nav-icon">☰</span>
