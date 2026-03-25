@@ -20,18 +20,18 @@ const db = getFirestore(fbApp);
 
 // ---- ROOM PASSWORDS (change these to your actual passwords) ----
 const ROOM_PASSWORDS = {
-  c101: 'c101pass',
-  narthex: 'narthexpass',
-  fellowship1: 'fellow1pass',
-  fellowship2: 'fellow2pass'
+  c101: 'MHBCC101',
+  narthex: 'MHBCNarthex',
+  fellowship1: 'MHBCF1',
+  fellowship2: 'MHBCF2'
 };
 
 // ---- ADMIN PINS (one per room — only admin sees the gear icon) ----
 const ADMIN_PINS = {
-  c101: '0000',
-  narthex: '0000',
-  fellowship1: '0000',
-  fellowship2: '0000'
+  c101: '7381',
+  narthex: '0179',
+  fellowship1: '2573',
+  fellowship2: '4618'
 };
 
 // ---- STATE ----
