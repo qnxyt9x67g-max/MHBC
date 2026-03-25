@@ -1,45 +1,39 @@
 // ============================================================
-// MHBC APP — app.js v4 — with Firebase Care Groups
+// MHBC APP — app.js v5 — Firebase via CDN (browser safe)
 // ============================================================
 
-// ---- FIREBASE CONFIG ----
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAH_vFWzh9kvi5ad63EDov2KeXkpgCMmv0",
-  authDomain: "mhbc-app.firebaseapp.com",
-  projectId: "mhbc-app",
-  storageBucket: "mhbc-app.firebasestorage.app",
-  messagingSenderId: "482094427911",
-  appId: "1:482094427911:web:7ed5ec06b716ae66a4dfa2"
-};
-
-const fbApp = initializeApp(firebaseConfig);
-const db = getFirestore(fbApp);
-
-// ---- ROOM PASSWORDS (change these to your actual passwords) ----
-const ROOM_PASSWORDS = {
-  c101: 'MHBCC101',
-  narthex: 'MHBCNarthex',
-  fellowship1: 'MHBCF1',
-  fellowship2: 'MHBCF2'
-};
-
-// ---- ADMIN PINS (one per room — only admin sees the gear icon) ----
-const ADMIN_PINS = {
-  c101: '7381',
-  narthex: '0179',
-  fellowship1: '2573',
-  fellowship2: '4618'
-};
-
 // ---- STATE ----
+var db = null;
 var currentGroup = null;
 var currentGroupName = null;
 var currentUser = null;
 var messageListener = null;
 var lastSeenTimestamps = {};
+
+// ---- ROOM PASSWORDS — change these! ----
+var ROOM_PASSWORDS = {
+  c101: 'c101pass',
+  narthex: 'narthexpass',
+  fellowship1: 'fellow1pass',
+  fellowship2: 'fellow2pass'
+};
+
+// ---- ADMIN PIN — change this to your PIN ----
+var ADMIN_PIN = '1234';
+
+// ---- INIT FIREBASE ----
+function initFirebase() {
+  var firebaseConfig = {
+    apiKey: "AIzaSyAH_vFWzh9kvi5ad63EDov2KeXkpgCMmv0",
+    authDomain: "mhbc-app.firebaseapp.com",
+    projectId: "mhbc-app",
+    storageBucket: "mhbc-app.firebasestorage.app",
+    messagingSenderId: "482094427911",
+    appId: "1:482094427911:web:7ed5ec06b716ae66a4dfa2"
+  };
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+}
 
 // ---- PAGE NAVIGATION ----
 function showPage(id) {
@@ -60,7 +54,6 @@ function showPage(id) {
   if (activeBtn) activeBtn.classList.add('active');
 
   if (id === 'care') {
-    // Check if already logged into a group
     var saved = getSavedUser();
     if (saved) {
       currentGroup = saved.group;
@@ -73,7 +66,7 @@ function showPage(id) {
   }
 }
 
-// ---- CARE GROUPS: SCREEN MANAGEMENT ----
+// ---- CARE GROUPS SCREENS ----
 function showCGScreen(screen) {
   var screens = ['select','login','pending','chat','admin'];
   for (var i = 0; i < screens.length; i++) {
@@ -82,27 +75,28 @@ function showCGScreen(screen) {
   }
   var show = document.getElementById('cg-' + screen + '-screen');
   if (show) show.style.display = 'block';
+
+  // Show/hide the chat input bar
+  var inputBar = document.getElementById('cg-input-bar');
+  if (inputBar) {
+    inputBar.style.display = (screen === 'chat') ? 'flex' : 'none';
+  }
 }
 
-// ---- SELECT GROUP ----
 function selectGroup(groupId, groupName) {
   currentGroup = groupId;
   currentGroupName = groupName;
-
-  // Check if already saved/approved for this group
   var saved = getSavedUser();
   if (saved && saved.group === groupId) {
     currentUser = saved;
     checkApprovalAndEnter();
     return;
   }
-
   document.getElementById('cg-login-title').textContent = groupName;
   showCGScreen('login');
 }
 
-// ---- SUBMIT LOGIN ----
-async function submitLogin() {
+function submitLogin() {
   var roomPass = document.getElementById('cg-room-password').value.trim();
   var userName = document.getElementById('cg-user-name').value.trim();
   var userPin = document.getElementById('cg-user-pin').value.trim();
@@ -122,72 +116,72 @@ async function submitLogin() {
     return;
   }
 
-  // Check if user already exists in this group
   var memberId = currentGroup + '_' + userName.replace(/\s/g,'').toLowerCase();
-  var memberRef = doc(db, 'groups', currentGroup, 'members', memberId);
-  var memberSnap = await getDoc(memberRef);
+  var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(memberId);
 
-  if (memberSnap.exists()) {
-    var data = memberSnap.data();
-    if (data.pin !== userPin) {
-      errEl.textContent = 'Incorrect PIN for that name. Try again.';
-      return;
+  memberRef.get().then(function(snap) {
+    if (snap.exists) {
+      var data = snap.data();
+      if (data.pin !== userPin) {
+        errEl.textContent = 'Incorrect PIN for that name. Try again.';
+        return;
+      }
+      var isAdmin = (userPin === ADMIN_PIN);
+      currentUser = { group: currentGroup, groupName: currentGroupName, name: userName, pin: userPin, memberId: memberId, isAdmin: isAdmin };
+      saveUser(currentUser);
+      if (data.approved) {
+        enterChat();
+      } else {
+        document.getElementById('cg-pending-title').textContent = currentGroupName;
+        showCGScreen('pending');
+      }
+    } else {
+      memberRef.set({
+        name: userName,
+        pin: userPin,
+        approved: false,
+        requestedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function() {
+        var isAdmin = (userPin === ADMIN_PIN);
+        currentUser = { group: currentGroup, groupName: currentGroupName, name: userName, pin: userPin, memberId: memberId, isAdmin: isAdmin };
+        saveUser(currentUser);
+        document.getElementById('cg-pending-title').textContent = currentGroupName;
+        showCGScreen('pending');
+      });
     }
-    // Existing user — check approval
-    currentUser = { group: currentGroup, groupName: currentGroupName, name: userName, pin: userPin, memberId: memberId, isAdmin: (userPin === ADMIN_PINS[currentGroup]) };
-    saveUser(currentUser);
-    if (data.approved) {
+  });
+}
+
+function checkApproval() {
+  if (!currentUser) return;
+  db.collection('groups').doc(currentGroup).collection('members').doc(currentUser.memberId).get().then(function(snap) {
+    if (snap.exists && snap.data().approved) {
       enterChat();
     } else {
+      alert('Not approved yet. Please wait for your group leader to approve you.');
+    }
+  });
+}
+
+function checkApprovalAndEnter() {
+  if (!currentUser) return;
+  db.collection('groups').doc(currentGroup).collection('members').doc(currentUser.memberId).get().then(function(snap) {
+    if (snap.exists && snap.data().approved) {
+      enterChat();
+    } else if (snap.exists) {
       document.getElementById('cg-pending-title').textContent = currentGroupName;
       showCGScreen('pending');
+    } else {
+      clearSavedUser();
+      showCGScreen('select');
     }
-  } else {
-    // New user — create pending request
-    await setDoc(memberRef, {
-      name: userName,
-      pin: userPin,
-      approved: false,
-      requestedAt: serverTimestamp()
-    });
-    currentUser = { group: currentGroup, groupName: currentGroupName, name: userName, pin: userPin, memberId: memberId, isAdmin: (userPin === ADMIN_PINS[currentGroup]) };
-    saveUser(currentUser);
-    document.getElementById('cg-pending-title').textContent = currentGroupName;
-    showCGScreen('pending');
-  }
+  });
 }
 
-// ---- CHECK APPROVAL ----
-async function checkApproval() {
-  if (!currentUser) return;
-  var memberRef = doc(db, 'groups', currentGroup, 'members', currentUser.memberId);
-  var snap = await getDoc(memberRef);
-  if (snap.exists() && snap.data().approved) {
-    enterChat();
-  } else {
-    alert('Not approved yet. Please wait for your group leader to approve you.');
-  }
-}
-
-async function checkApprovalAndEnter() {
-  if (!currentUser) return;
-  var memberRef = doc(db, 'groups', currentGroup, 'members', currentUser.memberId);
-  var snap = await getDoc(memberRef);
-  if (snap.exists() && snap.data().approved) {
-    enterChat();
-  } else if (snap.exists()) {
-    document.getElementById('cg-pending-title').textContent = currentGroupName;
-    showCGScreen('pending');
-  } else {
-    showCGScreen('select');
-  }
-}
-
-// ---- ENTER CHAT ----
 function enterChat() {
   document.getElementById('cg-chat-title').textContent = currentGroupName;
   var adminBtn = document.getElementById('cg-admin-btn');
-  if (currentUser.isAdmin || currentUser.pin === ADMIN_PINS[currentGroup]) {
+  if (currentUser && currentUser.pin === ADMIN_PIN) {
     adminBtn.style.display = 'block';
   } else {
     adminBtn.style.display = 'none';
@@ -197,68 +191,56 @@ function enterChat() {
   markAsRead();
 }
 
-// ---- LOAD MESSAGES ----
 function loadMessages() {
   if (messageListener) messageListener();
   var messagesEl = document.getElementById('cg-messages');
   messagesEl.innerHTML = '<div class="cg-loading">Loading messages...</div>';
 
-  var q = query(collection(db, 'groups', currentGroup, 'messages'), orderBy('timestamp', 'asc'));
-  messageListener = onSnapshot(q, function(snapshot) {
-    messagesEl.innerHTML = '';
-    if (snapshot.empty) {
-      messagesEl.innerHTML = '<div class="cg-no-msgs">No messages yet. Say hello! 👋</div>';
-      return;
-    }
-    snapshot.forEach(function(d) {
-      var msg = d.data();
-      var isMe = msg.author === currentUser.name;
-      var div = document.createElement('div');
-      div.className = 'cg-msg ' + (isMe ? 'cg-msg-me' : 'cg-msg-them');
-      var time = msg.timestamp ? new Date(msg.timestamp.toMillis()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
-      div.innerHTML = (!isMe ? '<div class="cg-msg-author">' + msg.author + '</div>' : '') +
-        '<div class="cg-msg-bubble">' + escapeHtml(msg.text) + '</div>' +
-        '<div class="cg-msg-time">' + time + '</div>';
-      messagesEl.appendChild(div);
+  messageListener = db.collection('groups').doc(currentGroup).collection('messages')
+    .orderBy('timestamp', 'asc')
+    .onSnapshot(function(snapshot) {
+      messagesEl.innerHTML = '';
+      if (snapshot.empty) {
+        messagesEl.innerHTML = '<div class="cg-no-msgs">No messages yet. Say hello! 👋</div>';
+        return;
+      }
+      snapshot.forEach(function(d) {
+        var msg = d.data();
+        var isMe = msg.author === currentUser.name;
+        var div = document.createElement('div');
+        div.className = 'cg-msg ' + (isMe ? 'cg-msg-me' : 'cg-msg-them');
+        var time = msg.timestamp ? new Date(msg.timestamp.toMillis()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+        div.innerHTML = (!isMe ? '<div class="cg-msg-author">' + msg.author + '</div>' : '') +
+          '<div class="cg-msg-bubble">' + escapeHtml(msg.text) + '</div>' +
+          '<div class="cg-msg-time">' + time + '</div>';
+        messagesEl.appendChild(div);
+      });
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      markAsRead();
     });
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-    markAsRead();
-  });
 }
 
-// ---- SEND MESSAGE ----
-async function sendMessage() {
+function sendMessage() {
   var input = document.getElementById('cg-msg-input');
   var text = input.value.trim();
-  if (!text) return;
+  if (!text || !db) return;
   input.value = '';
-  await addDoc(collection(db, 'groups', currentGroup, 'messages'), {
+  db.collection('groups').doc(currentGroup).collection('messages').add({
     text: text,
     author: currentUser.name,
-    timestamp: serverTimestamp()
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
   });
 }
 
-// Allow Enter key to send
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    var chatScreen = document.getElementById('cg-chat-screen');
-    if (chatScreen && chatScreen.style.display !== 'none') {
-      sendMessage();
-    }
-  }
-});
-
-// ---- LEAVE CHAT ----
 function leaveChat() {
-  if (messageListener) {
-    messageListener();
-    messageListener = null;
-  }
+  if (messageListener) { messageListener(); messageListener = null; }
+  clearSavedUser();
+  currentUser = null;
+  currentGroup = null;
+  currentGroupName = null;
   showCGScreen('select');
 }
 
-// ---- MARK AS READ ----
 function markAsRead() {
   if (!currentGroup) return;
   lastSeenTimestamps[currentGroup] = Date.now();
@@ -266,78 +248,46 @@ function markAsRead() {
   updateBadge(currentGroup, 0);
 }
 
-// ---- UNREAD BADGES ----
 function updateBadge(groupId, count) {
   var badge = document.getElementById('badge-' + groupId);
   var navBadge = document.getElementById('nav-badge-care');
   if (badge) {
-    if (count > 0) {
-      badge.textContent = count;
-      badge.style.display = 'flex';
-    } else {
-      badge.style.display = 'none';
-    }
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'flex' : 'none';
   }
-  // Update nav badge with total unread across all groups user belongs to
-  var totalUnread = 0;
-  var badges = document.querySelectorAll('.cg-badge');
-  badges.forEach(function(b) {
-    if (b.style.display !== 'none') totalUnread += parseInt(b.textContent || '0');
+  var total = 0;
+  var allBadges = document.querySelectorAll('.cg-badge');
+  allBadges.forEach(function(b) {
+    if (b.style.display !== 'none') total += parseInt(b.textContent || '0');
   });
   if (navBadge) {
-    if (totalUnread > 0) {
-      navBadge.textContent = totalUnread;
-      navBadge.style.display = 'flex';
-    } else {
-      navBadge.style.display = 'none';
-    }
+    navBadge.textContent = total;
+    navBadge.style.display = total > 0 ? 'flex' : 'none';
   }
 }
 
-function watchUnreadForGroup(groupId) {
-  var saved = getSavedUser();
-  if (!saved || saved.group !== groupId) return;
-  var lastSeen = lastSeenTimestamps[groupId] || 0;
-  var q = query(collection(db, 'groups', groupId, 'messages'), orderBy('timestamp', 'asc'));
-  onSnapshot(q, function(snapshot) {
-    var unread = 0;
-    snapshot.forEach(function(d) {
-      var msg = d.data();
-      if (msg.timestamp && msg.timestamp.toMillis() > lastSeen && msg.author !== saved.name) {
-        unread++;
-      }
-    });
-    updateBadge(groupId, unread);
-  });
-}
-
-// ---- ADMIN PANEL ----
-async function showAdminPanel() {
+function showAdminPanel() {
   showCGScreen('admin');
   loadAdminLists();
 }
 
-async function loadAdminLists() {
+function loadAdminLists() {
   var pendingEl = document.getElementById('admin-pending-list');
   var approvedEl = document.getElementById('admin-approved-list');
   pendingEl.innerHTML = '<div class="cg-loading">Loading...</div>';
   approvedEl.innerHTML = '<div class="cg-loading">Loading...</div>';
 
-  var membersSnap = await getDocs(collection(db, 'groups', currentGroup, 'members'));
-  var pending = [];
-  var approved = [];
-  membersSnap.forEach(function(d) {
-    var data = d.data();
-    data._id = d.id;
-    if (data.approved) approved.push(data);
-    else pending.push(data);
-  });
+  db.collection('groups').doc(currentGroup).collection('members').get().then(function(snap) {
+    var pending = [];
+    var approved = [];
+    snap.forEach(function(d) {
+      var data = d.data();
+      data._id = d.id;
+      if (data.approved) approved.push(data);
+      else pending.push(data);
+    });
 
-  // Render pending
-  if (pending.length === 0) {
-    pendingEl.innerHTML = '<div class="cg-empty-note">No pending requests</div>';
-  } else {
-    pendingEl.innerHTML = '';
+    pendingEl.innerHTML = pending.length === 0 ? '<div class="cg-empty-note">No pending requests</div>' : '';
     pending.forEach(function(m) {
       var div = document.createElement('div');
       div.className = 'cg-member-row';
@@ -346,13 +296,8 @@ async function loadAdminLists() {
         '<button class="cg-deny-btn" onclick="denyMember(\'' + m._id + '\')">Deny</button>';
       pendingEl.appendChild(div);
     });
-  }
 
-  // Render approved
-  if (approved.length === 0) {
-    approvedEl.innerHTML = '<div class="cg-empty-note">No approved members yet</div>';
-  } else {
-    approvedEl.innerHTML = '';
+    approvedEl.innerHTML = approved.length === 0 ? '<div class="cg-empty-note">No approved members yet</div>' : '';
     approved.forEach(function(m) {
       var div = document.createElement('div');
       div.className = 'cg-member-row';
@@ -360,50 +305,44 @@ async function loadAdminLists() {
         '<button class="cg-deny-btn" onclick="removeMember(\'' + m._id + '\')">Remove</button>';
       approvedEl.appendChild(div);
     });
-  }
+  });
 }
 
-async function approveMember(memberId) {
-  await updateDoc(doc(db, 'groups', currentGroup, 'members', memberId), { approved: true });
-  loadAdminLists();
+function approveMember(memberId) {
+  db.collection('groups').doc(currentGroup).collection('members').doc(memberId).update({ approved: true }).then(loadAdminLists);
 }
 
-async function denyMember(memberId) {
-  await deleteDoc(doc(db, 'groups', currentGroup, 'members', memberId));
-  loadAdminLists();
+function denyMember(memberId) {
+  db.collection('groups').doc(currentGroup).collection('members').doc(memberId).delete().then(loadAdminLists);
 }
 
-async function removeMember(memberId) {
+function removeMember(memberId) {
   if (confirm('Remove this member from the group?')) {
-    await deleteDoc(doc(db, 'groups', currentGroup, 'members', memberId));
-    loadAdminLists();
+    db.collection('groups').doc(currentGroup).collection('members').doc(memberId).delete().then(loadAdminLists);
   }
 }
 
-// ---- LOCAL STORAGE HELPERS ----
-function saveUser(user) {
-  localStorage.setItem('mhbc_cg_user', JSON.stringify(user));
-}
-
+// ---- LOCAL STORAGE ----
+function saveUser(user) { localStorage.setItem('mhbc_cg_user', JSON.stringify(user)); }
 function getSavedUser() {
   var raw = localStorage.getItem('mhbc_cg_user');
   if (!raw) return null;
   try { return JSON.parse(raw); } catch(e) { return null; }
 }
+function clearSavedUser() { localStorage.removeItem('mhbc_cg_user'); }
 
 // ---- BIBLE PICKER ----
 var chaptersMap = {
-  GEN:50, EXO:40, LEV:27, NUM:36, DEU:34, JOS:24, JDG:21, RUT:4,
-  '1SA':31, '2SA':24, '1KI':22, '2KI':25, '1CH':29, '2CH':36, EZR:10,
-  NEH:13, EST:10, JOB:42, PSA:150, PRO:31, ECC:12, SNG:8, ISA:66,
-  JER:52, LAM:5, EZK:48, DAN:12, HOS:14, JOL:3, AMO:9, OBA:1,
-  JON:4, MIC:7, NAM:3, HAB:3, ZEP:3, HAG:2, ZEC:14, MAL:4,
-  MAT:28, MRK:16, LUK:24, JHN:21, ACT:28, ROM:16, '1CO':16,
-  '2CO':13, GAL:6, EPH:6, PHP:4, COL:4, '1TH':5, '2TH':3,
-  '1TI':6, '2TI':4, TIT:3, PHM:1, HEB:13, JAS:5, '1PE':5,
-  '2PE':3, '1JN':5, '2JN':1, '3JN':1, JUD:1, REV:22
+  GEN:50,EXO:40,LEV:27,NUM:36,DEU:34,JOS:24,JDG:21,RUT:4,
+  '1SA':31,'2SA':24,'1KI':22,'2KI':25,'1CH':29,'2CH':36,EZR:10,
+  NEH:13,EST:10,JOB:42,PSA:150,PRO:31,ECC:12,SNG:8,ISA:66,
+  JER:52,LAM:5,EZK:48,DAN:12,HOS:14,JOL:3,AMO:9,OBA:1,
+  JON:4,MIC:7,NAM:3,HAB:3,ZEP:3,HAG:2,ZEC:14,MAL:4,
+  MAT:28,MRK:16,LUK:24,JHN:21,ACT:28,ROM:16,'1CO':16,
+  '2CO':13,GAL:6,EPH:6,PHP:4,COL:4,'1TH':5,'2TH':3,
+  '1TI':6,'2TI':4,TIT:3,PHM:1,HEB:13,JAS:5,'1PE':5,
+  '2PE':3,'1JN':5,'2JN':1,'3JN':1,JUD:1,REV:22
 };
-
 var currentTrans = '111';
 var currentCode = 'NIV';
 
@@ -424,45 +363,39 @@ function populateChapters(book, selected) {
 function openBible() {
   var book = document.getElementById('bibleBook').value;
   var chapter = document.getElementById('bibleChapter').value;
-  var url = 'https://www.bible.com/bible/' + currentTrans + '/' + book + '.' + chapter + '.' + currentCode;
-  window.open(url, '_blank');
+  window.open('https://www.bible.com/bible/' + currentTrans + '/' + book + '.' + chapter + '.' + currentCode, '_blank');
 }
 
 function tryGenerateQR() {
   var qrEl = document.getElementById('appQR');
   if (!qrEl) return;
   if (typeof QRCode !== 'undefined') {
-    new QRCode(qrEl, {
-      text: 'https://qnxyt9x67g-max.github.io/MHBC/',
-      width: 90, height: 90,
-      colorDark: '#0a1628', colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.H
-    });
+    new QRCode(qrEl, { text: 'https://qnxyt9x67g-max.github.io/MHBC/', width: 90, height: 90, colorDark: '#0a1628', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
   } else {
     setTimeout(tryGenerateQR, 500);
   }
 }
 
 function escapeHtml(text) {
-  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 // ---- INIT ----
 window.onload = function() {
+  initFirebase();
   populateChapters('JHN', 1);
 
   var bookSel = document.getElementById('bibleBook');
   if (bookSel) bookSel.addEventListener('change', function() { populateChapters(this.value, 1); });
 
-  var pills = document.querySelectorAll('.pill');
-  for (var i = 0; i < pills.length; i++) {
-    pills[i].addEventListener('click', function() {
+  document.querySelectorAll('.pill').forEach(function(pill) {
+    pill.addEventListener('click', function() {
       document.querySelectorAll('.pill').forEach(function(p) { p.classList.remove('active'); });
       this.classList.add('active');
       currentTrans = this.getAttribute('data-trans');
       currentCode = this.getAttribute('data-code');
     });
-  }
+  });
 
   var bibleBtn = document.getElementById('openBibleBtn');
   if (bibleBtn) bibleBtn.addEventListener('click', openBible);
@@ -473,18 +406,15 @@ window.onload = function() {
     if (badge) badge.style.display = 'flex';
   }
 
-  // Load last seen timestamps
   var ls = localStorage.getItem('mhbc_lastseen');
   if (ls) { try { lastSeenTimestamps = JSON.parse(ls); } catch(e) {} }
 
-  // Watch for unread messages in the user's group
-  var saved = getSavedUser();
-  if (saved) {
-    currentGroup = saved.group;
-    currentGroupName = saved.groupName;
-    currentUser = saved;
-    watchUnreadForGroup(saved.group);
-  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      var chatScreen = document.getElementById('cg-chat-screen');
+      if (chatScreen && chatScreen.style.display !== 'none') sendMessage();
+    }
+  });
 
   tryGenerateQR();
 };
