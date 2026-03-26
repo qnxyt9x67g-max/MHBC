@@ -1,8 +1,7 @@
 // ============================================================
-// MHBC APP — app.js v5 — Firebase via CDN (browser safe)
+// MHBC APP — app.js v6 — Secure, Firebase-backed
 // ============================================================
 
-// ---- STATE ----
 var db = null;
 var currentGroup = null;
 var currentGroupName = null;
@@ -10,21 +9,10 @@ var currentUser = null;
 var messageListener = null;
 var lastSeenTimestamps = {};
 
-// ---- ROOM PASSWORDS — change these! ----
-var ROOM_PASSWORDS = {
-  c101: 'c101pass',
-  narthex: 'narthexpass',
-  fellowship1: 'fellow1pass',
-  fellowship2: 'fellow2pass'
-};
-
-// ---- ADMIN PIN — change this to your PIN ----
-var ADMIN_PIN = '1234';
-
 // ---- INIT FIREBASE ----
 function initFirebase() {
   var firebaseConfig = {
-    apiKey: "AIzaSyAH_vFWzh9kvi5ad63EDov2KeXkpgCMmv0",
+    apiKey: "AIzaSyBYt5RR0YGB9u9n7QgvAGXnvmrb7-xTg-Y",
     authDomain: "mhbc-app.firebaseapp.com",
     projectId: "mhbc-app",
     storageBucket: "mhbc-app.firebasestorage.app",
@@ -75,14 +63,11 @@ function showCGScreen(screen) {
   }
   var show = document.getElementById('cg-' + screen + '-screen');
   if (show) show.style.display = 'block';
-
-  // Show/hide the chat input bar
   var inputBar = document.getElementById('cg-input-bar');
-  if (inputBar) {
-    inputBar.style.display = (screen === 'chat') ? 'flex' : 'none';
-  }
+  if (inputBar) inputBar.style.display = (screen === 'chat') ? 'flex' : 'none';
 }
 
+// ---- SELECT GROUP ----
 function selectGroup(groupId, groupName) {
   currentGroup = groupId;
   currentGroupName = groupName;
@@ -96,6 +81,7 @@ function selectGroup(groupId, groupName) {
   showCGScreen('login');
 }
 
+// ---- SUBMIT LOGIN ----
 function submitLogin() {
   var roomPass = document.getElementById('cg-room-password').value.trim();
   var userName = document.getElementById('cg-user-name').value.trim();
@@ -111,47 +97,64 @@ function submitLogin() {
     errEl.textContent = 'PIN must be exactly 4 digits.';
     return;
   }
-  if (roomPass !== ROOM_PASSWORDS[currentGroup]) {
-    errEl.textContent = 'Incorrect room password. Check with your group leader.';
-    return;
-  }
 
-  var memberId = currentGroup + '_' + userName.replace(/\s/g,'').toLowerCase();
-  var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(memberId);
+  // Fetch passwords from Firebase
+  db.collection('config').doc('rooms').get().then(function(snap) {
+    if (!snap.exists) {
+      errEl.textContent = 'Configuration error. Contact your admin.';
+      return;
+    }
+    var config = snap.data();
+    var correctPass = config[currentGroup];
+    var adminPin = config.adminPin;
 
-  memberRef.get().then(function(snap) {
-    if (snap.exists) {
-      var data = snap.data();
-      if (data.pin !== userPin) {
-        errEl.textContent = 'Incorrect PIN for that name. Try again.';
-        return;
-      }
-      var isAdmin = (userPin === ADMIN_PIN);
-      currentUser = { group: currentGroup, groupName: currentGroupName, name: userName, pin: userPin, memberId: memberId, isAdmin: isAdmin };
-      saveUser(currentUser);
-      if (data.approved) {
-        enterChat();
-      } else {
-        document.getElementById('cg-pending-title').textContent = currentGroupName;
-        showCGScreen('pending');
-      }
-    } else {
-      memberRef.set({
-        name: userName,
-        pin: userPin,
-        approved: false,
-        requestedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(function() {
-        var isAdmin = (userPin === ADMIN_PIN);
+    if (roomPass !== correctPass) {
+      errEl.textContent = 'Incorrect room password. Check with your group leader.';
+      return;
+    }
+
+    var isAdmin = (userPin === adminPin);
+    var memberId = currentGroup + '_' + userName.replace(/\s/g,'').toLowerCase();
+    var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(memberId);
+
+    memberRef.get().then(function(memberSnap) {
+      if (memberSnap.exists) {
+        var data = memberSnap.data();
+        if (data.pin !== userPin) {
+          errEl.textContent = 'Incorrect PIN for that name. Try again.';
+          return;
+        }
         currentUser = { group: currentGroup, groupName: currentGroupName, name: userName, pin: userPin, memberId: memberId, isAdmin: isAdmin };
         saveUser(currentUser);
-        document.getElementById('cg-pending-title').textContent = currentGroupName;
-        showCGScreen('pending');
-      });
-    }
+        if (data.approved) {
+          enterChat();
+        } else {
+          document.getElementById('cg-pending-title').textContent = currentGroupName;
+          showCGScreen('pending');
+        }
+      } else {
+        // New member — auto-approve if admin PIN used
+        memberRef.set({
+          name: userName,
+          pin: userPin,
+          approved: isAdmin ? true : false,
+          requestedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(function() {
+          currentUser = { group: currentGroup, groupName: currentGroupName, name: userName, pin: userPin, memberId: memberId, isAdmin: isAdmin };
+          saveUser(currentUser);
+          if (isAdmin) {
+            enterChat();
+          } else {
+            document.getElementById('cg-pending-title').textContent = currentGroupName;
+            showCGScreen('pending');
+          }
+        });
+      }
+    });
   });
 }
 
+// ---- CHECK APPROVAL ----
 function checkApproval() {
   if (!currentUser) return;
   db.collection('groups').doc(currentGroup).collection('members').doc(currentUser.memberId).get().then(function(snap) {
@@ -178,19 +181,17 @@ function checkApprovalAndEnter() {
   });
 }
 
+// ---- ENTER CHAT ----
 function enterChat() {
   document.getElementById('cg-chat-title').textContent = currentGroupName;
   var adminBtn = document.getElementById('cg-admin-btn');
-  if (currentUser && currentUser.pin === ADMIN_PIN) {
-    adminBtn.style.display = 'block';
-  } else {
-    adminBtn.style.display = 'none';
-  }
+  adminBtn.style.display = currentUser.isAdmin ? 'block' : 'none';
   showCGScreen('chat');
   loadMessages();
   markAsRead();
 }
 
+// ---- LOAD MESSAGES ----
 function loadMessages() {
   if (messageListener) messageListener();
   var messagesEl = document.getElementById('cg-messages');
@@ -220,6 +221,7 @@ function loadMessages() {
     });
 }
 
+// ---- SEND MESSAGE ----
 function sendMessage() {
   var input = document.getElementById('cg-msg-input');
   var text = input.value.trim();
@@ -232,6 +234,7 @@ function sendMessage() {
   });
 }
 
+// ---- LEAVE CHAT ----
 function leaveChat() {
   if (messageListener) { messageListener(); messageListener = null; }
   clearSavedUser();
@@ -241,6 +244,7 @@ function leaveChat() {
   showCGScreen('select');
 }
 
+// ---- MARK AS READ ----
 function markAsRead() {
   if (!currentGroup) return;
   lastSeenTimestamps[currentGroup] = Date.now();
@@ -248,6 +252,7 @@ function markAsRead() {
   updateBadge(currentGroup, 0);
 }
 
+// ---- BADGES ----
 function updateBadge(groupId, count) {
   var badge = document.getElementById('badge-' + groupId);
   var navBadge = document.getElementById('nav-badge-care');
@@ -256,8 +261,7 @@ function updateBadge(groupId, count) {
     badge.style.display = count > 0 ? 'flex' : 'none';
   }
   var total = 0;
-  var allBadges = document.querySelectorAll('.cg-badge');
-  allBadges.forEach(function(b) {
+  document.querySelectorAll('.cg-badge').forEach(function(b) {
     if (b.style.display !== 'none') total += parseInt(b.textContent || '0');
   });
   if (navBadge) {
@@ -266,6 +270,7 @@ function updateBadge(groupId, count) {
   }
 }
 
+// ---- ADMIN PANEL ----
 function showAdminPanel() {
   showCGScreen('admin');
   loadAdminLists();
@@ -309,16 +314,19 @@ function loadAdminLists() {
 }
 
 function approveMember(memberId) {
-  db.collection('groups').doc(currentGroup).collection('members').doc(memberId).update({ approved: true }).then(loadAdminLists);
+  db.collection('groups').doc(currentGroup).collection('members').doc(memberId)
+    .update({ approved: true }).then(loadAdminLists);
 }
 
 function denyMember(memberId) {
-  db.collection('groups').doc(currentGroup).collection('members').doc(memberId).delete().then(loadAdminLists);
+  db.collection('groups').doc(currentGroup).collection('members').doc(memberId)
+    .delete().then(loadAdminLists);
 }
 
 function removeMember(memberId) {
   if (confirm('Remove this member from the group?')) {
-    db.collection('groups').doc(currentGroup).collection('members').doc(memberId).delete().then(loadAdminLists);
+    db.collection('groups').doc(currentGroup).collection('members').doc(memberId)
+      .delete().then(loadAdminLists);
   }
 }
 
@@ -370,7 +378,12 @@ function tryGenerateQR() {
   var qrEl = document.getElementById('appQR');
   if (!qrEl) return;
   if (typeof QRCode !== 'undefined') {
-    new QRCode(qrEl, { text: 'https://qnxyt9x67g-max.github.io/MHBC/', width: 90, height: 90, colorDark: '#0a1628', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+    new QRCode(qrEl, {
+      text: 'https://qnxyt9x67g-max.github.io/MHBC/',
+      width: 90, height: 90,
+      colorDark: '#0a1628', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
   } else {
     setTimeout(tryGenerateQR, 500);
   }
@@ -378,6 +391,28 @@ function tryGenerateQR() {
 
 function escapeHtml(text) {
   return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ---- LIVE BADGE — only during service times (EST) ----
+function checkLiveBadge() {
+  var now = new Date();
+  // Convert to EST (UTC-5) or EDT (UTC-4)
+  var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  var est = new Date(utc + (-5 * 3600000));
+  var day = est.getDay();    // 0=Sun, 3=Wed
+  var hour = est.getHours();
+  var min = est.getMinutes();
+  var totalMins = hour * 60 + min;
+
+  // Sunday 9:30am–11:00am = 570–660 mins
+  var sundayLive = (day === 0 && totalMins >= 570 && totalMins <= 660);
+  // Wednesday 7:00pm–8:00pm = 1140–1200 mins
+  var wednesdayLive = (day === 3 && totalMins >= 1140 && totalMins <= 1200);
+
+  var badge = document.getElementById('liveBadge');
+  if (badge) {
+    badge.style.display = (sundayLive || wednesdayLive) ? 'flex' : 'none';
+  }
 }
 
 // ---- INIT ----
@@ -400,11 +435,8 @@ window.onload = function() {
   var bibleBtn = document.getElementById('openBibleBtn');
   if (bibleBtn) bibleBtn.addEventListener('click', openBible);
 
-  var day = new Date().getDay();
-  if (day === 0 || day === 3) {
-    var badge = document.getElementById('liveBadge');
-    if (badge) badge.style.display = 'flex';
-  }
+  checkLiveBadge();
+  setInterval(checkLiveBadge, 60000);
 
   var ls = localStorage.getItem('mhbc_lastseen');
   if (ls) { try { lastSeenTimestamps = JSON.parse(ls); } catch(e) {} }
