@@ -944,16 +944,15 @@ body {
 .cg-input-bar {
   position: fixed;
   bottom: var(--nav-height);
-  left: 0; right: 0;
-  display: none;
+  left: 0;
+  right: 0;
+  display: flex;
   gap: 8px;
   padding: 10px 14px;
   background: var(--navy);
   border-top: 1px solid var(--border);
   z-index: 10;
 }
-
-.cg-input-bar.visible { display: flex; }
 
 .cg-msg-input {
   flex: 1;
