@@ -1,5 +1,5 @@
 // ============================================================
-// MHBC APP — app.js v6 — Secure, Firebase-backed
+// MHBC APP — app.js v7 — Hashed passwords
 // ============================================================
 
 var db = null;
@@ -8,6 +8,15 @@ var currentGroupName = null;
 var currentUser = null;
 var messageListener = null;
 var lastSeenTimestamps = {};
+
+// ---- HASH FUNCTION ----
+async function hashInput(input, salt) {
+  var encoder = new TextEncoder();
+  var data = encoder.encode(input + salt);
+  var hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  var hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+}
 
 // ---- INIT FIREBASE ----
 function initFirebase() {
@@ -93,65 +102,90 @@ function submitLogin() {
     errEl.textContent = 'Please fill in all fields.';
     return;
   }
-  if (userPin.length !== 4 || isNaN(userPin)) {
-    errEl.textContent = 'PIN must be exactly 4 digits.';
+  if (userPin.length < 4) {
+    errEl.textContent = 'PIN must be at least 4 characters.';
     return;
   }
 
-  // Fetch passwords from Firebase
+  // Fetch hashes from Firebase
   db.collection('config').doc('rooms').get().then(function(snap) {
     if (!snap.exists) {
       errEl.textContent = 'Configuration error. Contact your admin.';
       return;
     }
     var config = snap.data();
-    var correctPass = config[currentGroup];
-    var adminPin = config.adminPin;
+    var roomSalt = config[currentGroup + '_salt'];
+    var roomHash = config[currentGroup + '_hash'];
+    var adminSalt = config['adminPin_salt'];
+    var adminHash = config['adminPin_hash'];
 
-    if (roomPass !== correctPass) {
-      errEl.textContent = 'Incorrect room password. Check with your group leader.';
-      return;
-    }
+    // Hash the entered room password and compare
+    hashInput(roomPass, roomSalt).then(function(enteredRoomHash) {
+      if (enteredRoomHash !== roomHash) {
+        errEl.textContent = 'Incorrect room password. Check with your group leader.';
+        return;
+      }
 
-    var isAdmin = (userPin === adminPin);
-    var memberId = currentGroup + '_' + userName.replace(/\s/g,'').toLowerCase();
-    var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(memberId);
+      // Hash the entered PIN and check if it matches admin
+      hashInput(userPin, adminSalt).then(function(enteredAdminHash) {
+        var isAdmin = (enteredAdminHash === adminHash);
+        var memberId = currentGroup + '_' + userName.replace(/\s/g,'').toLowerCase();
+        var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(memberId);
 
-    memberRef.get().then(function(memberSnap) {
-      if (memberSnap.exists) {
-        var data = memberSnap.data();
-        if (data.pin !== userPin) {
-          errEl.textContent = 'Incorrect PIN for that name. Try again.';
-          return;
-        }
-        currentUser = { group: currentGroup, groupName: currentGroupName, name: userName, pin: userPin, memberId: memberId, isAdmin: isAdmin };
-        saveUser(currentUser);
-        if (data.approved) {
-          enterChat();
-        } else {
-          document.getElementById('cg-pending-title').textContent = currentGroupName;
-          showCGScreen('pending');
-        }
-      } else {
-        // New member — auto-approve if admin PIN used
-        memberRef.set({
-          name: userName,
-          pin: userPin,
-          approved: isAdmin ? true : false,
-          requestedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(function() {
-          currentUser = { group: currentGroup, groupName: currentGroupName, name: userName, pin: userPin, memberId: memberId, isAdmin: isAdmin };
-          saveUser(currentUser);
-          if (isAdmin) {
-            enterChat();
+        memberRef.get().then(function(memberSnap) {
+          if (memberSnap.exists) {
+            var data = memberSnap.data();
+            // Verify PIN matches stored PIN hash for this member
+            hashInput(userPin, data.pinSalt).then(function(enteredPinHash) {
+              if (enteredPinHash !== data.pinHash) {
+                errEl.textContent = 'Incorrect PIN for that name. Try again.';
+                return;
+              }
+              currentUser = { group: currentGroup, groupName: currentGroupName, name: userName, memberId: memberId, isAdmin: isAdmin };
+              saveUser(currentUser);
+              if (data.approved) {
+                enterChat();
+              } else {
+                document.getElementById('cg-pending-title').textContent = currentGroupName;
+                showCGScreen('pending');
+              }
+            });
           } else {
-            document.getElementById('cg-pending-title').textContent = currentGroupName;
-            showCGScreen('pending');
+            // New member — hash their PIN before storing
+            var pinSalt = generateSalt();
+            hashInput(userPin, pinSalt).then(function(pinHash) {
+              memberRef.set({
+                name: userName,
+                pinHash: pinHash,
+                pinSalt: pinSalt,
+                approved: isAdmin ? true : false,
+                requestedAt: firebase.firestore.FieldValue.serverTimestamp()
+              }).then(function() {
+                currentUser = { group: currentGroup, groupName: currentGroupName, name: userName, memberId: memberId, isAdmin: isAdmin };
+                saveUser(currentUser);
+                if (isAdmin) {
+                  enterChat();
+                } else {
+                  document.getElementById('cg-pending-title').textContent = currentGroupName;
+                  showCGScreen('pending');
+                }
+              });
+            });
           }
         });
-      }
+      });
     });
   });
+}
+
+// ---- GENERATE SALT ----
+function generateSalt() {
+  var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var salt = '';
+  for (var i = 0; i < 8; i++) {
+    salt += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return salt;
 }
 
 // ---- CHECK APPROVAL ----
@@ -393,26 +427,17 @@ function escapeHtml(text) {
   return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// ---- LIVE BADGE — only during service times (EST) ----
+// ---- LIVE BADGE ----
 function checkLiveBadge() {
   var now = new Date();
-  // Convert to EST (UTC-5) or EDT (UTC-4)
   var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
   var est = new Date(utc + (-5 * 3600000));
-  var day = est.getDay();    // 0=Sun, 3=Wed
-  var hour = est.getHours();
-  var min = est.getMinutes();
-  var totalMins = hour * 60 + min;
-
-  // Sunday 9:30am–11:00am = 570–660 mins
+  var day = est.getDay();
+  var totalMins = est.getHours() * 60 + est.getMinutes();
   var sundayLive = (day === 0 && totalMins >= 570 && totalMins <= 660);
-  // Wednesday 7:00pm–8:00pm = 1140–1200 mins
   var wednesdayLive = (day === 3 && totalMins >= 1140 && totalMins <= 1200);
-
   var badge = document.getElementById('liveBadge');
-  if (badge) {
-    badge.style.display = (sundayLive || wednesdayLive) ? 'flex' : 'none';
-  }
+  if (badge) badge.style.display = (sundayLive || wednesdayLive) ? 'flex' : 'none';
 }
 
 // ---- INIT ----
