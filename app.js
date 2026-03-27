@@ -1,5 +1,5 @@
 // ============================================================
-// MHBC APP — app.js v7 — Hashed passwords
+// MHBC APP — app.js v8 — Threaded replies + fixed admin buttons
 // ============================================================
 
 var db = null;
@@ -107,7 +107,6 @@ function submitLogin() {
     return;
   }
 
-  // Fetch hashes from Firebase
   db.collection('config').doc('rooms').get().then(function(snap) {
     if (!snap.exists) {
       errEl.textContent = 'Configuration error. Contact your admin.';
@@ -119,14 +118,12 @@ function submitLogin() {
     var adminSalt = config['adminPin_salt'];
     var adminHash = config['adminPin_hash'];
 
-    // Hash the entered room password and compare
     hashInput(roomPass, roomSalt).then(function(enteredRoomHash) {
       if (enteredRoomHash !== roomHash) {
         errEl.textContent = 'Incorrect room password. Check with your group leader.';
         return;
       }
 
-      // Hash the entered PIN and check if it matches admin
       hashInput(userPin, adminSalt).then(function(enteredAdminHash) {
         var isAdmin = (enteredAdminHash === adminHash);
         var memberId = currentGroup + '_' + userName.replace(/\s/g,'').toLowerCase();
@@ -135,7 +132,6 @@ function submitLogin() {
         memberRef.get().then(function(memberSnap) {
           if (memberSnap.exists) {
             var data = memberSnap.data();
-            // Verify PIN matches stored PIN hash for this member
             hashInput(userPin, data.pinSalt).then(function(enteredPinHash) {
               if (enteredPinHash !== data.pinHash) {
                 errEl.textContent = 'Incorrect PIN for that name. Try again.';
@@ -151,7 +147,6 @@ function submitLogin() {
               }
             });
           } else {
-            // New member — hash their PIN before storing
             var pinSalt = generateSalt();
             hashInput(userPin, pinSalt).then(function(pinHash) {
               memberRef.set({
@@ -225,6 +220,24 @@ function enterChat() {
   markAsRead();
 }
 
+// ---- REPLY STATE ----
+var replyingTo = null;
+
+function setReply(messageId, authorName) {
+  replyingTo = { id: messageId, author: authorName };
+  var bar = document.getElementById('cg-reply-bar');
+  var label = document.getElementById('cg-reply-label');
+  if (bar) bar.style.display = 'flex';
+  if (label) label.textContent = 'Replying to ' + authorName;
+  document.getElementById('cg-msg-input').focus();
+}
+
+function clearReply() {
+  replyingTo = null;
+  var bar = document.getElementById('cg-reply-bar');
+  if (bar) bar.style.display = 'none';
+}
+
 // ---- LOAD MESSAGES ----
 function loadMessages() {
   if (messageListener) messageListener();
@@ -239,20 +252,79 @@ function loadMessages() {
         messagesEl.innerHTML = '<div class="cg-no-msgs">No messages yet. Say hello! 👋</div>';
         return;
       }
+
+      // Build a map of all messages
+      var msgMap = {};
+      var topLevel = [];
       snapshot.forEach(function(d) {
         var msg = d.data();
-        var isMe = msg.author === currentUser.name;
-        var div = document.createElement('div');
-        div.className = 'cg-msg ' + (isMe ? 'cg-msg-me' : 'cg-msg-them');
-        var time = msg.timestamp ? new Date(msg.timestamp.toMillis()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
-        div.innerHTML = (!isMe ? '<div class="cg-msg-author">' + msg.author + '</div>' : '') +
-          '<div class="cg-msg-bubble">' + escapeHtml(msg.text) + '</div>' +
-          '<div class="cg-msg-time">' + time + '</div>';
-        messagesEl.appendChild(div);
+        msg._id = d.id;
+        msgMap[d.id] = msg;
+        if (!msg.replyTo) topLevel.push(msg);
       });
+
+      // Render top-level messages with their replies nested below
+      topLevel.forEach(function(msg) {
+        renderMessage(msg, messagesEl, msgMap, snapshot, false);
+      });
+
       messagesEl.scrollTop = messagesEl.scrollHeight;
       markAsRead();
     });
+}
+
+function renderMessage(msg, container, msgMap, snapshot, isReply) {
+  var isMe = msg.author === currentUser.name;
+  var wrapper = document.createElement('div');
+  wrapper.className = 'cg-msg-wrapper' + (isReply ? ' cg-reply-wrapper' : '');
+
+  var div = document.createElement('div');
+  div.className = 'cg-msg ' + (isMe ? 'cg-msg-me' : 'cg-msg-them');
+
+  var time = msg.timestamp ? new Date(msg.timestamp.toMillis()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+
+  var inner = '';
+  if (!isMe) inner += '<div class="cg-msg-author">' + escapeHtml(msg.author) + '</div>';
+  inner += '<div class="cg-msg-bubble">' + escapeHtml(msg.text) + '</div>';
+  inner += '<div class="cg-msg-footer">';
+  inner += '<span class="cg-msg-time">' + time + '</span>';
+  if (!isReply) {
+    inner += '<span class="cg-reply-btn" data-id="' + msg._id + '" data-author="' + escapeHtml(msg.author) + '">↩ Reply</span>';
+  }
+  inner += '</div>';
+  div.innerHTML = inner;
+
+  // Attach reply button listener
+  if (!isReply) {
+    var replyBtn = div.querySelector('.cg-reply-btn');
+    if (replyBtn) {
+      replyBtn.addEventListener('click', (function(id, author) {
+        return function() { setReply(id, author); };
+      })(msg._id, msg.author));
+    }
+  }
+
+  wrapper.appendChild(div);
+
+  // Render replies under this message
+  if (!isReply) {
+    var replies = [];
+    snapshot.forEach(function(d) {
+      var m = d.data();
+      m._id = d.id;
+      if (m.replyTo === msg._id) replies.push(m);
+    });
+    if (replies.length > 0) {
+      var replyContainer = document.createElement('div');
+      replyContainer.className = 'cg-replies-container';
+      replies.forEach(function(reply) {
+        renderMessage(reply, replyContainer, msgMap, snapshot, true);
+      });
+      wrapper.appendChild(replyContainer);
+    }
+  }
+
+  container.appendChild(wrapper);
 }
 
 // ---- SEND MESSAGE ----
@@ -261,17 +333,27 @@ function sendMessage() {
   var text = input.value.trim();
   if (!text || !db) return;
   input.value = '';
-  db.collection('groups').doc(currentGroup).collection('messages').add({
+
+  var msgData = {
     text: text,
     author: currentUser.name,
     timestamp: firebase.firestore.FieldValue.serverTimestamp()
-  });
+  };
+
+  if (replyingTo) {
+    msgData.replyTo = replyingTo.id;
+    msgData.replyToAuthor = replyingTo.author;
+    clearReply();
+  }
+
+  db.collection('groups').doc(currentGroup).collection('messages').add(msgData);
 }
 
 // ---- LEAVE CHAT ----
 function leaveChat() {
   if (messageListener) { messageListener(); messageListener = null; }
   clearSavedUser();
+  clearReply();
   currentUser = null;
   currentGroup = null;
   currentGroupName = null;
@@ -326,24 +408,65 @@ function loadAdminLists() {
       else pending.push(data);
     });
 
-    pendingEl.innerHTML = pending.length === 0 ? '<div class="cg-empty-note">No pending requests</div>' : '';
-    pending.forEach(function(m) {
-      var div = document.createElement('div');
-      div.className = 'cg-member-row';
-      div.innerHTML = '<span class="cg-member-name">' + m.name + '</span>' +
-        '<button class="cg-approve-btn" onclick="approveMember(\'' + m._id + '\')">Approve</button>' +
-        '<button class="cg-deny-btn" onclick="denyMember(\'' + m._id + '\')">Deny</button>';
-      pendingEl.appendChild(div);
-    });
+    // Pending
+    pendingEl.innerHTML = '';
+    if (pending.length === 0) {
+      pendingEl.innerHTML = '<div class="cg-empty-note">No pending requests</div>';
+    } else {
+      pending.forEach(function(m) {
+        var div = document.createElement('div');
+        div.className = 'cg-member-row';
 
-    approvedEl.innerHTML = approved.length === 0 ? '<div class="cg-empty-note">No approved members yet</div>' : '';
-    approved.forEach(function(m) {
-      var div = document.createElement('div');
-      div.className = 'cg-member-row';
-      div.innerHTML = '<span class="cg-member-name">' + m.name + '</span>' +
-        '<button class="cg-deny-btn" onclick="removeMember(\'' + m._id + '\')">Remove</button>';
-      approvedEl.appendChild(div);
-    });
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'cg-member-name';
+        nameSpan.textContent = m.name;
+
+        var approveBtn = document.createElement('button');
+        approveBtn.className = 'cg-approve-btn';
+        approveBtn.textContent = 'Approve';
+        approveBtn.addEventListener('click', (function(id) {
+          return function() { approveMember(id); };
+        })(m._id));
+
+        var denyBtn = document.createElement('button');
+        denyBtn.className = 'cg-deny-btn';
+        denyBtn.textContent = 'Deny';
+        denyBtn.addEventListener('click', (function(id) {
+          return function() { denyMember(id); };
+        })(m._id));
+
+        div.appendChild(nameSpan);
+        div.appendChild(approveBtn);
+        div.appendChild(denyBtn);
+        pendingEl.appendChild(div);
+      });
+    }
+
+    // Approved
+    approvedEl.innerHTML = '';
+    if (approved.length === 0) {
+      approvedEl.innerHTML = '<div class="cg-empty-note">No approved members yet</div>';
+    } else {
+      approved.forEach(function(m) {
+        var div = document.createElement('div');
+        div.className = 'cg-member-row';
+
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'cg-member-name';
+        nameSpan.textContent = m.name;
+
+        var removeBtn = document.createElement('button');
+        removeBtn.className = 'cg-deny-btn';
+        removeBtn.textContent = 'Remove';
+        removeBtn.addEventListener('click', (function(id) {
+          return function() { removeMember(id); };
+        })(m._id));
+
+        div.appendChild(nameSpan);
+        div.appendChild(removeBtn);
+        approvedEl.appendChild(div);
+      });
+    }
   });
 }
 
