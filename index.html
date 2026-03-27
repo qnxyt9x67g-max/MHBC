@@ -490,10 +490,16 @@
     </button>
   </nav>
 
-  <!-- INPUT BAR — outside page wrapper so it stays fixed -->
+  <!-- INPUT BAR -->
   <div class="cg-input-bar" id="cg-input-bar" style="display:none;">
-    <input type="text" class="cg-msg-input" id="cg-msg-input" placeholder="Type a message..." />
-    <button class="cg-send-btn" onclick="sendMessage()">Send</button>
+    <div class="cg-reply-bar" id="cg-reply-bar" style="display:none;">
+      <span class="cg-reply-label" id="cg-reply-label">Replying to...</span>
+      <button class="cg-reply-cancel" onclick="clearReply()">✕</button>
+    </div>
+    <div class="cg-input-row">
+      <input type="text" class="cg-msg-input" id="cg-msg-input" placeholder="Type a message..." />
+      <button class="cg-send-btn" onclick="sendMessage()">Send</button>
+    </div>
   </div>
 
   <script src="app.js"></script>
