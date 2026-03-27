@@ -311,8 +311,8 @@
           <input type="password" class="cg-input" id="cg-room-password" placeholder="Enter room password" />
           <div class="cg-login-label">Your Name</div>
           <input type="text" class="cg-input" id="cg-user-name" placeholder="e.g. John S." />
-          <div class="cg-login-label">Your 4-Digit PIN</div>
-          <input type="password" class="cg-input" id="cg-user-pin" placeholder="Create or enter your PIN" maxlength="4" inputmode="numeric" />
+          <div class="cg-login-label">Your PIN</div>
+          <input type="password" class="cg-input" id="cg-user-pin" placeholder="Create or enter your PIN" />
           <div class="cg-login-note">First time? Create a PIN you'll remember. Returning? Enter your existing PIN.</div>
           <button class="cg-login-btn" onclick="submitLogin()">Request to Join</button>
           <div class="cg-login-error" id="cg-login-error"></div>
@@ -341,10 +341,6 @@
         </div>
         <div class="cg-messages" id="cg-messages">
           <div class="cg-loading">Loading messages...</div>
-        </div>
-        <div class="cg-input-bar">
-          <input type="text" class="cg-msg-input" id="cg-msg-input" placeholder="Type a message..." />
-          <button class="cg-send-btn" onclick="sendMessage()">Send</button>
         </div>
       </div>
 
@@ -493,6 +489,12 @@
       <span class="nav-label">More</span>
     </button>
   </nav>
+
+  <!-- INPUT BAR — outside page wrapper so it stays fixed -->
+  <div class="cg-input-bar" id="cg-input-bar" style="display:none;">
+    <input type="text" class="cg-msg-input" id="cg-msg-input" placeholder="Type a message..." />
+    <button class="cg-send-btn" onclick="sendMessage()">Send</button>
+  </div>
 
   <script src="app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
