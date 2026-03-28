@@ -1,5 +1,5 @@
 // ============================================================
-// MHBC APP — app.js v11 — TeamReach style replies + comment counts
+// MHBC APP — app.js v12 — Live unread badge counter
 // ============================================================
 
 var db = null;
@@ -7,6 +7,7 @@ var currentGroup = null;
 var currentGroupName = null;
 var currentUser = null;
 var messageListener = null;
+var unreadListener = null;
 var lastSeenTimestamps = {};
 var replyingTo = null;
 var longPressTimer = null;
@@ -230,6 +231,64 @@ function enterChat() {
   markAsRead();
 }
 
+// ---- BACKGROUND UNREAD WATCHER ----
+// Runs as soon as the app loads for any saved/logged-in user
+// Watches their group for new messages and updates the badge
+function startUnreadWatcher(groupId, userName) {
+  // Stop any existing watcher first
+  if (unreadListener) {
+    unreadListener();
+    unreadListener = null;
+  }
+
+  var lastSeen = lastSeenTimestamps[groupId] || 0;
+
+  unreadListener = db.collection('groups').doc(groupId).collection('messages')
+    .orderBy('timestamp', 'asc')
+    .onSnapshot(function(snapshot) {
+      // Only count if we're NOT currently in that chat
+      var chatScreen = document.getElementById('cg-chat-screen');
+      var carePageActive = document.getElementById('page-care');
+      var inChat = chatScreen &&
+                   chatScreen.style.display !== 'none' &&
+                   carePageActive &&
+                   carePageActive.classList.contains('active');
+
+      if (inChat) {
+        // User is actively reading — keep badge at zero
+        updateNavBadge(0);
+        return;
+      }
+
+      var unread = 0;
+      var refreshedLastSeen = lastSeenTimestamps[groupId] || 0;
+
+      snapshot.forEach(function(d) {
+        var msg = d.data();
+        // Only count messages from OTHER people that arrived after last visit
+        if (msg.author !== userName &&
+            msg.timestamp &&
+            msg.timestamp.toMillis() > refreshedLastSeen) {
+          unread++;
+        }
+      });
+
+      updateNavBadge(unread);
+    });
+}
+
+// ---- UPDATE NAV BADGE ----
+function updateNavBadge(count) {
+  var navBadge = document.getElementById('nav-badge-care');
+  if (!navBadge) return;
+  if (count > 0) {
+    navBadge.textContent = count > 99 ? '99+' : count;
+    navBadge.style.display = 'flex';
+  } else {
+    navBadge.style.display = 'none';
+  }
+}
+
 // ---- REPLY ----
 function setReply(messageId, authorName) {
   replyingTo = { id: messageId, author: authorName };
@@ -268,7 +327,6 @@ function loadMessages() {
         return;
       }
 
-      // Separate top-level and replies
       var topLevel = [];
       var replyMap = {};
       snapshot.forEach(function(d) {
@@ -295,41 +353,32 @@ function loadMessages() {
     });
 }
 
-// ---- RENDER THREAD (primary message + its replies) ----
+// ---- RENDER THREAD ----
 function renderThread(msg, replies, container, showDivider) {
   var thread = document.createElement('div');
   thread.className = 'cg-thread';
 
-  // Primary message
   renderPrimaryMessage(msg, thread);
 
-  // Comment count bar
-  if (replies.length > 0 || true) {
-    var commentBar = document.createElement('div');
-    commentBar.className = 'cg-comment-bar';
+  var commentBar = document.createElement('div');
+  commentBar.className = 'cg-comment-bar';
+  var replyBtn = document.createElement('button');
+  replyBtn.className = 'cg-comment-btn';
+  var commentWord = replies.length === 1 ? 'Comment' : 'Comments';
+  replyBtn.textContent = replies.length > 0 ? '💬 ' + replies.length + ' ' + commentWord : '💬 Reply';
+  replyBtn.addEventListener('click', (function(id, author) {
+    return function() { setReply(id, author); };
+  })(msg._id, msg.author));
+  commentBar.appendChild(replyBtn);
+  thread.appendChild(commentBar);
 
-    var replyBtn = document.createElement('button');
-    replyBtn.className = 'cg-comment-btn';
-    var commentWord = replies.length === 1 ? 'Comment' : 'Comments';
-    replyBtn.textContent = replies.length > 0 ? '💬 ' + replies.length + ' ' + commentWord : '💬 Reply';
-    replyBtn.addEventListener('click', (function(id, author) {
-      return function() { setReply(id, author); };
-    })(msg._id, msg.author));
-    commentBar.appendChild(replyBtn);
-    thread.appendChild(commentBar);
-  }
-
-  // Replies indented below
   if (replies.length > 0) {
     var repliesContainer = document.createElement('div');
     repliesContainer.className = 'cg-replies-container';
-    replies.forEach(function(reply) {
-      renderReplyMessage(reply, repliesContainer);
-    });
+    replies.forEach(function(reply) { renderReplyMessage(reply, repliesContainer); });
     thread.appendChild(repliesContainer);
   }
 
-  // Divider between threads
   if (showDivider) {
     var divider = document.createElement('div');
     divider.className = 'cg-thread-divider';
@@ -348,14 +397,12 @@ function renderPrimaryMessage(msg, container) {
   var row = document.createElement('div');
   row.className = 'cg-primary-row';
 
-  // Avatar circle
   var avatar = document.createElement('div');
   avatar.className = 'cg-avatar';
   avatar.textContent = msg.author.charAt(0).toUpperCase();
   avatar.style.background = color;
   row.appendChild(avatar);
 
-  // Content
   var content = document.createElement('div');
   content.className = 'cg-primary-content';
 
@@ -378,9 +425,7 @@ function renderPrimaryMessage(msg, container) {
   var text = document.createElement('div');
   text.className = 'cg-primary-text';
   text.textContent = msg.text;
-  content.appendChild(text);
 
-  // Long press to delete
   text.addEventListener('touchstart', (function(id, isMine) {
     return function() {
       longPressTimer = setTimeout(function() {
@@ -391,6 +436,7 @@ function renderPrimaryMessage(msg, container) {
   text.addEventListener('touchend', function() { clearTimeout(longPressTimer); });
   text.addEventListener('touchmove', function() { clearTimeout(longPressTimer); });
 
+  content.appendChild(text);
   row.appendChild(content);
   container.appendChild(row);
 }
@@ -433,7 +479,6 @@ function renderReplyMessage(msg, container) {
   text.className = 'cg-reply-text';
   text.textContent = msg.text;
 
-  // Long press to delete
   text.addEventListener('touchstart', (function(id, isMine) {
     return function() {
       longPressTimer = setTimeout(function() {
@@ -482,19 +527,13 @@ function markAsRead() {
   if (!currentGroup) return;
   lastSeenTimestamps[currentGroup] = Date.now();
   localStorage.setItem('mhbc_lastseen', JSON.stringify(lastSeenTimestamps));
-  updateBadge(currentGroup, 0);
+  updateNavBadge(0);
 }
 
 // ---- BADGES ----
 function updateBadge(groupId, count) {
   var badge = document.getElementById('badge-' + groupId);
-  var navBadge = document.getElementById('nav-badge-care');
   if (badge) { badge.textContent = count; badge.style.display = count > 0 ? 'flex' : 'none'; }
-  var total = 0;
-  document.querySelectorAll('.cg-badge').forEach(function(b) {
-    if (b.style.display !== 'none') total += parseInt(b.textContent || '0');
-  });
-  if (navBadge) { navBadge.textContent = total; navBadge.style.display = total > 0 ? 'flex' : 'none'; }
 }
 
 // ---- ADMIN PANEL ----
@@ -688,19 +727,15 @@ window.onload = function() {
     });
   });
 
-  // Login
   var loginBtn = document.getElementById('cg-login-submit');
   if (loginBtn) loginBtn.addEventListener('click', submitLogin);
 
-  // Check again
   var checkBtn = document.getElementById('cg-check-btn');
   if (checkBtn) checkBtn.addEventListener('click', checkApproval);
 
-  // Start over
   var startOverBtn = document.getElementById('cg-start-over-btn');
   if (startOverBtn) startOverBtn.addEventListener('click', startOver);
 
-  // Back buttons
   var backToSelect = document.getElementById('cg-back-to-select');
   if (backToSelect) backToSelect.addEventListener('click', function() { showCGScreen('select'); });
 
@@ -713,26 +748,21 @@ window.onload = function() {
   var leaveChatBtn = document.getElementById('cg-leave-chat');
   if (leaveChatBtn) leaveChatBtn.addEventListener('click', leaveChat);
 
-  // Admin
   var adminBtn = document.getElementById('cg-admin-btn');
   if (adminBtn) adminBtn.addEventListener('click', showAdminPanel);
 
-  // Send
   var sendBtn = document.getElementById('cg-send-btn');
   if (sendBtn) sendBtn.addEventListener('click', sendMessage);
 
-  // Reply cancel
   var replyCancel = document.getElementById('cg-reply-cancel');
   if (replyCancel) replyCancel.addEventListener('click', clearReply);
 
-  // Eye buttons
   var eyeRoom = document.getElementById('cg-eye-room');
   if (eyeRoom) eyeRoom.addEventListener('click', function() { toggleVisible('cg-room-password', this); });
 
   var eyePin = document.getElementById('cg-eye-pin');
   if (eyePin) eyePin.addEventListener('click', function() { toggleVisible('cg-user-pin', this); });
 
-  // Enter key in chat
   var msgInput = document.getElementById('cg-msg-input');
   if (msgInput) {
     msgInput.addEventListener('keydown', function(e) {
@@ -740,27 +770,32 @@ window.onload = function() {
     });
   }
 
-  // Location card
   var locationCard = document.getElementById('location-card');
   if (locationCard) locationCard.addEventListener('click', function() {
     window.open('https://www.google.com/maps/search/?api=1&query=301+Teel+Road+Beckley+WV+25801', '_blank');
   });
 
-  // YouTube launch card
   var ytLaunch = document.getElementById('yt-launch');
   if (ytLaunch) ytLaunch.addEventListener('click', function() {
     window.open('https://www.youtube.com/@maxwellhillbaptistchurch9695', '_blank');
   });
 
-  // Live badge
   var liveBadge = document.getElementById('liveBadge');
   if (liveBadge) liveBadge.addEventListener('click', function() { showPage('watch'); });
 
-  checkLiveBadge();
-  setInterval(checkLiveBadge, 60000);
-
+  // ---- START BACKGROUND UNREAD WATCHER ----
+  // If user is already logged in from a previous session,
+  // start watching their group for new messages immediately
   var ls = localStorage.getItem('mhbc_lastseen');
   if (ls) { try { lastSeenTimestamps = JSON.parse(ls); } catch(e) {} }
+
+  var savedUser = getSavedUser();
+  if (savedUser && savedUser.group && savedUser.name) {
+    startUnreadWatcher(savedUser.group, savedUser.name);
+  }
+
+  checkLiveBadge();
+  setInterval(checkLiveBadge, 60000);
 
   tryGenerateQR();
 };
