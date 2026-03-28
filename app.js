@@ -1,5 +1,5 @@
 // ============================================================
-// MHBC APP — app.js v10 — All buttons use event listeners
+// MHBC APP — app.js v11 — TeamReach style replies + comment counts
 // ============================================================
 
 var db = null;
@@ -48,7 +48,7 @@ function initFirebase() {
   db = firebase.firestore();
 }
 
-// ---- HIDE INPUT BAR ----
+// ---- INPUT BAR ----
 function hideInputBar() {
   var bar = document.getElementById('cg-input-bar');
   if (bar) bar.style.display = 'none';
@@ -70,7 +70,6 @@ function showPage(id) {
   var activeBtn = document.querySelector('.nav-btn[data-page="' + id + '"]');
   if (activeBtn) activeBtn.classList.add('active');
 
-  // Always hide input bar when navigating unless going to care chat
   hideInputBar();
 
   if (id === 'care') {
@@ -95,12 +94,8 @@ function showCGScreen(screen) {
   });
   var show = document.getElementById('cg-' + screen + '-screen');
   if (show) show.style.display = 'block';
-
-  if (screen === 'chat') {
-    showInputBar();
-  } else {
-    hideInputBar();
-  }
+  if (screen === 'chat') showInputBar();
+  else hideInputBar();
 }
 
 // ---- TOGGLE PASSWORD VISIBILITY ----
@@ -272,88 +267,186 @@ function loadMessages() {
         messagesEl.innerHTML = '<div class="cg-no-msgs">No messages yet. Say hello! 👋</div>';
         return;
       }
+
+      // Separate top-level and replies
       var topLevel = [];
+      var replyMap = {};
       snapshot.forEach(function(d) {
         var msg = d.data(); msg._id = d.id;
-        if (!msg.replyTo) topLevel.push(msg);
+        if (!msg.replyTo) {
+          topLevel.push(msg);
+          replyMap[d.id] = [];
+        }
       });
-      topLevel.forEach(function(msg) { renderMessage(msg, messagesEl, snapshot, false); });
+      snapshot.forEach(function(d) {
+        var msg = d.data(); msg._id = d.id;
+        if (msg.replyTo && replyMap[msg.replyTo]) {
+          replyMap[msg.replyTo].push(msg);
+        }
+      });
+
+      topLevel.forEach(function(msg, index) {
+        var replies = replyMap[msg._id] || [];
+        renderThread(msg, replies, messagesEl, index < topLevel.length - 1);
+      });
+
       messagesEl.scrollTop = messagesEl.scrollHeight;
       markAsRead();
     });
 }
 
-function renderMessage(msg, container, snapshot, isReply) {
-  var isMe = msg.author === currentUser.name;
-  var wrapper = document.createElement('div');
-  wrapper.className = 'cg-msg-wrapper' + (isReply ? ' cg-reply-wrapper' : '');
+// ---- RENDER THREAD (primary message + its replies) ----
+function renderThread(msg, replies, container, showDivider) {
+  var thread = document.createElement('div');
+  thread.className = 'cg-thread';
 
-  var div = document.createElement('div');
-  div.className = 'cg-msg ' + (isMe ? 'cg-msg-me' : 'cg-msg-them');
+  // Primary message
+  renderPrimaryMessage(msg, thread);
 
-  var time = msg.timestamp ? new Date(msg.timestamp.toMillis()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
-  var bubbleColor = isMe ? null : getBubbleColor(msg.author);
+  // Comment count bar
+  if (replies.length > 0 || true) {
+    var commentBar = document.createElement('div');
+    commentBar.className = 'cg-comment-bar';
 
-  if (!isMe) {
-    var authorDiv = document.createElement('div');
-    authorDiv.className = 'cg-msg-author';
-    authorDiv.textContent = msg.author;
-    authorDiv.style.color = bubbleColor;
-    div.appendChild(authorDiv);
+    var replyBtn = document.createElement('button');
+    replyBtn.className = 'cg-comment-btn';
+    var commentWord = replies.length === 1 ? 'Comment' : 'Comments';
+    replyBtn.textContent = replies.length > 0 ? '💬 ' + replies.length + ' ' + commentWord : '💬 Reply';
+    replyBtn.addEventListener('click', (function(id, author) {
+      return function() { setReply(id, author); };
+    })(msg._id, msg.author));
+    commentBar.appendChild(replyBtn);
+    thread.appendChild(commentBar);
   }
 
-  var bubble = document.createElement('div');
-  bubble.className = 'cg-msg-bubble';
-  bubble.textContent = msg.text;
-  if (!isMe && bubbleColor) bubble.style.background = bubbleColor;
+  // Replies indented below
+  if (replies.length > 0) {
+    var repliesContainer = document.createElement('div');
+    repliesContainer.className = 'cg-replies-container';
+    replies.forEach(function(reply) {
+      renderReplyMessage(reply, repliesContainer);
+    });
+    thread.appendChild(repliesContainer);
+  }
 
-  bubble.addEventListener('touchstart', (function(id, isMine) {
+  // Divider between threads
+  if (showDivider) {
+    var divider = document.createElement('div');
+    divider.className = 'cg-thread-divider';
+    thread.appendChild(divider);
+  }
+
+  container.appendChild(thread);
+}
+
+// ---- RENDER PRIMARY MESSAGE ----
+function renderPrimaryMessage(msg, container) {
+  var isMe = msg.author === currentUser.name;
+  var color = getBubbleColor(msg.author);
+  var time = msg.timestamp ? new Date(msg.timestamp.toMillis()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+
+  var row = document.createElement('div');
+  row.className = 'cg-primary-row';
+
+  // Avatar circle
+  var avatar = document.createElement('div');
+  avatar.className = 'cg-avatar';
+  avatar.textContent = msg.author.charAt(0).toUpperCase();
+  avatar.style.background = color;
+  row.appendChild(avatar);
+
+  // Content
+  var content = document.createElement('div');
+  content.className = 'cg-primary-content';
+
+  var header = document.createElement('div');
+  header.className = 'cg-primary-header';
+
+  var nameSpan = document.createElement('span');
+  nameSpan.className = 'cg-primary-name';
+  nameSpan.textContent = msg.author;
+  nameSpan.style.color = color;
+
+  var timeSpan = document.createElement('span');
+  timeSpan.className = 'cg-primary-time';
+  timeSpan.textContent = time;
+
+  header.appendChild(nameSpan);
+  header.appendChild(timeSpan);
+  content.appendChild(header);
+
+  var text = document.createElement('div');
+  text.className = 'cg-primary-text';
+  text.textContent = msg.text;
+  content.appendChild(text);
+
+  // Long press to delete
+  text.addEventListener('touchstart', (function(id, isMine) {
     return function() {
       longPressTimer = setTimeout(function() {
         if (isMine || currentUser.isAdmin) deleteMessage(id);
       }, 600);
     };
   })(msg._id, isMe));
-  bubble.addEventListener('touchend', function() { clearTimeout(longPressTimer); });
-  bubble.addEventListener('touchmove', function() { clearTimeout(longPressTimer); });
+  text.addEventListener('touchend', function() { clearTimeout(longPressTimer); });
+  text.addEventListener('touchmove', function() { clearTimeout(longPressTimer); });
 
-  div.appendChild(bubble);
+  row.appendChild(content);
+  container.appendChild(row);
+}
 
-  var footer = document.createElement('div');
-  footer.className = 'cg-msg-footer';
+// ---- RENDER REPLY MESSAGE ----
+function renderReplyMessage(msg, container) {
+  var isMe = msg.author === currentUser.name;
+  var color = getBubbleColor(msg.author);
+  var time = msg.timestamp ? new Date(msg.timestamp.toMillis()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+
+  var row = document.createElement('div');
+  row.className = 'cg-reply-row';
+
+  var avatar = document.createElement('div');
+  avatar.className = 'cg-avatar cg-avatar-sm';
+  avatar.textContent = msg.author.charAt(0).toUpperCase();
+  avatar.style.background = color;
+  row.appendChild(avatar);
+
+  var content = document.createElement('div');
+  content.className = 'cg-reply-content';
+
+  var header = document.createElement('div');
+  header.className = 'cg-primary-header';
+
+  var nameSpan = document.createElement('span');
+  nameSpan.className = 'cg-primary-name';
+  nameSpan.textContent = msg.author;
+  nameSpan.style.color = color;
+
   var timeSpan = document.createElement('span');
-  timeSpan.className = 'cg-msg-time';
+  timeSpan.className = 'cg-primary-time';
   timeSpan.textContent = time;
-  footer.appendChild(timeSpan);
 
-  if (!isReply) {
-    var replyBtn = document.createElement('span');
-    replyBtn.className = 'cg-reply-btn';
-    replyBtn.textContent = '↩ Reply';
-    replyBtn.addEventListener('click', (function(id, author) {
-      return function() { setReply(id, author); };
-    })(msg._id, msg.author));
-    footer.appendChild(replyBtn);
-  }
+  header.appendChild(nameSpan);
+  header.appendChild(timeSpan);
+  content.appendChild(header);
 
-  div.appendChild(footer);
-  wrapper.appendChild(div);
+  var text = document.createElement('div');
+  text.className = 'cg-reply-text';
+  text.textContent = msg.text;
 
-  if (!isReply) {
-    var replies = [];
-    snapshot.forEach(function(d) {
-      var m = d.data(); m._id = d.id;
-      if (m.replyTo === msg._id) replies.push(m);
-    });
-    if (replies.length > 0) {
-      var replyContainer = document.createElement('div');
-      replyContainer.className = 'cg-replies-container';
-      replies.forEach(function(reply) { renderMessage(reply, replyContainer, snapshot, true); });
-      wrapper.appendChild(replyContainer);
-    }
-  }
+  // Long press to delete
+  text.addEventListener('touchstart', (function(id, isMine) {
+    return function() {
+      longPressTimer = setTimeout(function() {
+        if (isMine || currentUser.isAdmin) deleteMessage(id);
+      }, 600);
+    };
+  })(msg._id, isMe));
+  text.addEventListener('touchend', function() { clearTimeout(longPressTimer); });
+  text.addEventListener('touchmove', function() { clearTimeout(longPressTimer); });
 
-  container.appendChild(wrapper);
+  content.appendChild(text);
+  row.appendChild(content);
+  container.appendChild(row);
 }
 
 // ---- SEND MESSAGE ----
@@ -427,28 +520,18 @@ function loadAdminLists() {
       pending.forEach(function(m) {
         var div = document.createElement('div');
         div.className = 'cg-member-row';
-
         var nameSpan = document.createElement('span');
         nameSpan.className = 'cg-member-name';
         nameSpan.textContent = m.name;
-
         var approveBtn = document.createElement('button');
         approveBtn.className = 'cg-approve-btn';
         approveBtn.textContent = 'Approve';
-        approveBtn.addEventListener('click', (function(id) {
-          return function() { approveMember(id); };
-        })(m._id));
-
+        approveBtn.addEventListener('click', (function(id) { return function() { approveMember(id); }; })(m._id));
         var denyBtn = document.createElement('button');
         denyBtn.className = 'cg-deny-btn';
         denyBtn.textContent = 'Deny';
-        denyBtn.addEventListener('click', (function(id) {
-          return function() { denyMember(id); };
-        })(m._id));
-
-        div.appendChild(nameSpan);
-        div.appendChild(approveBtn);
-        div.appendChild(denyBtn);
+        denyBtn.addEventListener('click', (function(id) { return function() { denyMember(id); }; })(m._id));
+        div.appendChild(nameSpan); div.appendChild(approveBtn); div.appendChild(denyBtn);
         pendingEl.appendChild(div);
       });
     }
@@ -460,20 +543,14 @@ function loadAdminLists() {
       approved.forEach(function(m) {
         var div = document.createElement('div');
         div.className = 'cg-member-row';
-
         var nameSpan = document.createElement('span');
         nameSpan.className = 'cg-member-name';
         nameSpan.textContent = m.name;
-
         var removeBtn = document.createElement('button');
         removeBtn.className = 'cg-deny-btn';
         removeBtn.textContent = 'Remove';
-        removeBtn.addEventListener('click', (function(id) {
-          return function() { removeMember(id); };
-        })(m._id));
-
-        div.appendChild(nameSpan);
-        div.appendChild(removeBtn);
+        removeBtn.addEventListener('click', (function(id) { return function() { removeMember(id); }; })(m._id));
+        div.appendChild(nameSpan); div.appendChild(removeBtn);
         approvedEl.appendChild(div);
       });
     }
@@ -484,12 +561,10 @@ function approveMember(memberId) {
   db.collection('groups').doc(currentGroup).collection('members').doc(memberId)
     .update({ approved: true }).then(loadAdminLists);
 }
-
 function denyMember(memberId) {
   db.collection('groups').doc(currentGroup).collection('members').doc(memberId)
     .delete().then(loadAdminLists);
 }
-
 function removeMember(memberId) {
   if (confirm('Remove this member from the group?')) {
     db.collection('groups').doc(currentGroup).collection('members').doc(memberId)
@@ -553,10 +628,6 @@ function tryGenerateQR() {
   } else { setTimeout(tryGenerateQR, 500); }
 }
 
-function escapeHtml(text) {
-  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
 // ---- LIVE BADGE ----
 function checkLiveBadge() {
   var now = new Date();
@@ -575,11 +646,9 @@ window.onload = function() {
   initFirebase();
   populateChapters('JHN', 1);
 
-  // Bible book change
   var bookSel = document.getElementById('bibleBook');
   if (bookSel) bookSel.addEventListener('change', function() { populateChapters(this.value, 1); });
 
-  // Bible translation pills
   document.querySelectorAll('.pill').forEach(function(pill) {
     pill.addEventListener('click', function() {
       document.querySelectorAll('.pill').forEach(function(p) { p.classList.remove('active'); });
@@ -589,7 +658,6 @@ window.onload = function() {
     });
   });
 
-  // Bible open button
   var bibleBtn = document.getElementById('openBibleBtn');
   if (bibleBtn) bibleBtn.addEventListener('click', openBible);
 
@@ -602,8 +670,7 @@ window.onload = function() {
   });
 
   // Quick access buttons
-  var quickBtns = document.querySelectorAll('.quick-btn');
-  quickBtns.forEach(function(btn) {
+  document.querySelectorAll('.quick-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       var action = this.getAttribute('data-action');
       var url = this.getAttribute('data-url');
@@ -621,15 +688,15 @@ window.onload = function() {
     });
   });
 
-  // Login button
+  // Login
   var loginBtn = document.getElementById('cg-login-submit');
   if (loginBtn) loginBtn.addEventListener('click', submitLogin);
 
-  // Check again button
+  // Check again
   var checkBtn = document.getElementById('cg-check-btn');
   if (checkBtn) checkBtn.addEventListener('click', checkApproval);
 
-  // Start over button
+  // Start over
   var startOverBtn = document.getElementById('cg-start-over-btn');
   if (startOverBtn) startOverBtn.addEventListener('click', startOver);
 
@@ -646,11 +713,11 @@ window.onload = function() {
   var leaveChatBtn = document.getElementById('cg-leave-chat');
   if (leaveChatBtn) leaveChatBtn.addEventListener('click', leaveChat);
 
-  // Admin button
+  // Admin
   var adminBtn = document.getElementById('cg-admin-btn');
   if (adminBtn) adminBtn.addEventListener('click', showAdminPanel);
 
-  // Send button
+  // Send
   var sendBtn = document.getElementById('cg-send-btn');
   if (sendBtn) sendBtn.addEventListener('click', sendMessage);
 
@@ -659,8 +726,8 @@ window.onload = function() {
   if (replyCancel) replyCancel.addEventListener('click', clearReply);
 
   // Eye buttons
-  var eyeRoomPass = document.getElementById('cg-eye-room');
-  if (eyeRoomPass) eyeRoomPass.addEventListener('click', function() { toggleVisible('cg-room-password', this); });
+  var eyeRoom = document.getElementById('cg-eye-room');
+  if (eyeRoom) eyeRoom.addEventListener('click', function() { toggleVisible('cg-room-password', this); });
 
   var eyePin = document.getElementById('cg-eye-pin');
   if (eyePin) eyePin.addEventListener('click', function() { toggleVisible('cg-user-pin', this); });
@@ -672,6 +739,7 @@ window.onload = function() {
       if (e.key === 'Enter') sendMessage();
     });
   }
+
   // Location card
   var locationCard = document.getElementById('location-card');
   if (locationCard) locationCard.addEventListener('click', function() {
