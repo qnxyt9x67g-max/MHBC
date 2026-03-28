@@ -1,5 +1,5 @@
 // ============================================================
-// MHBC APP — app.js v12 — Live unread badge counter
+// MHBC APP — app.js v13 — Notifications + Rich Media + Login fix
 // ============================================================
 
 var db = null;
@@ -11,6 +11,7 @@ var unreadListener = null;
 var lastSeenTimestamps = {};
 var replyingTo = null;
 var longPressTimer = null;
+var previousMessageCount = 0;
 
 // ---- BUBBLE COLORS ----
 var BUBBLE_COLORS = [
@@ -54,25 +55,37 @@ function hideInputBar() {
   var bar = document.getElementById('cg-input-bar');
   if (bar) bar.style.display = 'none';
 }
-
 function showInputBar() {
   var bar = document.getElementById('cg-input-bar');
   if (bar) bar.style.display = 'flex';
+}
+
+// ---- NOTIFICATION SOUND ----
+function playNotificationSound() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 520;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.4);
+  } catch(e) {}
 }
 
 // ---- PAGE NAVIGATION ----
 function showPage(id) {
   document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
   document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
-
   var target = document.getElementById('page-' + id);
   if (target) { target.classList.add('active'); window.scrollTo(0, 0); }
-
   var activeBtn = document.querySelector('.nav-btn[data-page="' + id + '"]');
   if (activeBtn) activeBtn.classList.add('active');
-
   hideInputBar();
-
   if (id === 'care') {
     var saved = getSavedUser();
     if (saved) {
@@ -232,40 +245,31 @@ function enterChat() {
 }
 
 // ---- BACKGROUND UNREAD WATCHER ----
-// Runs as soon as the app loads for any saved/logged-in user
-// Watches their group for new messages and updates the badge
-function startUnreadWatcher(groupId, userName) {
-  // Stop any existing watcher first
-  if (unreadListener) {
-    unreadListener();
-    unreadListener = null;
-  }
+function isInChat() {
+  var chatScreen = document.getElementById('cg-chat-screen');
+  var carePage = document.getElementById('page-care');
+  return chatScreen &&
+         chatScreen.style.display !== 'none' &&
+         carePage &&
+         carePage.classList.contains('active');
+}
 
-  var lastSeen = lastSeenTimestamps[groupId] || 0;
+function startUnreadWatcher(groupId, userName) {
+  if (unreadListener) { unreadListener(); unreadListener = null; }
+
+  var initialized = false;
+  var lastCount = 0;
 
   unreadListener = db.collection('groups').doc(groupId).collection('messages')
     .orderBy('timestamp', 'asc')
     .onSnapshot(function(snapshot) {
-      // Only count if we're NOT currently in that chat
-      var chatScreen = document.getElementById('cg-chat-screen');
-      var carePageActive = document.getElementById('page-care');
-      var inChat = chatScreen &&
-                   chatScreen.style.display !== 'none' &&
-                   carePageActive &&
-                   carePageActive.classList.contains('active');
-
-      if (inChat) {
-        // User is actively reading — keep badge at zero
-        updateNavBadge(0);
-        return;
-      }
-
-      var unread = 0;
       var refreshedLastSeen = lastSeenTimestamps[groupId] || 0;
+      var unread = 0;
+      var total = 0;
 
       snapshot.forEach(function(d) {
         var msg = d.data();
-        // Only count messages from OTHER people that arrived after last visit
+        total++;
         if (msg.author !== userName &&
             msg.timestamp &&
             msg.timestamp.toMillis() > refreshedLastSeen) {
@@ -273,7 +277,29 @@ function startUnreadWatcher(groupId, userName) {
         }
       });
 
-      updateNavBadge(unread);
+      // On first load just record the count, don't play sound
+      if (!initialized) {
+        initialized = true;
+        lastCount = total;
+        if (!isInChat()) updateNavBadge(unread);
+        return;
+      }
+
+      // New message arrived
+      if (total > lastCount) {
+        lastCount = total;
+        if (isInChat()) {
+          // User is reading — keep badge clear
+          updateNavBadge(0);
+        } else {
+          // User is elsewhere — show badge and play sound
+          updateNavBadge(unread);
+          if (unread > 0) playNotificationSound();
+        }
+      } else {
+        // Message deleted or no change
+        if (!isInChat()) updateNavBadge(unread);
+      }
     });
 }
 
@@ -312,6 +338,74 @@ function deleteMessage(msgId) {
   }
 }
 
+// ---- RICH MEDIA RENDERER ----
+function renderMessageContent(text, container) {
+  var urlRegex = /(https?:\/\/[^\s]+)/g;
+  var parts = text.split(urlRegex);
+  var urls = text.match(urlRegex) || [];
+  var urlIndex = 0;
+
+  parts.forEach(function(part) {
+    if (!part) return;
+
+    // Check if this part is a URL
+    if (part.match(/^https?:\/\//)) {
+      var url = part;
+
+      // YouTube
+      var ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+      if (ytMatch) {
+        var iframe = document.createElement('iframe');
+        iframe.src = 'https://www.youtube.com/embed/' + ytMatch[1];
+        iframe.className = 'msg-youtube';
+        iframe.setAttribute('allowfullscreen', '');
+        iframe.setAttribute('frameborder', '0');
+        iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+        container.appendChild(iframe);
+        return;
+      }
+
+      // Image
+      if (url.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i)) {
+        var img = document.createElement('img');
+        img.src = url;
+        img.className = 'msg-image';
+        img.addEventListener('click', function() { window.open(url, '_blank'); });
+        img.setAttribute('loading', 'lazy');
+        container.appendChild(img);
+        return;
+      }
+
+      // Video
+      if (url.match(/\.(mp4|webm|ogg)(\?.*)?$/i)) {
+        var video = document.createElement('video');
+        video.src = url;
+        video.className = 'msg-video';
+        video.controls = true;
+        video.setAttribute('playsinline', '');
+        container.appendChild(video);
+        return;
+      }
+
+      // Generic link
+      var link = document.createElement('a');
+      link.href = url;
+      link.textContent = url;
+      link.target = '_blank';
+      link.className = 'msg-link';
+      container.appendChild(link);
+
+    } else {
+      // Plain text
+      if (part.trim()) {
+        var span = document.createElement('span');
+        span.textContent = part;
+        container.appendChild(span);
+      }
+    }
+  });
+}
+
 // ---- LOAD MESSAGES ----
 function loadMessages() {
   if (messageListener) messageListener();
@@ -331,16 +425,11 @@ function loadMessages() {
       var replyMap = {};
       snapshot.forEach(function(d) {
         var msg = d.data(); msg._id = d.id;
-        if (!msg.replyTo) {
-          topLevel.push(msg);
-          replyMap[d.id] = [];
-        }
+        if (!msg.replyTo) { topLevel.push(msg); replyMap[d.id] = []; }
       });
       snapshot.forEach(function(d) {
         var msg = d.data(); msg._id = d.id;
-        if (msg.replyTo && replyMap[msg.replyTo]) {
-          replyMap[msg.replyTo].push(msg);
-        }
+        if (msg.replyTo && replyMap[msg.replyTo]) replyMap[msg.replyTo].push(msg);
       });
 
       topLevel.forEach(function(msg, index) {
@@ -357,7 +446,6 @@ function loadMessages() {
 function renderThread(msg, replies, container, showDivider) {
   var thread = document.createElement('div');
   thread.className = 'cg-thread';
-
   renderPrimaryMessage(msg, thread);
 
   var commentBar = document.createElement('div');
@@ -408,35 +496,32 @@ function renderPrimaryMessage(msg, container) {
 
   var header = document.createElement('div');
   header.className = 'cg-primary-header';
-
   var nameSpan = document.createElement('span');
   nameSpan.className = 'cg-primary-name';
   nameSpan.textContent = msg.author;
   nameSpan.style.color = color;
-
   var timeSpan = document.createElement('span');
   timeSpan.className = 'cg-primary-time';
   timeSpan.textContent = time;
-
   header.appendChild(nameSpan);
   header.appendChild(timeSpan);
   content.appendChild(header);
 
-  var text = document.createElement('div');
-  text.className = 'cg-primary-text';
-  text.textContent = msg.text;
+  var textDiv = document.createElement('div');
+  textDiv.className = 'cg-primary-text';
+  renderMessageContent(msg.text, textDiv);
 
-  text.addEventListener('touchstart', (function(id, isMine) {
+  textDiv.addEventListener('touchstart', (function(id, isMine) {
     return function() {
       longPressTimer = setTimeout(function() {
         if (isMine || currentUser.isAdmin) deleteMessage(id);
       }, 600);
     };
   })(msg._id, isMe));
-  text.addEventListener('touchend', function() { clearTimeout(longPressTimer); });
-  text.addEventListener('touchmove', function() { clearTimeout(longPressTimer); });
+  textDiv.addEventListener('touchend', function() { clearTimeout(longPressTimer); });
+  textDiv.addEventListener('touchmove', function() { clearTimeout(longPressTimer); });
 
-  content.appendChild(text);
+  content.appendChild(textDiv);
   row.appendChild(content);
   container.appendChild(row);
 }
@@ -461,35 +546,32 @@ function renderReplyMessage(msg, container) {
 
   var header = document.createElement('div');
   header.className = 'cg-primary-header';
-
   var nameSpan = document.createElement('span');
   nameSpan.className = 'cg-primary-name';
   nameSpan.textContent = msg.author;
   nameSpan.style.color = color;
-
   var timeSpan = document.createElement('span');
   timeSpan.className = 'cg-primary-time';
   timeSpan.textContent = time;
-
   header.appendChild(nameSpan);
   header.appendChild(timeSpan);
   content.appendChild(header);
 
-  var text = document.createElement('div');
-  text.className = 'cg-reply-text';
-  text.textContent = msg.text;
+  var textDiv = document.createElement('div');
+  textDiv.className = 'cg-reply-text';
+  renderMessageContent(msg.text, textDiv);
 
-  text.addEventListener('touchstart', (function(id, isMine) {
+  textDiv.addEventListener('touchstart', (function(id, isMine) {
     return function() {
       longPressTimer = setTimeout(function() {
         if (isMine || currentUser.isAdmin) deleteMessage(id);
       }, 600);
     };
   })(msg._id, isMe));
-  text.addEventListener('touchend', function() { clearTimeout(longPressTimer); });
-  text.addEventListener('touchmove', function() { clearTimeout(longPressTimer); });
+  textDiv.addEventListener('touchend', function() { clearTimeout(longPressTimer); });
+  textDiv.addEventListener('touchmove', function() { clearTimeout(longPressTimer); });
 
-  content.appendChild(text);
+  content.appendChild(textDiv);
   row.appendChild(content);
   container.appendChild(row);
 }
@@ -528,12 +610,6 @@ function markAsRead() {
   lastSeenTimestamps[currentGroup] = Date.now();
   localStorage.setItem('mhbc_lastseen', JSON.stringify(lastSeenTimestamps));
   updateNavBadge(0);
-}
-
-// ---- BADGES ----
-function updateBadge(groupId, count) {
-  var badge = document.getElementById('badge-' + groupId);
-  if (badge) { badge.textContent = count; badge.style.display = count > 0 ? 'flex' : 'none'; }
 }
 
 // ---- ADMIN PANEL ----
@@ -700,7 +776,6 @@ window.onload = function() {
   var bibleBtn = document.getElementById('openBibleBtn');
   if (bibleBtn) bibleBtn.addEventListener('click', openBible);
 
-  // Nav buttons
   document.querySelectorAll('.nav-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       var page = this.getAttribute('data-page');
@@ -708,7 +783,6 @@ window.onload = function() {
     });
   });
 
-  // Quick access buttons
   document.querySelectorAll('.quick-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       var action = this.getAttribute('data-action');
@@ -718,7 +792,6 @@ window.onload = function() {
     });
   });
 
-  // Care group buttons
   document.querySelectorAll('.cg-group-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       var groupId = this.getAttribute('data-group');
@@ -783,12 +856,11 @@ window.onload = function() {
   var liveBadge = document.getElementById('liveBadge');
   if (liveBadge) liveBadge.addEventListener('click', function() { showPage('watch'); });
 
-  // ---- START BACKGROUND UNREAD WATCHER ----
-  // If user is already logged in from a previous session,
-  // start watching their group for new messages immediately
+  // Load last seen timestamps
   var ls = localStorage.getItem('mhbc_lastseen');
   if (ls) { try { lastSeenTimestamps = JSON.parse(ls); } catch(e) {} }
 
+  // Start background watcher if already logged in
   var savedUser = getSavedUser();
   if (savedUser && savedUser.group && savedUser.name) {
     startUnreadWatcher(savedUser.group, savedUser.name);
@@ -796,6 +868,5 @@ window.onload = function() {
 
   checkLiveBadge();
   setInterval(checkLiveBadge, 60000);
-
   tryGenerateQR();
 };
