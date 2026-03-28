@@ -970,3 +970,128 @@ body {
   cursor: pointer;
   -webkit-appearance: none;
 }
+/* ---- CHAT THREAD STYLES v6 ---- */
+
+/* Fix iOS zoom on input focus */
+.cg-msg-input {
+  font-size: 16px !important;
+}
+
+.cg-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cg-thread-divider {
+  height: 1px;
+  background: rgba(201,168,76,0.15);
+  margin: 12px 0;
+}
+
+/* Primary message row */
+.cg-primary-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 4px 0;
+}
+
+/* Avatar circle */
+.cg-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.cg-avatar-sm {
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+}
+
+/* Primary content */
+.cg-primary-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.cg-primary-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+.cg-primary-name {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cg-primary-time {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.cg-primary-text {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* Comment bar */
+.cg-comment-bar {
+  padding: 4px 0 4px 46px;
+}
+
+.cg-comment-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: 'Lato', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 0;
+  -webkit-appearance: none;
+}
+
+.cg-comment-btn:active { color: var(--gold); }
+
+/* Replies container — indented */
+.cg-replies-container {
+  margin-left: 46px;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-left: 12px;
+  border-left: 2px solid rgba(201,168,76,0.2);
+}
+
+/* Reply row */
+.cg-reply-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.cg-reply-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.cg-reply-text {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+  word-break: break-word;
+}
