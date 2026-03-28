@@ -672,6 +672,21 @@ window.onload = function() {
       if (e.key === 'Enter') sendMessage();
     });
   }
+  // Location card
+  var locationCard = document.getElementById('location-card');
+  if (locationCard) locationCard.addEventListener('click', function() {
+    window.open('https://www.google.com/maps/search/?api=1&query=301+Teel+Road+Beckley+WV+25801', '_blank');
+  });
+
+  // YouTube launch card
+  var ytLaunch = document.getElementById('yt-launch');
+  if (ytLaunch) ytLaunch.addEventListener('click', function() {
+    window.open('https://www.youtube.com/@maxwellhillbaptistchurch9695', '_blank');
+  });
+
+  // Live badge
+  var liveBadge = document.getElementById('liveBadge');
+  if (liveBadge) liveBadge.addEventListener('click', function() { showPage('watch'); });
 
   checkLiveBadge();
   setInterval(checkLiveBadge, 60000);
