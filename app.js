@@ -1,5 +1,5 @@
 // ============================================================
-// MHBC APP — app.js v15 — Fixed Anonymous Auth
+// MHBC APP — app.js v16 — Fixed notifications, badges, audio
 // ============================================================
 
 var db = null;
@@ -9,10 +9,12 @@ var currentGroup = null;
 var currentGroupName = null;
 var currentUser = null;
 var messageListener = null;
-var unreadListener = null;
+var unreadListeners = {};
 var lastSeenTimestamps = {};
 var replyingTo = null;
 var longPressTimer = null;
+var audioUnlocked = false;
+var audioCtx = null;
 
 // ---- BUBBLE COLORS ----
 var BUBBLE_COLORS = [
@@ -52,6 +54,39 @@ function initFirebase() {
   auth = firebase.auth();
 }
 
+// ---- UNLOCK AUDIO ON FIRST TAP ----
+// iPhone requires audio to be started from a user gesture
+function unlockAudio() {
+  if (audioUnlocked) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Play a silent buffer to unlock
+    var buffer = audioCtx.createBuffer(1, 1, 22050);
+    var source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioCtx.destination);
+    source.start(0);
+    audioUnlocked = true;
+  } catch(e) {}
+}
+
+function playNotificationSound() {
+  if (!audioUnlocked || !audioCtx) return;
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.frequency.value = 520;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.4);
+  } catch(e) {}
+}
+
 // ---- INPUT BAR ----
 function hideInputBar() {
   var bar = document.getElementById('cg-input-bar');
@@ -60,23 +95,6 @@ function hideInputBar() {
 function showInputBar() {
   var bar = document.getElementById('cg-input-bar');
   if (bar) bar.style.display = 'flex';
-}
-
-// ---- NOTIFICATION SOUND ----
-function playNotificationSound() {
-  try {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    var osc = ctx.createOscillator();
-    var gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 520;
-    osc.type = 'sine';
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.4);
-  } catch(e) {}
 }
 
 // ---- PAGE NAVIGATION ----
@@ -155,19 +173,11 @@ function submitLogin() {
   var errEl = document.getElementById('cg-login-error');
   errEl.textContent = '';
 
-  if (!roomPass || !userName || !userPin) {
-    errEl.textContent = 'Please fill in all fields.';
-    return;
-  }
-  if (userPin.length < 4) {
-    errEl.textContent = 'PIN must be at least 4 characters.';
-    return;
-  }
+  if (!roomPass || !userName || !userPin) { errEl.textContent = 'Please fill in all fields.'; return; }
+  if (userPin.length < 4) { errEl.textContent = 'PIN must be at least 4 characters.'; return; }
 
-  // Get current auth user directly from Firebase
   var authUser = auth.currentUser;
   if (!authUser) {
-    // Try signing in again and retry
     errEl.textContent = 'Connecting... please wait a moment and try again.';
     auth.signInAnonymously().then(function(result) {
       currentUID = result.user.uid;
@@ -203,72 +213,40 @@ function submitLogin() {
             var privateRef = db.collection('groups').doc(currentGroup)
                                .collection('privateMembers').doc(currentUID);
             privateRef.get().then(function(privateSnap) {
-              if (!privateSnap.exists) {
-                errEl.textContent = 'Account error. Please use Start Over.';
-                return;
-              }
+              if (!privateSnap.exists) { errEl.textContent = 'Account error. Please use Start Over.'; return; }
               var pinData = privateSnap.data();
               hashInput(userPin, pinData.pinSalt).then(function(enteredPinHash) {
-                if (enteredPinHash !== pinData.pinHash) {
-                  errEl.textContent = 'Incorrect PIN. Try again.';
-                  return;
-                }
-                if (isAdmin && !memberSnap.data().approved) {
-                  memberRef.update({ approved: true });
-                }
-                currentUser = {
-                  group: currentGroup,
-                  groupName: currentGroupName,
-                  name: memberSnap.data().name,
-                  uid: currentUID,
-                  isAdmin: isAdmin
-                };
+                if (enteredPinHash !== pinData.pinHash) { errEl.textContent = 'Incorrect PIN. Try again.'; return; }
+                if (isAdmin && !memberSnap.data().approved) memberRef.update({ approved: true });
+                currentUser = { group: currentGroup, groupName: currentGroupName, name: memberSnap.data().name, uid: currentUID, isAdmin: isAdmin };
                 saveUser(currentUser);
+                // Start watcher after successful login
+                startUnreadWatcher(currentGroup, memberSnap.data().name);
                 if (memberSnap.data().approved || isAdmin) { enterChat(); }
-                else {
-                  document.getElementById('cg-pending-title').textContent = currentGroupName;
-                  showCGScreen('pending');
-                }
+                else { document.getElementById('cg-pending-title').textContent = currentGroupName; showCGScreen('pending'); }
               });
             });
           } else {
             var pinSalt = generateSalt();
             hashInput(userPin, pinSalt).then(function(pinHash) {
-              memberRef.set({
-                name: userName,
-                approved: isAdmin,
-                joinedAt: Date.now()
-              }).then(function() {
+              memberRef.set({ name: userName, approved: isAdmin, joinedAt: Date.now() }).then(function() {
                 return db.collection('groups').doc(currentGroup)
                           .collection('privateMembers').doc(currentUID)
                           .set({ pinHash: pinHash, pinSalt: pinSalt });
               }).then(function() {
-                currentUser = {
-                  group: currentGroup,
-                  groupName: currentGroupName,
-                  name: userName,
-                  uid: currentUID,
-                  isAdmin: isAdmin
-                };
+                currentUser = { group: currentGroup, groupName: currentGroupName, name: userName, uid: currentUID, isAdmin: isAdmin };
                 saveUser(currentUser);
+                // Start watcher after successful registration
+                startUnreadWatcher(currentGroup, userName);
                 if (isAdmin) { enterChat(); }
-                else {
-                  document.getElementById('cg-pending-title').textContent = currentGroupName;
-                  showCGScreen('pending');
-                }
-              }).catch(function(err) {
-                errEl.textContent = 'Save error: ' + err.message;
-              });
+                else { document.getElementById('cg-pending-title').textContent = currentGroupName; showCGScreen('pending'); }
+              }).catch(function(err) { errEl.textContent = 'Save error: ' + err.message; });
             });
           }
-        }).catch(function(err) {
-          errEl.textContent = 'Database error: ' + err.message;
-        });
+        }).catch(function(err) { errEl.textContent = 'Database error: ' + err.message; });
       });
     });
-  }).catch(function(err) {
-    errEl.textContent = 'Config error: ' + err.message;
-  });
+  }).catch(function(err) { errEl.textContent = 'Config error: ' + err.message; });
 }
 
 function generateSalt() {
@@ -282,27 +260,20 @@ function generateSalt() {
 function checkApproval() {
   if (!currentUser) return;
   var uid = currentUser.uid || currentUID;
-  db.collection('groups').doc(currentGroup)
-    .collection('members').doc(uid).get().then(function(snap) {
-      if (snap.exists && snap.data().approved) { enterChat(); }
-      else { alert('Not approved yet. Please wait for your group leader to approve you.'); }
-    });
+  db.collection('groups').doc(currentGroup).collection('members').doc(uid).get().then(function(snap) {
+    if (snap.exists && snap.data().approved) { enterChat(); }
+    else { alert('Not approved yet. Please wait for your group leader to approve you.'); }
+  });
 }
 
 function checkApprovalAndEnter() {
   if (!currentUser) return;
   var uid = currentUser.uid || currentUID;
-  db.collection('groups').doc(currentGroup)
-    .collection('members').doc(uid).get().then(function(snap) {
-      if (snap.exists && snap.data().approved) { enterChat(); }
-      else if (snap.exists) {
-        document.getElementById('cg-pending-title').textContent = currentGroupName;
-        showCGScreen('pending');
-      } else { clearSavedUser(); showCGScreen('select'); }
-    }).catch(function() {
-      clearSavedUser();
-      showCGScreen('select');
-    });
+  db.collection('groups').doc(currentGroup).collection('members').doc(uid).get().then(function(snap) {
+    if (snap.exists && snap.data().approved) { enterChat(); }
+    else if (snap.exists) { document.getElementById('cg-pending-title').textContent = currentGroupName; showCGScreen('pending'); }
+    else { clearSavedUser(); showCGScreen('select'); }
+  }).catch(function() { clearSavedUser(); showCGScreen('select'); });
 }
 
 // ---- ENTER CHAT ----
@@ -313,6 +284,9 @@ function enterChat() {
   showCGScreen('chat');
   loadMessages();
   markAsRead();
+  // Clear badge for this group when entering chat
+  updateRoomBadge(currentGroup, 0);
+  updateNavBadge();
 }
 
 // ---- IS IN CHAT ----
@@ -326,51 +300,90 @@ function isInChat() {
 }
 
 // ---- BACKGROUND UNREAD WATCHER ----
+// Watches a single group for unread messages
 function startUnreadWatcher(groupId, userName) {
-  if (unreadListener) { unreadListener(); unreadListener = null; }
+  // Stop existing watcher for this group if any
+  if (unreadListeners[groupId]) {
+    unreadListeners[groupId]();
+    delete unreadListeners[groupId];
+  }
+
   var initialized = false;
   var lastCount = 0;
 
-  unreadListener = db.collection('groups').doc(groupId)
+  unreadListeners[groupId] = db.collection('groups').doc(groupId)
     .collection('messages')
     .orderBy('timestamp', 'asc')
     .onSnapshot(function(snapshot) {
-      var refreshedLastSeen = lastSeenTimestamps[groupId] || 0;
+      var lastSeen = lastSeenTimestamps[groupId] || 0;
       var unread = 0;
-      var total = 0;
+      var total = snapshot.size;
+
       snapshot.forEach(function(d) {
         var msg = d.data();
-        total++;
         if (msg.author !== userName &&
             msg.timestamp &&
-            msg.timestamp.toMillis() > refreshedLastSeen) {
+            msg.timestamp.toMillis() > lastSeen) {
           unread++;
         }
       });
+
       if (!initialized) {
         initialized = true;
         lastCount = total;
-        if (!isInChat()) updateNavBadge(unread);
+        updateRoomBadge(groupId, isInChat() && currentGroup === groupId ? 0 : unread);
+        updateNavBadge();
         return;
       }
+
       if (total > lastCount) {
+        // New message arrived
         lastCount = total;
-        if (isInChat()) { updateNavBadge(0); }
-        else { updateNavBadge(unread); if (unread > 0) playNotificationSound(); }
+        if (isInChat() && currentGroup === groupId) {
+          // Currently reading this group — clear badge
+          updateRoomBadge(groupId, 0);
+          markAsRead();
+        } else {
+          // Not in this chat — show badge and sound
+          updateRoomBadge(groupId, unread);
+          if (unread > 0) playNotificationSound();
+        }
       } else {
-        if (!isInChat()) updateNavBadge(unread);
+        updateRoomBadge(groupId, isInChat() && currentGroup === groupId ? 0 : unread);
       }
+
+      updateNavBadge();
     }, function(err) {
-      console.log('Watcher error:', err.message);
+      console.log('Watcher error for ' + groupId + ':', err.message);
     });
 }
 
-// ---- UPDATE NAV BADGE ----
-function updateNavBadge(count) {
+// ---- UPDATE ROOM BADGE (individual group button) ----
+function updateRoomBadge(groupId, count) {
+  var badge = document.getElementById('badge-' + groupId);
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = count > 99 ? '99+' : count;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// ---- UPDATE NAV BADGE (bottom nav total) ----
+function updateNavBadge() {
   var navBadge = document.getElementById('nav-badge-care');
   if (!navBadge) return;
-  if (count > 0) {
-    navBadge.textContent = count > 99 ? '99+' : count;
+  var total = 0;
+  var groups = ['c101','narthex','fellowship1','fellowship2'];
+  groups.forEach(function(g) {
+    var badge = document.getElementById('badge-' + g);
+    if (badge && badge.style.display !== 'none') {
+      total += parseInt(badge.textContent || '0');
+    }
+  });
+  if (total > 0) {
+    navBadge.textContent = total > 99 ? '99+' : total;
     navBadge.style.display = 'flex';
   } else {
     navBadge.style.display = 'none';
@@ -396,8 +409,7 @@ function clearReply() {
 // ---- DELETE MESSAGE ----
 function deleteMessage(msgId) {
   if (confirm('Delete this message?')) {
-    db.collection('groups').doc(currentGroup)
-      .collection('messages').doc(msgId).delete();
+    db.collection('groups').doc(currentGroup).collection('messages').doc(msgId).delete();
   }
 }
 
@@ -460,16 +472,14 @@ function loadMessages() {
   var messagesEl = document.getElementById('cg-messages');
   messagesEl.innerHTML = '<div class="cg-loading">Loading messages...</div>';
   messageListener = db.collection('groups').doc(currentGroup)
-    .collection('messages')
-    .orderBy('timestamp', 'asc')
+    .collection('messages').orderBy('timestamp', 'asc')
     .onSnapshot(function(snapshot) {
       messagesEl.innerHTML = '';
       if (snapshot.empty) {
         messagesEl.innerHTML = '<div class="cg-no-msgs">No messages yet. Say hello! 👋</div>';
         return;
       }
-      var topLevel = [];
-      var replyMap = {};
+      var topLevel = [], replyMap = {};
       snapshot.forEach(function(d) {
         var msg = d.data(); msg._id = d.id;
         if (!msg.replyTo) { topLevel.push(msg); replyMap[d.id] = []; }
@@ -479,8 +489,7 @@ function loadMessages() {
         if (msg.replyTo && replyMap[msg.replyTo]) replyMap[msg.replyTo].push(msg);
       });
       topLevel.forEach(function(msg, index) {
-        var replies = replyMap[msg._id] || [];
-        renderThread(msg, replies, messagesEl, index < topLevel.length - 1);
+        renderThread(msg, replyMap[msg._id] || [], messagesEl, index < topLevel.length - 1);
       });
       messagesEl.scrollTop = messagesEl.scrollHeight;
       markAsRead();
@@ -496,8 +505,7 @@ function renderThread(msg, replies, container, showDivider) {
   commentBar.className = 'cg-comment-bar';
   var replyBtn = document.createElement('button');
   replyBtn.className = 'cg-comment-btn';
-  var commentWord = replies.length === 1 ? 'Comment' : 'Comments';
-  replyBtn.textContent = replies.length > 0 ? '💬 ' + replies.length + ' ' + commentWord : '💬 Reply';
+  replyBtn.textContent = replies.length > 0 ? '💬 ' + replies.length + (replies.length === 1 ? ' Comment' : ' Comments') : '💬 Reply';
   replyBtn.addEventListener('click', (function(id, author) {
     return function() { setReply(id, author); };
   })(msg._id, msg.author));
@@ -547,11 +555,7 @@ function renderPrimaryMessage(msg, container) {
   textDiv.className = 'cg-primary-text';
   renderMessageContent(msg.text, textDiv);
   textDiv.addEventListener('touchstart', (function(id, isMine) {
-    return function() {
-      longPressTimer = setTimeout(function() {
-        if (isMine || currentUser.isAdmin) deleteMessage(id);
-      }, 600);
-    };
+    return function() { longPressTimer = setTimeout(function() { if (isMine || currentUser.isAdmin) deleteMessage(id); }, 600); };
   })(msg._id, isMe));
   textDiv.addEventListener('touchend', function() { clearTimeout(longPressTimer); });
   textDiv.addEventListener('touchmove', function() { clearTimeout(longPressTimer); });
@@ -590,11 +594,7 @@ function renderReplyMessage(msg, container) {
   textDiv.className = 'cg-reply-text';
   renderMessageContent(msg.text, textDiv);
   textDiv.addEventListener('touchstart', (function(id, isMine) {
-    return function() {
-      longPressTimer = setTimeout(function() {
-        if (isMine || currentUser.isAdmin) deleteMessage(id);
-      }, 600);
-    };
+    return function() { longPressTimer = setTimeout(function() { if (isMine || currentUser.isAdmin) deleteMessage(id); }, 600); };
   })(msg._id, isMe));
   textDiv.addEventListener('touchend', function() { clearTimeout(longPressTimer); });
   textDiv.addEventListener('touchmove', function() { clearTimeout(longPressTimer); });
@@ -609,15 +609,8 @@ function sendMessage() {
   var text = input.value.trim();
   if (!text || !db) return;
   input.value = '';
-  var msgData = {
-    text: text, author: currentUser.name,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-  };
-  if (replyingTo) {
-    msgData.replyTo = replyingTo.id;
-    msgData.replyToAuthor = replyingTo.author;
-    clearReply();
-  }
+  var msgData = { text: text, author: currentUser.name, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+  if (replyingTo) { msgData.replyTo = replyingTo.id; msgData.replyToAuthor = replyingTo.author; clearReply(); }
   db.collection('groups').doc(currentGroup).collection('messages').add(msgData);
 }
 
@@ -636,7 +629,8 @@ function markAsRead() {
   if (!currentGroup) return;
   lastSeenTimestamps[currentGroup] = Date.now();
   localStorage.setItem('mhbc_lastseen', JSON.stringify(lastSeenTimestamps));
-  updateNavBadge(0);
+  updateRoomBadge(currentGroup, 0);
+  updateNavBadge();
 }
 
 // ---- ADMIN PANEL ----
@@ -649,45 +643,28 @@ function loadAdminLists() {
   approvedEl.innerHTML = '<div class="cg-loading">Loading...</div>';
   db.collection('groups').doc(currentGroup).collection('members').get().then(function(snap) {
     var pending = [], approved = [];
-    snap.forEach(function(d) {
-      var data = d.data(); data._id = d.id;
-      if (data.approved) approved.push(data); else pending.push(data);
-    });
+    snap.forEach(function(d) { var data = d.data(); data._id = d.id; if (data.approved) approved.push(data); else pending.push(data); });
     pendingEl.innerHTML = '';
-    if (pending.length === 0) {
-      pendingEl.innerHTML = '<div class="cg-empty-note">No pending requests</div>';
-    } else {
+    if (pending.length === 0) { pendingEl.innerHTML = '<div class="cg-empty-note">No pending requests</div>'; }
+    else {
       pending.forEach(function(m) {
-        var div = document.createElement('div');
-        div.className = 'cg-member-row';
-        var nameSpan = document.createElement('span');
-        nameSpan.className = 'cg-member-name';
-        nameSpan.textContent = m.name;
-        var approveBtn = document.createElement('button');
-        approveBtn.className = 'cg-approve-btn';
-        approveBtn.textContent = 'Approve';
+        var div = document.createElement('div'); div.className = 'cg-member-row';
+        var nameSpan = document.createElement('span'); nameSpan.className = 'cg-member-name'; nameSpan.textContent = m.name;
+        var approveBtn = document.createElement('button'); approveBtn.className = 'cg-approve-btn'; approveBtn.textContent = 'Approve';
         approveBtn.addEventListener('click', (function(id) { return function() { approveMember(id); }; })(m._id));
-        var denyBtn = document.createElement('button');
-        denyBtn.className = 'cg-deny-btn';
-        denyBtn.textContent = 'Deny';
+        var denyBtn = document.createElement('button'); denyBtn.className = 'cg-deny-btn'; denyBtn.textContent = 'Deny';
         denyBtn.addEventListener('click', (function(id) { return function() { denyMember(id); }; })(m._id));
         div.appendChild(nameSpan); div.appendChild(approveBtn); div.appendChild(denyBtn);
         pendingEl.appendChild(div);
       });
     }
     approvedEl.innerHTML = '';
-    if (approved.length === 0) {
-      approvedEl.innerHTML = '<div class="cg-empty-note">No approved members yet</div>';
-    } else {
+    if (approved.length === 0) { approvedEl.innerHTML = '<div class="cg-empty-note">No approved members yet</div>'; }
+    else {
       approved.forEach(function(m) {
-        var div = document.createElement('div');
-        div.className = 'cg-member-row';
-        var nameSpan = document.createElement('span');
-        nameSpan.className = 'cg-member-name';
-        nameSpan.textContent = m.name;
-        var removeBtn = document.createElement('button');
-        removeBtn.className = 'cg-deny-btn';
-        removeBtn.textContent = 'Remove';
+        var div = document.createElement('div'); div.className = 'cg-member-row';
+        var nameSpan = document.createElement('span'); nameSpan.className = 'cg-member-name'; nameSpan.textContent = m.name;
+        var removeBtn = document.createElement('button'); removeBtn.className = 'cg-deny-btn'; removeBtn.textContent = 'Remove';
         removeBtn.addEventListener('click', (function(id) { return function() { removeMember(id); }; })(m._id));
         div.appendChild(nameSpan); div.appendChild(removeBtn);
         approvedEl.appendChild(div);
@@ -701,29 +678,23 @@ function approveMember(memberId) {
     .update({ approved: true }).then(loadAdminLists);
 }
 function denyMember(memberId) {
-  db.collection('groups').doc(currentGroup).collection('members').doc(memberId)
-    .delete().then(function() {
-      db.collection('groups').doc(currentGroup).collection('privateMembers').doc(memberId).delete();
-      loadAdminLists();
-    });
+  db.collection('groups').doc(currentGroup).collection('members').doc(memberId).delete().then(function() {
+    db.collection('groups').doc(currentGroup).collection('privateMembers').doc(memberId).delete();
+    loadAdminLists();
+  });
 }
 function removeMember(memberId) {
   if (confirm('Remove this member from the group?')) {
-    db.collection('groups').doc(currentGroup).collection('members').doc(memberId)
-      .delete().then(function() {
-        db.collection('groups').doc(currentGroup).collection('privateMembers').doc(memberId).delete();
-        loadAdminLists();
-      });
+    db.collection('groups').doc(currentGroup).collection('members').doc(memberId).delete().then(function() {
+      db.collection('groups').doc(currentGroup).collection('privateMembers').doc(memberId).delete();
+      loadAdminLists();
+    });
   }
 }
 
 // ---- LOCAL STORAGE ----
 function saveUser(user) { localStorage.setItem('mhbc_cg_user', JSON.stringify(user)); }
-function getSavedUser() {
-  var raw = localStorage.getItem('mhbc_cg_user');
-  if (!raw) return null;
-  try { return JSON.parse(raw); } catch(e) { return null; }
-}
+function getSavedUser() { var raw = localStorage.getItem('mhbc_cg_user'); if (!raw) return null; try { return JSON.parse(raw); } catch(e) { return null; } }
 function clearSavedUser() { localStorage.removeItem('mhbc_cg_user'); }
 
 // ---- BIBLE PICKER ----
@@ -764,12 +735,7 @@ function tryGenerateQR() {
   var qrEl = document.getElementById('appQR');
   if (!qrEl) return;
   if (typeof QRCode !== 'undefined') {
-    new QRCode(qrEl, {
-      text: 'https://qnxyt9x67g-max.github.io/MHBC/',
-      width: 90, height: 90,
-      colorDark: '#0a1628', colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.H
-    });
+    new QRCode(qrEl, { text: 'https://qnxyt9x67g-max.github.io/MHBC/', width: 90, height: 90, colorDark: '#0a1628', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
   } else { setTimeout(tryGenerateQR, 500); }
 }
 
@@ -780,10 +746,8 @@ function checkLiveBadge() {
   var est = new Date(utc + (-5 * 3600000));
   var day = est.getDay();
   var totalMins = est.getHours() * 60 + est.getMinutes();
-  var sundayLive = (day === 0 && totalMins >= 570 && totalMins <= 660);
-  var wednesdayLive = (day === 3 && totalMins >= 1140 && totalMins <= 1200);
   var badge = document.getElementById('liveBadge');
-  if (badge) badge.style.display = (sundayLive || wednesdayLive) ? 'flex' : 'none';
+  if (badge) badge.style.display = ((day === 0 && totalMins >= 570 && totalMins <= 660) || (day === 3 && totalMins >= 1140 && totalMins <= 1200)) ? 'flex' : 'none';
 }
 
 // ---- INIT ----
@@ -793,10 +757,10 @@ window.onload = function() {
   var ls = localStorage.getItem('mhbc_lastseen');
   if (ls) { try { lastSeenTimestamps = JSON.parse(ls); } catch(e) {} }
 
-  // Wire up all buttons
   populateChapters('JHN', 1);
   var bookSel = document.getElementById('bibleBook');
   if (bookSel) bookSel.addEventListener('change', function() { populateChapters(this.value, 1); });
+
   document.querySelectorAll('.pill').forEach(function(pill) {
     pill.addEventListener('click', function() {
       document.querySelectorAll('.pill').forEach(function(p) { p.classList.remove('active'); });
@@ -805,67 +769,88 @@ window.onload = function() {
       currentCode = this.getAttribute('data-code');
     });
   });
+
   var bibleBtn = document.getElementById('openBibleBtn');
   if (bibleBtn) bibleBtn.addEventListener('click', openBible);
+
   document.querySelectorAll('.nav-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
+      unlockAudio(); // Unlock audio on any user tap
       var page = this.getAttribute('data-page');
       if (page) showPage(page);
     });
   });
+
   document.querySelectorAll('.quick-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
+      unlockAudio();
       var action = this.getAttribute('data-action');
       var url = this.getAttribute('data-url');
       if (action) showPage(action);
       else if (url) window.open(url, '_blank');
     });
   });
+
   document.querySelectorAll('.cg-group-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
+      unlockAudio();
       var groupId = this.getAttribute('data-group');
       var groupName = this.getAttribute('data-name');
       if (groupId && groupName) selectGroup(groupId, groupName);
     });
   });
+
   var loginBtn = document.getElementById('cg-login-submit');
-  if (loginBtn) loginBtn.addEventListener('click', submitLogin);
+  if (loginBtn) loginBtn.addEventListener('click', function() { unlockAudio(); submitLogin(); });
+
   var checkBtn = document.getElementById('cg-check-btn');
   if (checkBtn) checkBtn.addEventListener('click', checkApproval);
+
   var startOverBtn = document.getElementById('cg-start-over-btn');
   if (startOverBtn) startOverBtn.addEventListener('click', startOver);
+
   var backToSelect = document.getElementById('cg-back-to-select');
   if (backToSelect) backToSelect.addEventListener('click', function() { showCGScreen('select'); });
+
   var backToSelectFromPending = document.getElementById('cg-back-to-select-pending');
   if (backToSelectFromPending) backToSelectFromPending.addEventListener('click', function() { showCGScreen('select'); });
+
   var backToChat = document.getElementById('cg-back-to-chat');
   if (backToChat) backToChat.addEventListener('click', function() { showCGScreen('chat'); });
+
   var leaveChatBtn = document.getElementById('cg-leave-chat');
   if (leaveChatBtn) leaveChatBtn.addEventListener('click', leaveChat);
+
   var adminBtn = document.getElementById('cg-admin-btn');
   if (adminBtn) adminBtn.addEventListener('click', showAdminPanel);
+
   var sendBtn = document.getElementById('cg-send-btn');
-  if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+  if (sendBtn) sendBtn.addEventListener('click', function() { unlockAudio(); sendMessage(); });
+
   var replyCancel = document.getElementById('cg-reply-cancel');
   if (replyCancel) replyCancel.addEventListener('click', clearReply);
+
   var eyeRoom = document.getElementById('cg-eye-room');
   if (eyeRoom) eyeRoom.addEventListener('click', function() { toggleVisible('cg-room-password', this); });
+
   var eyePin = document.getElementById('cg-eye-pin');
   if (eyePin) eyePin.addEventListener('click', function() { toggleVisible('cg-user-pin', this); });
+
   var msgInput = document.getElementById('cg-msg-input');
   if (msgInput) {
-    msgInput.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') sendMessage();
-    });
+    msgInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') sendMessage(); });
   }
+
   var locationCard = document.getElementById('location-card');
   if (locationCard) locationCard.addEventListener('click', function() {
     window.open('https://www.google.com/maps/search/?api=1&query=301+Teel+Road+Beckley+WV+25801', '_blank');
   });
+
   var ytLaunch = document.getElementById('yt-launch');
   if (ytLaunch) ytLaunch.addEventListener('click', function() {
     window.open('https://www.youtube.com/@maxwellhillbaptistchurch9695', '_blank');
   });
+
   var liveBadge = document.getElementById('liveBadge');
   if (liveBadge) liveBadge.addEventListener('click', function() { showPage('watch'); });
 
@@ -874,19 +859,15 @@ window.onload = function() {
   tryGenerateQR();
 
   // ---- AUTH STATE LISTENER ----
-  // This is the key fix — wait for Firebase to confirm auth
-  // before allowing any database access
   auth.onAuthStateChanged(function(user) {
     if (user) {
-      // User is signed in
       currentUID = user.uid;
-      // Start background watcher if already logged in
+      // Start watcher if already logged in from previous session
       var savedUser = getSavedUser();
       if (savedUser && savedUser.group && savedUser.name) {
         startUnreadWatcher(savedUser.group, savedUser.name);
       }
     } else {
-      // No user — sign in anonymously
       auth.signInAnonymously().catch(function(err) {
         console.error('Sign in failed:', err.code, err.message);
       });
