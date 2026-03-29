@@ -50,29 +50,23 @@ function initFirebase() {
   firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
   auth = firebase.auth();
-  auth.onAuthStateChanged(function(user) {
-  console.log('AUTH STATE:', user ? user.uid : null);
-  if (user) currentUID = user.uid;
-});
 }
 
 // ---- SIGN IN ANONYMOUSLY ----
 function signInAnonymously() {
-  return auth.signInAnonymously()
-    .then(function(result) {
-      currentUID = result.user.uid;
+  return auth.signInAnonymously().then(function(result) {
+    currentUID = result.user.uid;
+    // Check if we have a saved UID mapping
+    var savedUID = localStorage.getItem('mhbc_uid');
+    if (!savedUID) {
       localStorage.setItem('mhbc_uid', currentUID);
-      console.log('SIGNED IN:', currentUID);
-      return result;
-    })
-    .catch(function(err) {
-      console.error('Auth error:', err);
-      var errEl = document.getElementById('cg-login-error');
-      if (errEl) {
-        errEl.textContent = 'Auth error: ' + (err.code || err.message);
-      }
-      throw err;
-    });
+    } else {
+      // Use the saved UID for consistency
+      currentUID = savedUID;
+    }
+  }).catch(function(err) {
+    console.error('Auth error:', err);
+  });
 }
 
 // ---- INPUT BAR ----
@@ -952,13 +946,5 @@ window.onload = function() {
     setInterval(checkLiveBadge, 60000);
     tryGenerateQR();
 
-  })
-.catch(function(err) {
-  console.error('Startup auth failed:', err);
-
-  var errEl = document.getElementById('cg-login-error');
-  if (errEl) {
-    errEl.textContent = 'Auth error: ' + (err.code || err.message);
-  }
-});
+  });
 };
