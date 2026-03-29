@@ -54,14 +54,22 @@ function initFirebase() {
 
 // ---- SIGN IN ANONYMOUSLY ----
 function signInAnonymously() {
-  return auth.signInAnonymously().then(function(result) {
-    currentUID = result.user.uid;
-    // Check if we have a saved UID mapping
-    currentUID = result.user.uid;
-localStorage.setItem('mhbc_uid', currentUID);
-  }).catch(function(err) {
-    console.error('Auth error:', err);
-  });
+  return auth.signInAnonymously()
+    .then(function(result) {
+      currentUID = result.user.uid;
+      localStorage.setItem('mhbc_uid', currentUID);
+
+      console.log("SIGNED IN:", currentUID); // 👈 add this
+    })
+    .catch(function(err) {
+      console.error('Auth error:', err);
+
+      // 👇 ADD THIS so we SEE the real error in your app
+      var errEl = document.getElementById('cg-login-error');
+      if (errEl) {
+        errEl.textContent = 'Auth error: ' + (err.code || err.message);
+      }
+    });
 }
 
 // ---- INPUT BAR ----
