@@ -1,5 +1,5 @@
 // ============================================================
-// MHBC APP — app.js v16 — Fixed notifications, badges, audio
+// MHBC APP — app.js v17
 // ============================================================
 
 var db = null;
@@ -9,7 +9,8 @@ var currentGroup = null;
 var currentGroupName = null;
 var currentUser = null;
 var messageListener = null;
-var unreadListeners = {};
+var unreadListener = null;
+var unreadCount = 0;
 var lastSeenTimestamps = {};
 var replyingTo = null;
 var longPressTimer = null;
@@ -54,13 +55,11 @@ function initFirebase() {
   auth = firebase.auth();
 }
 
-// ---- UNLOCK AUDIO ON FIRST TAP ----
-// iPhone requires audio to be started from a user gesture
+// ---- AUDIO ----
 function unlockAudio() {
   if (audioUnlocked) return;
   try {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    // Play a silent buffer to unlock
     var buffer = audioCtx.createBuffer(1, 1, 22050);
     var source = audioCtx.createBufferSource();
     source.buffer = buffer;
@@ -71,7 +70,7 @@ function unlockAudio() {
 }
 
 function playNotificationSound() {
-  if (!audioUnlocked || !audioCtx) return;
+  if (!audioCtx) return;
   try {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     var osc = audioCtx.createOscillator();
@@ -85,6 +84,21 @@ function playNotificationSound() {
     osc.start(audioCtx.currentTime);
     osc.stop(audioCtx.currentTime + 0.4);
   } catch(e) {}
+}
+
+// ---- BADGES ----
+function setUnreadCount(count) {
+  unreadCount = count;
+  var roomBadge = document.getElementById('badge-' + currentGroup);
+  var navBadge = document.getElementById('nav-badge-care');
+  if (count > 0) {
+    var label = count > 99 ? '99+' : count;
+    if (roomBadge) { roomBadge.textContent = label; roomBadge.style.display = 'flex'; }
+    if (navBadge) { navBadge.textContent = label; navBadge.style.display = 'flex'; }
+  } else {
+    if (roomBadge) roomBadge.style.display = 'none';
+    if (navBadge) navBadge.style.display = 'none';
+  }
 }
 
 // ---- INPUT BAR ----
@@ -121,7 +135,7 @@ function showPage(id) {
 
 // ---- CARE GROUPS SCREENS ----
 function showCGScreen(screen) {
-  var screens = ['select','login','pending','chat','admin'];
+  var screens = ['select','login','pending','chat','members','admin'];
   screens.forEach(function(s) {
     var el = document.getElementById('cg-' + s + '-screen');
     if (el) el.style.display = 'none';
@@ -174,7 +188,7 @@ function submitLogin() {
   errEl.textContent = '';
 
   if (!roomPass || !userName || !userPin) { errEl.textContent = 'Please fill in all fields.'; return; }
-  if (userPin.length < 4) { errEl.textContent = 'PIN must be at least 4 characters.'; return; }
+  if (userPin.length < 4) { errEl.textContent = 'Password must be at least 4 characters.'; return; }
 
   var authUser = auth.currentUser;
   if (!authUser) {
@@ -216,11 +230,10 @@ function submitLogin() {
               if (!privateSnap.exists) { errEl.textContent = 'Account error. Please use Start Over.'; return; }
               var pinData = privateSnap.data();
               hashInput(userPin, pinData.pinSalt).then(function(enteredPinHash) {
-                if (enteredPinHash !== pinData.pinHash) { errEl.textContent = 'Incorrect PIN. Try again.'; return; }
+                if (enteredPinHash !== pinData.pinHash) { errEl.textContent = 'Incorrect password. Try again.'; return; }
                 if (isAdmin && !memberSnap.data().approved) memberRef.update({ approved: true });
                 currentUser = { group: currentGroup, groupName: currentGroupName, name: memberSnap.data().name, uid: currentUID, isAdmin: isAdmin };
                 saveUser(currentUser);
-                // Start watcher after successful login
                 startUnreadWatcher(currentGroup, memberSnap.data().name);
                 if (memberSnap.data().approved || isAdmin) { enterChat(); }
                 else { document.getElementById('cg-pending-title').textContent = currentGroupName; showCGScreen('pending'); }
@@ -236,7 +249,6 @@ function submitLogin() {
               }).then(function() {
                 currentUser = { group: currentGroup, groupName: currentGroupName, name: userName, uid: currentUID, isAdmin: isAdmin };
                 saveUser(currentUser);
-                // Start watcher after successful registration
                 startUnreadWatcher(currentGroup, userName);
                 if (isAdmin) { enterChat(); }
                 else { document.getElementById('cg-pending-title').textContent = currentGroupName; showCGScreen('pending'); }
@@ -279,14 +291,13 @@ function checkApprovalAndEnter() {
 // ---- ENTER CHAT ----
 function enterChat() {
   document.getElementById('cg-chat-title').textContent = currentGroupName;
-  var adminBtn = document.getElementById('cg-admin-btn');
-  adminBtn.style.display = currentUser.isAdmin ? 'block' : 'none';
+  // Show members button for everyone
+  var membersBtn = document.getElementById('cg-members-btn');
+  if (membersBtn) membersBtn.style.display = 'block';
   showCGScreen('chat');
   loadMessages();
+  // Mark as read but keep badge until messages actually load
   markAsRead();
-  // Clear badge for this group when entering chat
-  updateRoomBadge(currentGroup, 0);
-  updateNavBadge();
 }
 
 // ---- IS IN CHAT ----
@@ -299,95 +310,61 @@ function isInChat() {
          carePage.classList.contains('active');
 }
 
-// ---- BACKGROUND UNREAD WATCHER ----
-// Watches a single group for unread messages
+// ---- UNREAD WATCHER ----
+// Simple single-room watcher
 function startUnreadWatcher(groupId, userName) {
-  // Stop existing watcher for this group if any
-  if (unreadListeners[groupId]) {
-    unreadListeners[groupId]();
-    delete unreadListeners[groupId];
-  }
+  if (unreadListener) { unreadListener(); unreadListener = null; }
 
   var initialized = false;
   var lastCount = 0;
 
-  unreadListeners[groupId] = db.collection('groups').doc(groupId)
+  unreadListener = db.collection('groups').doc(groupId)
     .collection('messages')
     .orderBy('timestamp', 'asc')
     .onSnapshot(function(snapshot) {
       var lastSeen = lastSeenTimestamps[groupId] || 0;
-      var unread = 0;
       var total = snapshot.size;
 
+      // Count messages from others after last seen
+      var newUnread = 0;
       snapshot.forEach(function(d) {
         var msg = d.data();
         if (msg.author !== userName &&
             msg.timestamp &&
             msg.timestamp.toMillis() > lastSeen) {
-          unread++;
+          newUnread++;
         }
       });
 
       if (!initialized) {
+        // First load — set baseline, show existing unread if any
         initialized = true;
         lastCount = total;
-        updateRoomBadge(groupId, isInChat() && currentGroup === groupId ? 0 : unread);
-        updateNavBadge();
+        if (!isInChat()) setUnreadCount(newUnread);
         return;
       }
 
       if (total > lastCount) {
         // New message arrived
         lastCount = total;
-        if (isInChat() && currentGroup === groupId) {
-          // Currently reading this group — clear badge
-          updateRoomBadge(groupId, 0);
+
+        if (isInChat()) {
+          // Inside chat — mark read immediately, clear badge
           markAsRead();
+          setUnreadCount(0);
         } else {
-          // Not in this chat — show badge and sound
-          updateRoomBadge(groupId, unread);
-          if (unread > 0) playNotificationSound();
+          // Outside chat — show badge
+          setUnreadCount(newUnread);
         }
-      } else {
-        updateRoomBadge(groupId, isInChat() && currentGroup === groupId ? 0 : unread);
+
+        // Sound plays always when new message arrives from someone else
+        if (newUnread > 0 || total > lastCount) {
+          playNotificationSound();
+        }
       }
-
-      updateNavBadge();
     }, function(err) {
-      console.log('Watcher error for ' + groupId + ':', err.message);
+      console.log('Watcher error:', err.message);
     });
-}
-
-// ---- UPDATE ROOM BADGE (individual group button) ----
-function updateRoomBadge(groupId, count) {
-  var badge = document.getElementById('badge-' + groupId);
-  if (!badge) return;
-  if (count > 0) {
-    badge.textContent = count > 99 ? '99+' : count;
-    badge.style.display = 'flex';
-  } else {
-    badge.style.display = 'none';
-  }
-}
-
-// ---- UPDATE NAV BADGE (bottom nav total) ----
-function updateNavBadge() {
-  var navBadge = document.getElementById('nav-badge-care');
-  if (!navBadge) return;
-  var total = 0;
-  var groups = ['c101','narthex','fellowship1','fellowship2'];
-  groups.forEach(function(g) {
-    var badge = document.getElementById('badge-' + g);
-    if (badge && badge.style.display !== 'none') {
-      total += parseInt(badge.textContent || '0');
-    }
-  });
-  if (total > 0) {
-    navBadge.textContent = total > 99 ? '99+' : total;
-    navBadge.style.display = 'flex';
-  } else {
-    navBadge.style.display = 'none';
-  }
 }
 
 // ---- REPLY ----
@@ -413,25 +390,61 @@ function deleteMessage(msgId) {
   }
 }
 
+// ---- YOUTUBE ID EXTRACTOR ----
+function extractYouTubeId(url) {
+  var patterns = [
+    /youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]{11})/,
+    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/
+  ];
+  for (var i = 0; i < patterns.length; i++) {
+    var match = url.match(patterns[i]);
+    if (match) return match[1];
+  }
+  return null;
+}
+
 // ---- RICH MEDIA RENDERER ----
 function renderMessageContent(text, container) {
   var urlRegex = /(https?:\/\/[^\s]+)/g;
   var parts = text.split(urlRegex);
+
   parts.forEach(function(part) {
     if (!part) return;
+
     if (part.match(/^https?:\/\//)) {
       var url = part;
-      var ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-      if (ytMatch) {
+
+      // YouTube — try embed, fallback to thumbnail
+      var ytId = extractYouTubeId(url);
+      if (ytId) {
+        var ytWrap = document.createElement('div');
+        ytWrap.className = 'msg-yt-wrap';
+
         var iframe = document.createElement('iframe');
-        iframe.src = 'https://www.youtube.com/embed/' + ytMatch[1];
+        iframe.src = 'https://www.youtube.com/embed/' + ytId;
         iframe.className = 'msg-youtube';
         iframe.setAttribute('allowfullscreen', '');
         iframe.setAttribute('frameborder', '0');
         iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
-        container.appendChild(iframe);
+
+        // Fallback thumbnail in case iframe fails
+        iframe.addEventListener('error', function() {
+          ytWrap.innerHTML = '';
+          var thumb = document.createElement('img');
+          thumb.src = 'https://img.youtube.com/vi/' + ytId + '/hqdefault.jpg';
+          thumb.className = 'msg-image';
+          thumb.addEventListener('click', function() { window.open(url, '_blank'); });
+          ytWrap.appendChild(thumb);
+        });
+
+        ytWrap.appendChild(iframe);
+        container.appendChild(ytWrap);
         return;
       }
+
+      // Image
       if (url.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i)) {
         var img = document.createElement('img');
         img.src = url;
@@ -441,6 +454,8 @@ function renderMessageContent(text, container) {
         container.appendChild(img);
         return;
       }
+
+      // Video
       if (url.match(/\.(mp4|webm|ogg)(\?.*)?$/i)) {
         var video = document.createElement('video');
         video.src = url;
@@ -450,12 +465,15 @@ function renderMessageContent(text, container) {
         container.appendChild(video);
         return;
       }
+
+      // Generic link
       var link = document.createElement('a');
       link.href = url;
       link.textContent = url;
       link.target = '_blank';
       link.className = 'msg-link';
       container.appendChild(link);
+
     } else {
       if (part.trim()) {
         var span = document.createElement('span');
@@ -471,6 +489,7 @@ function loadMessages() {
   if (messageListener) messageListener();
   var messagesEl = document.getElementById('cg-messages');
   messagesEl.innerHTML = '<div class="cg-loading">Loading messages...</div>';
+
   messageListener = db.collection('groups').doc(currentGroup)
     .collection('messages').orderBy('timestamp', 'asc')
     .onSnapshot(function(snapshot) {
@@ -493,6 +512,7 @@ function loadMessages() {
       });
       messagesEl.scrollTop = messagesEl.scrollHeight;
       markAsRead();
+      setUnreadCount(0);
     });
 }
 
@@ -629,45 +649,94 @@ function markAsRead() {
   if (!currentGroup) return;
   lastSeenTimestamps[currentGroup] = Date.now();
   localStorage.setItem('mhbc_lastseen', JSON.stringify(lastSeenTimestamps));
-  updateRoomBadge(currentGroup, 0);
-  updateNavBadge();
 }
 
-// ---- ADMIN PANEL ----
-function showAdminPanel() { showCGScreen('admin'); loadAdminLists(); }
+// ---- MEMBERS PANEL ----
+function showMembersPanel() {
+  showCGScreen('members');
+  loadMembersList();
+}
 
-function loadAdminLists() {
-  var pendingEl = document.getElementById('admin-pending-list');
-  var approvedEl = document.getElementById('admin-approved-list');
-  pendingEl.innerHTML = '<div class="cg-loading">Loading...</div>';
-  approvedEl.innerHTML = '<div class="cg-loading">Loading...</div>';
+function loadMembersList() {
+  var listEl = document.getElementById('members-list');
+  if (!listEl) return;
+  listEl.innerHTML = '<div class="cg-loading">Loading...</div>';
+
   db.collection('groups').doc(currentGroup).collection('members').get().then(function(snap) {
-    var pending = [], approved = [];
-    snap.forEach(function(d) { var data = d.data(); data._id = d.id; if (data.approved) approved.push(data); else pending.push(data); });
-    pendingEl.innerHTML = '';
-    if (pending.length === 0) { pendingEl.innerHTML = '<div class="cg-empty-note">No pending requests</div>'; }
-    else {
+    listEl.innerHTML = '';
+    if (snap.empty) {
+      listEl.innerHTML = '<div class="cg-empty-note">No members yet</div>';
+      return;
+    }
+
+    var approved = [], pending = [];
+    snap.forEach(function(d) {
+      var data = d.data(); data._id = d.id;
+      if (data.approved) approved.push(data); else pending.push(data);
+    });
+
+    // Show pending section only to admins
+    if (currentUser.isAdmin && pending.length > 0) {
+      var pendingLabel = document.createElement('div');
+      pendingLabel.className = 'section-label';
+      pendingLabel.textContent = 'PENDING REQUESTS';
+      listEl.appendChild(pendingLabel);
+
       pending.forEach(function(m) {
-        var div = document.createElement('div'); div.className = 'cg-member-row';
-        var nameSpan = document.createElement('span'); nameSpan.className = 'cg-member-name'; nameSpan.textContent = m.name;
-        var approveBtn = document.createElement('button'); approveBtn.className = 'cg-approve-btn'; approveBtn.textContent = 'Approve';
-        approveBtn.addEventListener('click', (function(id) { return function() { approveMember(id); }; })(m._id));
-        var denyBtn = document.createElement('button'); denyBtn.className = 'cg-deny-btn'; denyBtn.textContent = 'Deny';
-        denyBtn.addEventListener('click', (function(id) { return function() { denyMember(id); }; })(m._id));
-        div.appendChild(nameSpan); div.appendChild(approveBtn); div.appendChild(denyBtn);
-        pendingEl.appendChild(div);
+        var div = document.createElement('div');
+        div.className = 'cg-member-row';
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'cg-member-name';
+        nameSpan.textContent = m.name;
+        var approveBtn = document.createElement('button');
+        approveBtn.className = 'cg-approve-btn';
+        approveBtn.textContent = 'Approve';
+        approveBtn.addEventListener('click', (function(id) {
+          return function() { approveMember(id); };
+        })(m._id));
+        var denyBtn = document.createElement('button');
+        denyBtn.className = 'cg-deny-btn';
+        denyBtn.textContent = 'Deny';
+        denyBtn.addEventListener('click', (function(id) {
+          return function() { denyMember(id); };
+        })(m._id));
+        div.appendChild(nameSpan);
+        div.appendChild(approveBtn);
+        div.appendChild(denyBtn);
+        listEl.appendChild(div);
       });
     }
-    approvedEl.innerHTML = '';
-    if (approved.length === 0) { approvedEl.innerHTML = '<div class="cg-empty-note">No approved members yet</div>'; }
-    else {
+
+    // Approved members — visible to everyone
+    var approvedLabel = document.createElement('div');
+    approvedLabel.className = 'section-label';
+    approvedLabel.textContent = 'MEMBERS';
+    listEl.appendChild(approvedLabel);
+
+    if (approved.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'cg-empty-note';
+      empty.textContent = 'No approved members yet';
+      listEl.appendChild(empty);
+    } else {
       approved.forEach(function(m) {
-        var div = document.createElement('div'); div.className = 'cg-member-row';
-        var nameSpan = document.createElement('span'); nameSpan.className = 'cg-member-name'; nameSpan.textContent = m.name;
-        var removeBtn = document.createElement('button'); removeBtn.className = 'cg-deny-btn'; removeBtn.textContent = 'Remove';
-        removeBtn.addEventListener('click', (function(id) { return function() { removeMember(id); }; })(m._id));
-        div.appendChild(nameSpan); div.appendChild(removeBtn);
-        approvedEl.appendChild(div);
+        var div = document.createElement('div');
+        div.className = 'cg-member-row';
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'cg-member-name';
+        nameSpan.textContent = m.name;
+        div.appendChild(nameSpan);
+        // Remove button only for admins
+        if (currentUser.isAdmin) {
+          var removeBtn = document.createElement('button');
+          removeBtn.className = 'cg-deny-btn';
+          removeBtn.textContent = 'Remove';
+          removeBtn.addEventListener('click', (function(id) {
+            return function() { removeMember(id); };
+          })(m._id));
+          div.appendChild(removeBtn);
+        }
+        listEl.appendChild(div);
       });
     }
   });
@@ -675,19 +744,19 @@ function loadAdminLists() {
 
 function approveMember(memberId) {
   db.collection('groups').doc(currentGroup).collection('members').doc(memberId)
-    .update({ approved: true }).then(loadAdminLists);
+    .update({ approved: true }).then(loadMembersList);
 }
 function denyMember(memberId) {
   db.collection('groups').doc(currentGroup).collection('members').doc(memberId).delete().then(function() {
     db.collection('groups').doc(currentGroup).collection('privateMembers').doc(memberId).delete();
-    loadAdminLists();
+    loadMembersList();
   });
 }
 function removeMember(memberId) {
   if (confirm('Remove this member from the group?')) {
     db.collection('groups').doc(currentGroup).collection('members').doc(memberId).delete().then(function() {
       db.collection('groups').doc(currentGroup).collection('privateMembers').doc(memberId).delete();
-      loadAdminLists();
+      loadMembersList();
     });
   }
 }
@@ -775,7 +844,7 @@ window.onload = function() {
 
   document.querySelectorAll('.nav-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      unlockAudio(); // Unlock audio on any user tap
+      unlockAudio();
       var page = this.getAttribute('data-page');
       if (page) showPage(page);
     });
@@ -818,11 +887,14 @@ window.onload = function() {
   var backToChat = document.getElementById('cg-back-to-chat');
   if (backToChat) backToChat.addEventListener('click', function() { showCGScreen('chat'); });
 
+  var backToChatFromMembers = document.getElementById('cg-back-to-chat-members');
+  if (backToChatFromMembers) backToChatFromMembers.addEventListener('click', function() { showCGScreen('chat'); });
+
   var leaveChatBtn = document.getElementById('cg-leave-chat');
   if (leaveChatBtn) leaveChatBtn.addEventListener('click', leaveChat);
 
-  var adminBtn = document.getElementById('cg-admin-btn');
-  if (adminBtn) adminBtn.addEventListener('click', showAdminPanel);
+  var membersBtn = document.getElementById('cg-members-btn');
+  if (membersBtn) membersBtn.addEventListener('click', showMembersPanel);
 
   var sendBtn = document.getElementById('cg-send-btn');
   if (sendBtn) sendBtn.addEventListener('click', function() { unlockAudio(); sendMessage(); });
@@ -837,9 +909,7 @@ window.onload = function() {
   if (eyePin) eyePin.addEventListener('click', function() { toggleVisible('cg-user-pin', this); });
 
   var msgInput = document.getElementById('cg-msg-input');
-  if (msgInput) {
-    msgInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') sendMessage(); });
-  }
+  if (msgInput) msgInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') sendMessage(); });
 
   var locationCard = document.getElementById('location-card');
   if (locationCard) locationCard.addEventListener('click', function() {
@@ -858,13 +928,13 @@ window.onload = function() {
   setInterval(checkLiveBadge, 60000);
   tryGenerateQR();
 
-  // ---- AUTH STATE LISTENER ----
+  // ---- AUTH ----
   auth.onAuthStateChanged(function(user) {
     if (user) {
       currentUID = user.uid;
-      // Start watcher if already logged in from previous session
       var savedUser = getSavedUser();
       if (savedUser && savedUser.group && savedUser.name) {
+        currentGroup = savedUser.group;
         startUnreadWatcher(savedUser.group, savedUser.name);
       }
     } else {
