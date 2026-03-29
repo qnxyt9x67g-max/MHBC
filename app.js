@@ -50,6 +50,10 @@ function initFirebase() {
   firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
   auth = firebase.auth();
+  auth.onAuthStateChanged(function(user) {
+  console.log('AUTH STATE:', user ? user.uid : null);
+  if (user) currentUID = user.uid;
+});
 }
 
 // ---- SIGN IN ANONYMOUSLY ----
