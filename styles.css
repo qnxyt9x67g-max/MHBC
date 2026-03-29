@@ -1132,3 +1132,158 @@ body {
   margin-top: 4px;
   text-decoration: underline;
 }
+/* ============================================================
+   ADD THESE TO THE BOTTOM OF styles.css
+   ============================================================ */
+
+/* ---- MEMBERS BUTTON ---- */
+.cg-members-btn {
+  background: rgba(201,168,76,0.15);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-family: 'Lato', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+/* ---- MESSAGE WRAPPER — long press target ---- */
+.msg-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ---- EDITED LABEL ---- */
+.msg-edited {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ---- LONG PRESS MENU ---- */
+.msg-menu {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--navy-card);
+  border-top: 1px solid var(--border);
+  border-radius: 16px 16px 0 0;
+  padding: 12px 14px 32px;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.msg-menu-btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: var(--navy-light);
+  border: none;
+  border-radius: var(--radius);
+  color: var(--white);
+  font-family: 'Lato', sans-serif;
+  font-size: 15px;
+  cursor: pointer;
+  text-align: left;
+  -webkit-appearance: none;
+}
+
+.msg-menu-delete { color: #ef5350; }
+
+.msg-menu-cancel {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  text-align: center;
+}
+
+/* ---- YOUTUBE THUMBNAIL WRAPPER ---- */
+.msg-yt-wrap {
+  position: relative;
+  display: inline-block;
+  margin-top: 6px;
+  max-width: 280px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.msg-yt-thumb {
+  width: 100%;
+  border-radius: 10px;
+  display: block;
+}
+
+.msg-yt-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.7);
+  color: white;
+  font-size: 24px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* ---- RICH MEDIA ---- */
+.msg-image {
+  max-width: 260px;
+  width: 100%;
+  border-radius: 10px;
+  margin-top: 6px;
+  cursor: pointer;
+  display: block;
+}
+
+.msg-video {
+  max-width: 260px;
+  width: 100%;
+  border-radius: 10px;
+  margin-top: 6px;
+  display: block;
+}
+
+.msg-link {
+  color: var(--gold);
+  font-size: 13px;
+  word-break: break-all;
+  display: block;
+  margin-top: 4px;
+  text-decoration: underline;
+}
+
+/* ---- FIX iOS ZOOM ON INPUT ---- */
+.cg-msg-input { font-size: 16px !important; }
+
+/* ---- THREAD STYLES ---- */
+.cg-thread { display: flex; flex-direction: column; gap: 0; }
+.cg-thread-divider { height: 1px; background: rgba(201,168,76,0.15); margin: 12px 0; }
+.cg-primary-row { display: flex; gap: 10px; align-items: flex-start; padding: 4px 0; }
+.cg-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: white; flex-shrink: 0; margin-top: 2px; }
+.cg-avatar-sm { width: 28px; height: 28px; font-size: 12px; }
+.cg-primary-content { flex: 1; min-width: 0; }
+.cg-primary-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px; }
+.cg-primary-name { font-size: 13px; font-weight: 700; }
+.cg-primary-time { font-size: 10px; color: var(--text-dim); }
+.cg-primary-text { font-size: 14px; color: var(--text); line-height: 1.5; word-break: break-word; }
+.cg-comment-bar { padding: 4px 0 4px 46px; }
+.cg-comment-btn { background: none; border: none; color: var(--text-dim); font-family: 'Lato', sans-serif; font-size: 12px; cursor: pointer; padding: 4px 0; -webkit-appearance: none; }
+.cg-comment-btn:active { color: var(--gold); }
+.cg-replies-container { margin-left: 46px; margin-top: 6px; display: flex; flex-direction: column; gap: 10px; padding-left: 12px; border-left: 2px solid rgba(201,168,76,0.2); }
+.cg-reply-row { display: flex; gap: 8px; align-items: flex-start; }
+.cg-reply-content { flex: 1; min-width: 0; }
+.cg-reply-text { font-size: 13px; color: var(--text); line-height: 1.5; word-break: break-word; }
