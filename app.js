@@ -952,5 +952,13 @@ window.onload = function() {
     setInterval(checkLiveBadge, 60000);
     tryGenerateQR();
 
-  });
+  })
+.catch(function(err) {
+  console.error('Startup auth failed:', err);
+
+  var errEl = document.getElementById('cg-login-error');
+  if (errEl) {
+    errEl.textContent = 'Auth error: ' + (err.code || err.message);
+  }
+});
 };
