@@ -62,17 +62,16 @@ function signInAnonymously() {
     .then(function(result) {
       currentUID = result.user.uid;
       localStorage.setItem('mhbc_uid', currentUID);
-
-      console.log("SIGNED IN:", currentUID); // 👈 add this
+      console.log('SIGNED IN:', currentUID);
+      return result;
     })
     .catch(function(err) {
       console.error('Auth error:', err);
-
-      // 👇 ADD THIS so we SEE the real error in your app
       var errEl = document.getElementById('cg-login-error');
       if (errEl) {
         errEl.textContent = 'Auth error: ' + (err.code || err.message);
       }
+      throw err;
     });
 }
 
