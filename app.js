@@ -57,13 +57,8 @@ function signInAnonymously() {
   return auth.signInAnonymously().then(function(result) {
     currentUID = result.user.uid;
     // Check if we have a saved UID mapping
-    var savedUID = localStorage.getItem('mhbc_uid');
-    if (!savedUID) {
-      localStorage.setItem('mhbc_uid', currentUID);
-    } else {
-      // Use the saved UID for consistency
-      currentUID = savedUID;
-    }
+    currentUID = result.user.uid;
+localStorage.setItem('mhbc_uid', currentUID);
   }).catch(function(err) {
     console.error('Auth error:', err);
   });
