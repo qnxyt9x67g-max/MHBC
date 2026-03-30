@@ -1,6 +1,7 @@
 // ============================================================
-// MHBC APP — app.js v19
-// Name-based identity, per-person admin, fixed badge logic
+// MHBC APP — app.js v20
+// Hybrid model: UID = trusted session, name+password = recovery
+// Admin assigned backend-only via Firebase console
 // ============================================================
 
 var db = null;
@@ -9,7 +10,7 @@ var currentUID = null;
 var currentGroup = null;
 var currentGroupName = null;
 var currentUser = null;       // { name, normalizedName, group, groupName, isAdmin }
-var currentMemberKey = null;  // normalized name used as Firestore doc key
+var currentMemberKey = null;  // normalizedName for identity doc lookup
 var messageListener = null;
 var unreadListener = null;
 var unreadCount = 0;
@@ -34,13 +35,12 @@ function getBubbleColor(name) {
 }
 
 // ---- NAME NORMALIZATION ----
-// Produces a stable, unique key from a display name
 function normalizeName(name) {
   return name
     .trim()
     .toLowerCase()
-    .replace(/\s+/g, '-')       // collapse spaces to hyphens
-    .replace(/[^a-z0-9-]/g, ''); // remove non-alphanumeric except hyphens
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
 }
 
 // ---- HASH FUNCTION ----
@@ -52,7 +52,6 @@ async function hashInput(input, salt) {
   return hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
 }
 
-// ---- GENERATE SALT ----
 function generateSalt() {
   var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   var salt = '';
@@ -121,15 +120,12 @@ function setUnreadCount(groupId, count) {
   }
 }
 
-// ---- IS IN CHAT — strict check ----
-// Both conditions must be true: care page active AND chat sub-screen visible
+// ---- IS IN CHAT ----
 function isInChat() {
   var chatScreen = document.getElementById('cg-chat-screen');
   var carePage = document.getElementById('page-care');
   if (!chatScreen || !carePage) return false;
-  var careActive = carePage.classList.contains('active');
-  var chatVisible = chatScreen.style.display !== 'none';
-  return careActive && chatVisible;
+  return carePage.classList.contains('active') && chatScreen.style.display !== 'none';
 }
 
 // ---- INPUT BAR ----
@@ -150,7 +146,6 @@ function showPage(id) {
   if (target) { target.classList.add('active'); window.scrollTo(0, 0); }
   var activeBtn = document.querySelector('.nav-btn[data-page="' + id + '"]');
   if (activeBtn) activeBtn.classList.add('active');
-  // Always hide input bar when navigating away from care chat
   hideInputBar();
 
   if (id === 'care') {
@@ -165,8 +160,6 @@ function showPage(id) {
       showCGScreen('select');
     }
   }
-  // When navigating AWAY from care, badge can now accumulate again
-  // No action needed — isInChat() will return false correctly
 }
 
 // ---- CARE GROUPS SCREENS ----
@@ -178,11 +171,8 @@ function showCGScreen(screen) {
   });
   var show = document.getElementById('cg-' + screen + '-screen');
   if (show) show.style.display = 'block';
-  if (screen === 'chat') {
-    showInputBar();
-  } else {
-    hideInputBar();
-  }
+  if (screen === 'chat') showInputBar();
+  else hideInputBar();
 }
 
 // ---- TOGGLE PASSWORD VISIBILITY ----
@@ -220,6 +210,13 @@ function selectGroup(groupId, groupName) {
 }
 
 // ---- SUBMIT LOGIN ----
+// Flow:
+// 1. Verify room password against config hashes
+// 2. Look up identity doc by normalizedName
+// 3. If identity exists: verify personal password
+//    - If UID member doc exists: check approved/isAdmin and enter
+//    - If UID member doc missing (new device): create pending member doc
+// 4. If identity missing: create new identity + pending member doc
 function submitLogin() {
   var roomPass = document.getElementById('cg-room-password').value.trim();
   var userName = document.getElementById('cg-user-name').value.trim();
@@ -229,12 +226,15 @@ function submitLogin() {
 
   if (!roomPass || !userName || !userPassword) { errEl.textContent = 'Please fill in all fields.'; return; }
   if (userPassword.length < 4) { errEl.textContent = 'Password must be at least 4 characters.'; return; }
-  if (!auth.currentUser) {
+
+  var authUser = auth.currentUser;
+  if (!authUser) {
     errEl.textContent = 'Connecting... please wait and try again.';
     auth.signInAnonymously().catch(function(err) { errEl.textContent = 'Auth error: ' + err.message; });
     return;
   }
 
+  currentUID = authUser.uid;
   var normalized = normalizeName(userName);
   if (!normalized) { errEl.textContent = 'Please enter a valid name.'; return; }
 
@@ -242,99 +242,150 @@ function submitLogin() {
   db.collection('config').doc('rooms').get().then(function(snap) {
     if (!snap.exists) { errEl.textContent = 'Configuration error. Contact your admin.'; return; }
     var config = snap.data();
-    var roomSalt = config[currentGroup + '_salt'];
-    var roomHash = config[currentGroup + '_hash'];
 
-    hashInput(roomPass, roomSalt).then(function(enteredRoomHash) {
-      if (enteredRoomHash !== roomHash) {
+    hashInput(roomPass, config[currentGroup + '_salt']).then(function(enteredRoomHash) {
+      if (enteredRoomHash !== config[currentGroup + '_hash']) {
         errEl.textContent = 'Incorrect room password. Check with your group leader.';
         return;
       }
 
-      // Step 2: Look up member by normalized name
-      var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(normalized);
-      memberRef.get().then(function(memberSnap) {
+      // Step 2: Look up identity doc by normalizedName
+      var identityRef = db.collection('groups').doc(currentGroup)
+                          .collection('identities').doc(normalized);
 
-        if (memberSnap.exists) {
-          // Existing member — verify personal password
-          var data = memberSnap.data();
-          hashInput(userPassword, data.passwordSalt).then(function(enteredHash) {
-            if (enteredHash !== data.passwordHash) {
+      identityRef.get().then(function(identitySnap) {
+
+        if (identitySnap.exists) {
+          // Identity found — verify personal password
+          var identity = identitySnap.data();
+
+          hashInput(userPassword, identity.passwordSalt).then(function(enteredHash) {
+            if (enteredHash !== identity.passwordHash) {
               errEl.textContent = 'Incorrect password. Try again.';
               return;
             }
-            // Password correct — update last login
-            memberRef.update({ lastLoginAt: Date.now() });
 
-            currentMemberKey = normalized;
-            currentUser = {
-              group: currentGroup,
-              groupName: currentGroupName,
-              name: data.displayName,
-              normalizedName: normalized,
-              isAdmin: data.isAdmin === true
-            };
-            saveUser(currentUser);
-            startUnreadWatcher(currentGroup, data.displayName);
+            // Password correct — now check/create UID member doc
+            var memberRef = db.collection('groups').doc(currentGroup)
+                              .collection('members').doc(currentUID);
 
-            if (data.approved) { enterChat(); }
-            else { document.getElementById('cg-pending-title').textContent = currentGroupName; showCGScreen('pending'); }
-          });
-
-        } else {
-          // New member — check if this is the very first member (bootstrap admin)
-          db.collection('groups').doc(currentGroup).collection('members').get().then(function(allSnap) {
-            var isFirstMember = allSnap.empty;
-            var passwordSalt = generateSalt();
-
-            hashInput(userPassword, passwordSalt).then(function(passwordHash) {
-              memberRef.set({
-                displayName: userName,
-                normalizedName: normalized,
-                passwordHash: passwordHash,
-                passwordSalt: passwordSalt,
-                approved: isFirstMember,   // first person auto-approved
-                isAdmin: isFirstMember,    // first person auto-admin
-                createdAt: Date.now(),
-                lastLoginAt: Date.now()
-              }).then(function() {
+            memberRef.get().then(function(memberSnap) {
+              if (memberSnap.exists) {
+                // UID member doc exists — update lastLoginAt and enter
+                memberRef.update({ lastLoginAt: Date.now() });
+                var memberData = memberSnap.data();
                 currentMemberKey = normalized;
                 currentUser = {
                   group: currentGroup,
                   groupName: currentGroupName,
-                  name: userName,
+                  name: identity.displayName,
                   normalizedName: normalized,
-                  isAdmin: isFirstMember
+                  isAdmin: memberData.isAdmin === true
                 };
                 saveUser(currentUser);
-                startUnreadWatcher(currentGroup, userName);
+                startUnreadWatcher(currentGroup, identity.displayName);
 
-                if (isFirstMember) { enterChat(); }
+                if (memberData.approved) { enterChat(); }
                 else { document.getElementById('cg-pending-title').textContent = currentGroupName; showCGScreen('pending'); }
-              }).catch(function(err) { errEl.textContent = 'Save error: ' + err.message; });
-            });
+
+              } else {
+                // New device / cleared browser — create pending member doc for this UID
+                // Rules enforce: approved=false, isAdmin=false on create
+                memberRef.set({
+                  uid: currentUID,
+                  normalizedName: normalized,
+                  displayName: identity.displayName,
+                  approved: false,
+                  isAdmin: false,
+                  createdAt: Date.now(),
+                  lastLoginAt: Date.now()
+                }).then(function() {
+                  currentMemberKey = normalized;
+                  currentUser = {
+                    group: currentGroup,
+                    groupName: currentGroupName,
+                    name: identity.displayName,
+                    normalizedName: normalized,
+                    isAdmin: false
+                  };
+                  saveUser(currentUser);
+                  startUnreadWatcher(currentGroup, identity.displayName);
+                  document.getElementById('cg-pending-title').textContent = currentGroupName;
+                  showCGScreen('pending');
+                }).catch(function(err) { errEl.textContent = 'Session error: ' + err.message; });
+              }
+            }).catch(function(err) { errEl.textContent = 'Member lookup error: ' + err.message; });
+          });
+
+        } else {
+          // New user — create identity doc + pending member doc
+          var passwordSalt = generateSalt();
+          hashInput(userPassword, passwordSalt).then(function(passwordHash) {
+
+            // Create identity doc (rules enforce approved=false, isAdmin=false)
+            identityRef.set({
+              displayName: userName,
+              normalizedName: normalized,
+              passwordHash: passwordHash,
+              passwordSalt: passwordSalt,
+              approved: false,
+              isAdmin: false,
+              createdAt: Date.now()
+            }).then(function() {
+              // Create member doc keyed by UID
+              var memberRef = db.collection('groups').doc(currentGroup)
+                                .collection('members').doc(currentUID);
+              return memberRef.set({
+                uid: currentUID,
+                normalizedName: normalized,
+                displayName: userName,
+                approved: false,
+                isAdmin: false,
+                createdAt: Date.now(),
+                lastLoginAt: Date.now()
+              });
+            }).then(function() {
+              currentMemberKey = normalized;
+              currentUser = {
+                group: currentGroup,
+                groupName: currentGroupName,
+                name: userName,
+                normalizedName: normalized,
+                isAdmin: false
+              };
+              saveUser(currentUser);
+              startUnreadWatcher(currentGroup, userName);
+              document.getElementById('cg-pending-title').textContent = currentGroupName;
+              showCGScreen('pending');
+            }).catch(function(err) { errEl.textContent = 'Registration error: ' + err.message; });
           });
         }
 
-      }).catch(function(err) { errEl.textContent = 'Lookup error: ' + err.message; });
+      }).catch(function(err) { errEl.textContent = 'Identity lookup error: ' + err.message; });
     });
   }).catch(function(err) { errEl.textContent = 'Config error: ' + err.message; });
 }
 
 // ---- CHECK APPROVAL ----
+// Checks the UID-keyed member doc (trusted by rules)
 function checkApproval() {
-  if (!currentMemberKey || !currentGroup) return;
-  db.collection('groups').doc(currentGroup).collection('members').doc(currentMemberKey).get().then(function(snap) {
-    if (snap.exists && snap.data().approved) { enterChat(); }
-    else { alert('Not approved yet. Please wait for your group leader to approve you.'); }
+  if (!currentUID || !currentGroup) return;
+  db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).get().then(function(snap) {
+    if (snap.exists && snap.data().approved) {
+      currentUser.isAdmin = snap.data().isAdmin === true;
+      saveUser(currentUser);
+      enterChat();
+    } else {
+      alert('Not approved yet. Please wait for your group leader to approve you.');
+    }
   });
 }
 
 function checkApprovalAndEnter() {
-  if (!currentMemberKey || !currentGroup) { showCGScreen('select'); return; }
-  db.collection('groups').doc(currentGroup).collection('members').doc(currentMemberKey).get().then(function(snap) {
+  if (!currentUID || !currentGroup) { showCGScreen('select'); return; }
+  db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).get().then(function(snap) {
     if (snap.exists && snap.data().approved) {
-      // Refresh isAdmin from Firestore in case it was updated
+      // Refresh isAdmin from Firestore
       currentUser.isAdmin = snap.data().isAdmin === true;
       saveUser(currentUser);
       enterChat();
@@ -355,12 +406,11 @@ function enterChat() {
   if (membersBtn) membersBtn.style.display = 'block';
   showCGScreen('chat');
   loadMessages();
-  // Mark as read and clear badge when entering chat
   markAsRead();
   setUnreadCount(currentGroup, 0);
 }
 
-// ---- UNREAD WATCHER — fixed badge logic ----
+// ---- UNREAD WATCHER ----
 function startUnreadWatcher(groupId, userName) {
   if (unreadListener) { unreadListener(); unreadListener = null; }
 
@@ -368,13 +418,11 @@ function startUnreadWatcher(groupId, userName) {
   var lastCount = 0;
 
   unreadListener = db.collection('groups').doc(groupId)
-    .collection('messages')
-    .orderBy('timestamp', 'asc')
+    .collection('messages').orderBy('timestamp', 'asc')
     .onSnapshot(function(snapshot) {
       var lastSeen = lastSeenTimestamps[groupId] || 0;
       var total = snapshot.size;
 
-      // Count messages from others after last seen
       var newUnread = 0;
       snapshot.forEach(function(d) {
         var msg = d.data();
@@ -390,27 +438,19 @@ function startUnreadWatcher(groupId, userName) {
         return;
       }
 
-      // Capture BEFORE updating lastCount (fix for the always-false bug)
       var hasNewMessage = total > lastCount;
       lastCount = total;
 
       if (hasNewMessage) {
-        // Sound plays always — inside or outside chat
         if (newUnread > 0) playNotificationSound();
-
         if (isInChat()) {
-          // Inside chat — user is seeing it, mark read, clear badge
           markAsRead();
           setUnreadCount(groupId, 0);
         } else {
-          // Outside chat — accumulate badge
           setUnreadCount(groupId, newUnread);
         }
       }
-      // If no new message (e.g. edit/delete), don't change badge
-    }, function(err) {
-      console.log('Watcher error:', err.message);
-    });
+    }, function(err) { console.log('Watcher error:', err.message); });
 }
 
 // ---- REPLY ----
@@ -480,9 +520,8 @@ function editMessage(msgId) {
   var msgRef = db.collection('groups').doc(currentGroup).collection('messages').doc(msgId);
   msgRef.get().then(function(snap) {
     if (!snap.exists) return;
-    var current = snap.data().text;
-    var newText = prompt('Edit your message:', current);
-    if (newText !== null && newText.trim() !== '' && newText.trim() !== current) {
+    var newText = prompt('Edit your message:', snap.data().text);
+    if (newText !== null && newText.trim() !== '' && newText.trim() !== snap.data().text) {
       msgRef.update({ text: newText.trim(), edited: true });
     }
   });
@@ -491,10 +530,8 @@ function editMessage(msgId) {
 // ---- ATTACH LONG PRESS ----
 function attachLongPress(wrapper, msgId, isMe) {
   if (!isMe && !currentUser.isAdmin) return;
-  wrapper.addEventListener('touchstart', function(e) {
-    longPressTimer = setTimeout(function() {
-      showMessageMenu(msgId, isMe);
-    }, 600);
+  wrapper.addEventListener('touchstart', function() {
+    longPressTimer = setTimeout(function() { showMessageMenu(msgId, isMe); }, 600);
   });
   wrapper.addEventListener('touchend', function() { clearTimeout(longPressTimer); });
   wrapper.addEventListener('touchmove', function() { clearTimeout(longPressTimer); });
@@ -520,13 +557,10 @@ function extractYouTubeId(url) {
 function renderMessageContent(text, container) {
   var urlRegex = /(https?:\/\/[^\s]+)/g;
   var parts = text.split(urlRegex);
-
   parts.forEach(function(part) {
     if (!part) return;
     if (part.match(/^https?:\/\//)) {
       var url = part;
-
-      // YouTube — always thumbnail with play overlay
       var ytId = extractYouTubeId(url);
       if (ytId) {
         var ytWrap = document.createElement('div');
@@ -545,8 +579,6 @@ function renderMessageContent(text, container) {
         container.appendChild(ytWrap);
         return;
       }
-
-      // Image
       if (url.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i)) {
         var img = document.createElement('img');
         img.src = url; img.className = 'msg-image';
@@ -555,8 +587,6 @@ function renderMessageContent(text, container) {
         container.appendChild(img);
         return;
       }
-
-      // Video
       if (url.match(/\.(mp4|webm|ogg)(\?.*)?$/i)) {
         var video = document.createElement('video');
         video.src = url; video.className = 'msg-video';
@@ -564,13 +594,10 @@ function renderMessageContent(text, container) {
         container.appendChild(video);
         return;
       }
-
-      // Generic link
       var link = document.createElement('a');
       link.href = url; link.textContent = url;
       link.target = '_blank'; link.className = 'msg-link';
       container.appendChild(link);
-
     } else {
       if (part.trim()) {
         var span = document.createElement('span');
@@ -608,11 +635,7 @@ function loadMessages() {
         renderThread(msg, replyMap[msg._id] || [], messagesEl, index < topLevel.length - 1);
       });
       messagesEl.scrollTop = messagesEl.scrollHeight;
-      // Only clear badge if actually in chat
-      if (isInChat()) {
-        markAsRead();
-        setUnreadCount(currentGroup, 0);
-      }
+      if (isInChat()) { markAsRead(); setUnreadCount(currentGroup, 0); }
     });
 }
 
@@ -650,19 +673,15 @@ function renderPrimaryMessage(msg, container) {
   var isMe = msg.author === currentUser.name;
   var color = getBubbleColor(msg.author);
   var time = msg.timestamp ? new Date(msg.timestamp.toMillis()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
-
   var row = document.createElement('div');
   row.className = 'cg-primary-row';
-
   var avatar = document.createElement('div');
   avatar.className = 'cg-avatar';
   avatar.textContent = msg.author.charAt(0).toUpperCase();
   avatar.style.background = color;
   row.appendChild(avatar);
-
   var content = document.createElement('div');
   content.className = 'cg-primary-content';
-
   var header = document.createElement('div');
   header.className = 'cg-primary-header';
   var nameSpan = document.createElement('span');
@@ -675,7 +694,6 @@ function renderPrimaryMessage(msg, container) {
   header.appendChild(nameSpan);
   header.appendChild(timeSpan);
   content.appendChild(header);
-
   var wrapper = document.createElement('div');
   wrapper.className = 'msg-wrapper';
   renderMessageContent(msg.text, wrapper);
@@ -696,19 +714,15 @@ function renderReplyMessage(msg, container) {
   var isMe = msg.author === currentUser.name;
   var color = getBubbleColor(msg.author);
   var time = msg.timestamp ? new Date(msg.timestamp.toMillis()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
-
   var row = document.createElement('div');
   row.className = 'cg-reply-row';
-
   var avatar = document.createElement('div');
   avatar.className = 'cg-avatar cg-avatar-sm';
   avatar.textContent = msg.author.charAt(0).toUpperCase();
   avatar.style.background = color;
   row.appendChild(avatar);
-
   var content = document.createElement('div');
   content.className = 'cg-reply-content';
-
   var header = document.createElement('div');
   header.className = 'cg-primary-header';
   var nameSpan = document.createElement('span');
@@ -721,7 +735,6 @@ function renderReplyMessage(msg, container) {
   header.appendChild(nameSpan);
   header.appendChild(timeSpan);
   content.appendChild(header);
-
   var wrapper = document.createElement('div');
   wrapper.className = 'msg-wrapper';
   renderMessageContent(msg.text, wrapper);
@@ -738,15 +751,17 @@ function renderReplyMessage(msg, container) {
 }
 
 // ---- SEND MESSAGE ----
+// Includes authorUid so rules can verify ownership
 function sendMessage() {
   var input = document.getElementById('cg-msg-input');
   var text = input.value.trim();
-  if (!text || !db) return;
+  if (!text || !db || !currentUID) return;
   input.value = '';
   var msgData = {
     text: text,
     author: currentUser.name,
     authorKey: currentMemberKey,
+    authorUid: currentUID,
     timestamp: firebase.firestore.FieldValue.serverTimestamp()
   };
   if (replyingTo) { msgData.replyTo = replyingTo.id; msgData.replyToAuthor = replyingTo.author; clearReply(); }
@@ -755,7 +770,6 @@ function sendMessage() {
 
 // ---- LEAVE CHAT ----
 function leaveChat() {
-  // Do NOT stop messageListener — keep it running for badge updates
   clearSavedUser();
   clearReply();
   currentUser = null; currentGroup = null; currentGroupName = null; currentMemberKey = null;
@@ -801,7 +815,8 @@ function loadMembersList() {
       pendingList.className = 'cg-member-list';
       pending.forEach(function(m) {
         var div = document.createElement('div'); div.className = 'cg-member-row';
-        var nameSpan = document.createElement('span'); nameSpan.className = 'cg-member-name'; nameSpan.textContent = m.displayName || m.name || m._id;
+        var nameSpan = document.createElement('span'); nameSpan.className = 'cg-member-name';
+        nameSpan.textContent = m.displayName || m._id;
         var approveBtn = document.createElement('button'); approveBtn.className = 'cg-approve-btn'; approveBtn.textContent = 'Approve';
         approveBtn.addEventListener('click', (function(id) { return function() { approveMember(id); }; })(m._id));
         var denyBtn = document.createElement('button'); denyBtn.className = 'cg-deny-btn'; denyBtn.textContent = 'Deny';
@@ -812,12 +827,11 @@ function loadMembersList() {
       listEl.appendChild(pendingList);
     }
 
-    // Approved — everyone sees this list
+    // Approved members — visible to everyone
     var approvedLabel = document.createElement('div');
     approvedLabel.className = 'section-label';
     approvedLabel.textContent = 'MEMBERS';
     listEl.appendChild(approvedLabel);
-
     var approvedList = document.createElement('div');
     approvedList.className = 'cg-member-list';
 
@@ -827,7 +841,7 @@ function loadMembersList() {
       approved.forEach(function(m) {
         var div = document.createElement('div'); div.className = 'cg-member-row';
         var nameSpan = document.createElement('span'); nameSpan.className = 'cg-member-name';
-        nameSpan.textContent = (m.displayName || m.name || m._id) + (m.isAdmin ? ' ⭐' : '');
+        nameSpan.textContent = (m.displayName || m._id) + (m.isAdmin ? ' ⭐' : '');
         div.appendChild(nameSpan);
         if (currentUser.isAdmin) {
           var removeBtn = document.createElement('button'); removeBtn.className = 'cg-deny-btn'; removeBtn.textContent = 'Remove';
@@ -841,17 +855,19 @@ function loadMembersList() {
   });
 }
 
-function approveMember(memberId) {
-  db.collection('groups').doc(currentGroup).collection('members').doc(memberId)
+// Admin actions write to members/{uid} docs
+// Rules enforce: only admins can delete, only safe fields on update
+function approveMember(memberUid) {
+  db.collection('groups').doc(currentGroup).collection('members').doc(memberUid)
     .update({ approved: true }).then(loadMembersList);
 }
-function denyMember(memberId) {
-  db.collection('groups').doc(currentGroup).collection('members').doc(memberId)
+function denyMember(memberUid) {
+  db.collection('groups').doc(currentGroup).collection('members').doc(memberUid)
     .delete().then(loadMembersList);
 }
-function removeMember(memberId) {
+function removeMember(memberUid) {
   if (confirm('Remove this member from the group?')) {
-    db.collection('groups').doc(currentGroup).collection('members').doc(memberId)
+    db.collection('groups').doc(currentGroup).collection('members').doc(memberUid)
       .delete().then(loadMembersList);
   }
 }
@@ -1024,11 +1040,10 @@ window.onload = function() {
   setInterval(checkLiveBadge, 60000);
   tryGenerateQR();
 
-  // ---- AUTH — anonymous sign-in for Firestore protection ----
+  // ---- AUTH ----
   auth.onAuthStateChanged(function(user) {
     if (user) {
       currentUID = user.uid;
-      // Restore session if saved
       var savedUser = getSavedUser();
       if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) {
         currentGroup = savedUser.group;
