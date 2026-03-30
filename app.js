@@ -1,5 +1,6 @@
 // ============================================================
-// MHBC APP — app.js v18
+// MHBC APP — app.js v19
+// Name-based identity, per-person admin, fixed badge logic
 // ============================================================
 
 var db = null;
@@ -7,7 +8,8 @@ var auth = null;
 var currentUID = null;
 var currentGroup = null;
 var currentGroupName = null;
-var currentUser = null;
+var currentUser = null;       // { name, normalizedName, group, groupName, isAdmin }
+var currentMemberKey = null;  // normalized name used as Firestore doc key
 var messageListener = null;
 var unreadListener = null;
 var unreadCount = 0;
@@ -31,6 +33,16 @@ function getBubbleColor(name) {
   return BUBBLE_COLORS[Math.abs(hash) % BUBBLE_COLORS.length];
 }
 
+// ---- NAME NORMALIZATION ----
+// Produces a stable, unique key from a display name
+function normalizeName(name) {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')       // collapse spaces to hyphens
+    .replace(/[^a-z0-9-]/g, ''); // remove non-alphanumeric except hyphens
+}
+
 // ---- HASH FUNCTION ----
 async function hashInput(input, salt) {
   var encoder = new TextEncoder();
@@ -38,6 +50,14 @@ async function hashInput(input, salt) {
   var hashBuffer = await crypto.subtle.digest('SHA-256', data);
   var hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+}
+
+// ---- GENERATE SALT ----
+function generateSalt() {
+  var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var salt = '';
+  for (var i = 0; i < 8; i++) salt += chars[Math.floor(Math.random() * chars.length)];
+  return salt;
 }
 
 // ---- INIT FIREBASE ----
@@ -86,7 +106,7 @@ function playNotificationSound() {
   } catch(e) {}
 }
 
-// ---- BADGES — pass groupId explicitly ----
+// ---- BADGES ----
 function setUnreadCount(groupId, count) {
   unreadCount = count;
   var roomBadge = document.getElementById('badge-' + groupId);
@@ -99,6 +119,17 @@ function setUnreadCount(groupId, count) {
     if (roomBadge) roomBadge.style.display = 'none';
     if (navBadge) navBadge.style.display = 'none';
   }
+}
+
+// ---- IS IN CHAT — strict check ----
+// Both conditions must be true: care page active AND chat sub-screen visible
+function isInChat() {
+  var chatScreen = document.getElementById('cg-chat-screen');
+  var carePage = document.getElementById('page-care');
+  if (!chatScreen || !carePage) return false;
+  var careActive = carePage.classList.contains('active');
+  var chatVisible = chatScreen.style.display !== 'none';
+  return careActive && chatVisible;
 }
 
 // ---- INPUT BAR ----
@@ -119,18 +150,23 @@ function showPage(id) {
   if (target) { target.classList.add('active'); window.scrollTo(0, 0); }
   var activeBtn = document.querySelector('.nav-btn[data-page="' + id + '"]');
   if (activeBtn) activeBtn.classList.add('active');
+  // Always hide input bar when navigating away from care chat
   hideInputBar();
+
   if (id === 'care') {
     var saved = getSavedUser();
     if (saved) {
       currentGroup = saved.group;
       currentGroupName = saved.groupName;
       currentUser = saved;
+      currentMemberKey = saved.normalizedName;
       checkApprovalAndEnter();
     } else {
       showCGScreen('select');
     }
   }
+  // When navigating AWAY from care, badge can now accumulate again
+  // No action needed — isInChat() will return false correctly
 }
 
 // ---- CARE GROUPS SCREENS ----
@@ -142,8 +178,11 @@ function showCGScreen(screen) {
   });
   var show = document.getElementById('cg-' + screen + '-screen');
   if (show) show.style.display = 'block';
-  if (screen === 'chat') showInputBar();
-  else hideInputBar();
+  if (screen === 'chat') {
+    showInputBar();
+  } else {
+    hideInputBar();
+  }
 }
 
 // ---- TOGGLE PASSWORD VISIBILITY ----
@@ -157,7 +196,7 @@ function toggleVisible(inputId, btn) {
 // ---- START OVER ----
 function startOver() {
   clearSavedUser();
-  currentUser = null; currentGroup = null; currentGroupName = null;
+  currentUser = null; currentGroup = null; currentGroupName = null; currentMemberKey = null;
   showCGScreen('select');
 }
 
@@ -168,6 +207,7 @@ function selectGroup(groupId, groupName) {
   var saved = getSavedUser();
   if (saved && saved.group === groupId) {
     currentUser = saved;
+    currentMemberKey = saved.normalizedName;
     checkApprovalAndEnter();
     return;
   }
@@ -183,100 +223,128 @@ function selectGroup(groupId, groupName) {
 function submitLogin() {
   var roomPass = document.getElementById('cg-room-password').value.trim();
   var userName = document.getElementById('cg-user-name').value.trim();
-  var userPin = document.getElementById('cg-user-pin').value.trim();
+  var userPassword = document.getElementById('cg-user-pin').value.trim();
   var errEl = document.getElementById('cg-login-error');
   errEl.textContent = '';
 
-  if (!roomPass || !userName || !userPin) { errEl.textContent = 'Please fill in all fields.'; return; }
-  if (userPin.length < 4) { errEl.textContent = 'Password must be at least 4 characters.'; return; }
-
-  var authUser = auth.currentUser;
-  if (!authUser) {
-    errEl.textContent = 'Connecting... please wait a moment and try again.';
-    auth.signInAnonymously().then(function(result) {
-      currentUID = result.user.uid;
-      errEl.textContent = 'Ready! Please tap Log In again.';
-    }).catch(function(err) { errEl.textContent = 'Auth error: ' + err.message; });
+  if (!roomPass || !userName || !userPassword) { errEl.textContent = 'Please fill in all fields.'; return; }
+  if (userPassword.length < 4) { errEl.textContent = 'Password must be at least 4 characters.'; return; }
+  if (!auth.currentUser) {
+    errEl.textContent = 'Connecting... please wait and try again.';
+    auth.signInAnonymously().catch(function(err) { errEl.textContent = 'Auth error: ' + err.message; });
     return;
   }
 
-  currentUID = authUser.uid;
+  var normalized = normalizeName(userName);
+  if (!normalized) { errEl.textContent = 'Please enter a valid name.'; return; }
 
+  // Step 1: Verify room password
   db.collection('config').doc('rooms').get().then(function(snap) {
     if (!snap.exists) { errEl.textContent = 'Configuration error. Contact your admin.'; return; }
     var config = snap.data();
     var roomSalt = config[currentGroup + '_salt'];
     var roomHash = config[currentGroup + '_hash'];
-    var adminSalt = config['adminPin_salt'];
-    var adminHash = config['adminPin_hash'];
 
     hashInput(roomPass, roomSalt).then(function(enteredRoomHash) {
-      if (enteredRoomHash !== roomHash) { errEl.textContent = 'Incorrect room password. Check with your group leader.'; return; }
-      hashInput(userPin, adminSalt).then(function(enteredAdminHash) {
-        var isAdmin = (enteredAdminHash === adminHash);
-        var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(currentUID);
+      if (enteredRoomHash !== roomHash) {
+        errEl.textContent = 'Incorrect room password. Check with your group leader.';
+        return;
+      }
 
-        memberRef.get().then(function(memberSnap) {
-          if (memberSnap.exists) {
-            var privateRef = db.collection('groups').doc(currentGroup).collection('privateMembers').doc(currentUID);
-            privateRef.get().then(function(privateSnap) {
-              if (!privateSnap.exists) { errEl.textContent = 'Account error. Please use Start Over.'; return; }
-              var pinData = privateSnap.data();
-              hashInput(userPin, pinData.pinSalt).then(function(enteredPinHash) {
-                if (enteredPinHash !== pinData.pinHash) { errEl.textContent = 'Incorrect password. Try again.'; return; }
-                if (isAdmin && !memberSnap.data().approved) memberRef.update({ approved: true });
-                currentUser = { group: currentGroup, groupName: currentGroupName, name: memberSnap.data().name, uid: currentUID, isAdmin: isAdmin };
-                saveUser(currentUser);
-                startUnreadWatcher(currentGroup, memberSnap.data().name);
-                if (memberSnap.data().approved || isAdmin) { enterChat(); }
-                else { document.getElementById('cg-pending-title').textContent = currentGroupName; showCGScreen('pending'); }
-              });
-            });
-          } else {
-            var pinSalt = generateSalt();
-            hashInput(userPin, pinSalt).then(function(pinHash) {
-              memberRef.set({ name: userName, approved: isAdmin, joinedAt: Date.now() }).then(function() {
-                return db.collection('groups').doc(currentGroup).collection('privateMembers').doc(currentUID)
-                          .set({ pinHash: pinHash, pinSalt: pinSalt });
+      // Step 2: Look up member by normalized name
+      var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(normalized);
+      memberRef.get().then(function(memberSnap) {
+
+        if (memberSnap.exists) {
+          // Existing member — verify personal password
+          var data = memberSnap.data();
+          hashInput(userPassword, data.passwordSalt).then(function(enteredHash) {
+            if (enteredHash !== data.passwordHash) {
+              errEl.textContent = 'Incorrect password. Try again.';
+              return;
+            }
+            // Password correct — update last login
+            memberRef.update({ lastLoginAt: Date.now() });
+
+            currentMemberKey = normalized;
+            currentUser = {
+              group: currentGroup,
+              groupName: currentGroupName,
+              name: data.displayName,
+              normalizedName: normalized,
+              isAdmin: data.isAdmin === true
+            };
+            saveUser(currentUser);
+            startUnreadWatcher(currentGroup, data.displayName);
+
+            if (data.approved) { enterChat(); }
+            else { document.getElementById('cg-pending-title').textContent = currentGroupName; showCGScreen('pending'); }
+          });
+
+        } else {
+          // New member — check if this is the very first member (bootstrap admin)
+          db.collection('groups').doc(currentGroup).collection('members').get().then(function(allSnap) {
+            var isFirstMember = allSnap.empty;
+            var passwordSalt = generateSalt();
+
+            hashInput(userPassword, passwordSalt).then(function(passwordHash) {
+              memberRef.set({
+                displayName: userName,
+                normalizedName: normalized,
+                passwordHash: passwordHash,
+                passwordSalt: passwordSalt,
+                approved: isFirstMember,   // first person auto-approved
+                isAdmin: isFirstMember,    // first person auto-admin
+                createdAt: Date.now(),
+                lastLoginAt: Date.now()
               }).then(function() {
-                currentUser = { group: currentGroup, groupName: currentGroupName, name: userName, uid: currentUID, isAdmin: isAdmin };
+                currentMemberKey = normalized;
+                currentUser = {
+                  group: currentGroup,
+                  groupName: currentGroupName,
+                  name: userName,
+                  normalizedName: normalized,
+                  isAdmin: isFirstMember
+                };
                 saveUser(currentUser);
                 startUnreadWatcher(currentGroup, userName);
-                if (isAdmin) { enterChat(); }
+
+                if (isFirstMember) { enterChat(); }
                 else { document.getElementById('cg-pending-title').textContent = currentGroupName; showCGScreen('pending'); }
               }).catch(function(err) { errEl.textContent = 'Save error: ' + err.message; });
             });
-          }
-        }).catch(function(err) { errEl.textContent = 'Database error: ' + err.message; });
-      });
+          });
+        }
+
+      }).catch(function(err) { errEl.textContent = 'Lookup error: ' + err.message; });
     });
   }).catch(function(err) { errEl.textContent = 'Config error: ' + err.message; });
 }
 
-function generateSalt() {
-  var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  var salt = '';
-  for (var i = 0; i < 8; i++) salt += chars[Math.floor(Math.random() * chars.length)];
-  return salt;
-}
-
 // ---- CHECK APPROVAL ----
 function checkApproval() {
-  if (!currentUser) return;
-  var uid = currentUser.uid || currentUID;
-  db.collection('groups').doc(currentGroup).collection('members').doc(uid).get().then(function(snap) {
+  if (!currentMemberKey || !currentGroup) return;
+  db.collection('groups').doc(currentGroup).collection('members').doc(currentMemberKey).get().then(function(snap) {
     if (snap.exists && snap.data().approved) { enterChat(); }
     else { alert('Not approved yet. Please wait for your group leader to approve you.'); }
   });
 }
 
 function checkApprovalAndEnter() {
-  if (!currentUser) return;
-  var uid = currentUser.uid || currentUID;
-  db.collection('groups').doc(currentGroup).collection('members').doc(uid).get().then(function(snap) {
-    if (snap.exists && snap.data().approved) { enterChat(); }
-    else if (snap.exists) { document.getElementById('cg-pending-title').textContent = currentGroupName; showCGScreen('pending'); }
-    else { clearSavedUser(); showCGScreen('select'); }
+  if (!currentMemberKey || !currentGroup) { showCGScreen('select'); return; }
+  db.collection('groups').doc(currentGroup).collection('members').doc(currentMemberKey).get().then(function(snap) {
+    if (snap.exists && snap.data().approved) {
+      // Refresh isAdmin from Firestore in case it was updated
+      currentUser.isAdmin = snap.data().isAdmin === true;
+      saveUser(currentUser);
+      enterChat();
+    } else if (snap.exists) {
+      document.getElementById('cg-pending-title').textContent = currentGroupName;
+      showCGScreen('pending');
+    } else {
+      clearSavedUser();
+      showCGScreen('select');
+    }
   }).catch(function() { clearSavedUser(); showCGScreen('select'); });
 }
 
@@ -287,21 +355,12 @@ function enterChat() {
   if (membersBtn) membersBtn.style.display = 'block';
   showCGScreen('chat');
   loadMessages();
-  // Mark as read here — badge will clear after messages render
+  // Mark as read and clear badge when entering chat
   markAsRead();
+  setUnreadCount(currentGroup, 0);
 }
 
-// ---- IS IN CHAT ----
-function isInChat() {
-  var chatScreen = document.getElementById('cg-chat-screen');
-  var carePage = document.getElementById('page-care');
-  return chatScreen &&
-         chatScreen.style.display !== 'none' &&
-         carePage &&
-         carePage.classList.contains('active');
-}
-
-// ---- UNREAD WATCHER — fixed logic ----
+// ---- UNREAD WATCHER — fixed badge logic ----
 function startUnreadWatcher(groupId, userName) {
   if (unreadListener) { unreadListener(); unreadListener = null; }
 
@@ -315,7 +374,7 @@ function startUnreadWatcher(groupId, userName) {
       var lastSeen = lastSeenTimestamps[groupId] || 0;
       var total = snapshot.size;
 
-      // Count unread from others
+      // Count messages from others after last seen
       var newUnread = 0;
       snapshot.forEach(function(d) {
         var msg = d.data();
@@ -327,12 +386,11 @@ function startUnreadWatcher(groupId, userName) {
       if (!initialized) {
         initialized = true;
         lastCount = total;
-        // Show existing unread on startup only if not in chat
         if (!isInChat()) setUnreadCount(groupId, newUnread);
         return;
       }
 
-      // FIX: capture BEFORE updating lastCount
+      // Capture BEFORE updating lastCount (fix for the always-false bug)
       var hasNewMessage = total > lastCount;
       lastCount = total;
 
@@ -340,16 +398,16 @@ function startUnreadWatcher(groupId, userName) {
         // Sound plays always — inside or outside chat
         if (newUnread > 0) playNotificationSound();
 
-        // Badge: only update if outside chat
-        if (!isInChat()) {
-          setUnreadCount(groupId, newUnread);
-        }
-        // If in chat, messages are being seen — mark read
         if (isInChat()) {
+          // Inside chat — user is seeing it, mark read, clear badge
           markAsRead();
           setUnreadCount(groupId, 0);
+        } else {
+          // Outside chat — accumulate badge
+          setUnreadCount(groupId, newUnread);
         }
       }
+      // If no new message (e.g. edit/delete), don't change badge
     }, function(err) {
       console.log('Watcher error:', err.message);
     });
@@ -373,7 +431,6 @@ function clearReply() {
 
 // ---- LONG PRESS MENU ----
 function showMessageMenu(msgId, isMe) {
-  // Remove any existing menu
   var existing = document.getElementById('msg-menu');
   if (existing) existing.remove();
 
@@ -381,18 +438,15 @@ function showMessageMenu(msgId, isMe) {
   menu.id = 'msg-menu';
   menu.className = 'msg-menu';
 
-  if (isMe || currentUser.isAdmin) {
-    if (isMe) {
-      var editBtn = document.createElement('button');
-      editBtn.className = 'msg-menu-btn';
-      editBtn.textContent = '✏️ Edit';
-      editBtn.addEventListener('click', function() {
-        menu.remove();
-        editMessage(msgId);
-      });
-      menu.appendChild(editBtn);
-    }
+  if (isMe) {
+    var editBtn = document.createElement('button');
+    editBtn.className = 'msg-menu-btn';
+    editBtn.textContent = '✏️ Edit';
+    editBtn.addEventListener('click', function() { menu.remove(); editMessage(msgId); });
+    menu.appendChild(editBtn);
+  }
 
+  if (isMe || currentUser.isAdmin) {
     var deleteBtn = document.createElement('button');
     deleteBtn.className = 'msg-menu-btn msg-menu-delete';
     deleteBtn.textContent = '🗑️ Delete';
@@ -413,7 +467,6 @@ function showMessageMenu(msgId, isMe) {
 
   document.body.appendChild(menu);
 
-  // Dismiss on outside tap
   setTimeout(function() {
     document.addEventListener('click', function dismiss() {
       menu.remove();
@@ -435,12 +488,11 @@ function editMessage(msgId) {
   });
 }
 
-// ---- ATTACH LONG PRESS TO WRAPPER ----
+// ---- ATTACH LONG PRESS ----
 function attachLongPress(wrapper, msgId, isMe) {
+  if (!isMe && !currentUser.isAdmin) return;
   wrapper.addEventListener('touchstart', function(e) {
-    if (!isMe && !currentUser.isAdmin) return;
     longPressTimer = setTimeout(function() {
-      e.preventDefault();
       showMessageMenu(msgId, isMe);
     }, 600);
   });
@@ -471,31 +523,23 @@ function renderMessageContent(text, container) {
 
   parts.forEach(function(part) {
     if (!part) return;
-
     if (part.match(/^https?:\/\//)) {
       var url = part;
 
-      // YouTube — always show thumbnail, also try iframe
+      // YouTube — always thumbnail with play overlay
       var ytId = extractYouTubeId(url);
       if (ytId) {
         var ytWrap = document.createElement('div');
         ytWrap.className = 'msg-yt-wrap';
-
-        // Always render clickable thumbnail as primary
         var thumb = document.createElement('img');
         thumb.src = 'https://img.youtube.com/vi/' + ytId + '/hqdefault.jpg';
         thumb.className = 'msg-image msg-yt-thumb';
         thumb.setAttribute('loading', 'lazy');
-
-        // Tapping thumbnail opens YouTube
         thumb.addEventListener('click', function() { window.open(url, '_blank'); });
-
-        // Play button overlay
         var playOverlay = document.createElement('div');
         playOverlay.className = 'msg-yt-play';
         playOverlay.textContent = '▶';
         playOverlay.addEventListener('click', function() { window.open(url, '_blank'); });
-
         ytWrap.appendChild(thumb);
         ytWrap.appendChild(playOverlay);
         container.appendChild(ytWrap);
@@ -505,8 +549,7 @@ function renderMessageContent(text, container) {
       // Image
       if (url.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i)) {
         var img = document.createElement('img');
-        img.src = url;
-        img.className = 'msg-image';
+        img.src = url; img.className = 'msg-image';
         img.setAttribute('loading', 'lazy');
         img.addEventListener('click', function() { window.open(url, '_blank'); });
         container.appendChild(img);
@@ -516,24 +559,20 @@ function renderMessageContent(text, container) {
       // Video
       if (url.match(/\.(mp4|webm|ogg)(\?.*)?$/i)) {
         var video = document.createElement('video');
-        video.src = url;
-        video.className = 'msg-video';
-        video.controls = true;
-        video.setAttribute('playsinline', '');
+        video.src = url; video.className = 'msg-video';
+        video.controls = true; video.setAttribute('playsinline', '');
         container.appendChild(video);
         return;
       }
 
       // Generic link
       var link = document.createElement('a');
-      link.href = url;
-      link.textContent = url;
-      link.target = '_blank';
-      link.className = 'msg-link';
+      link.href = url; link.textContent = url;
+      link.target = '_blank'; link.className = 'msg-link';
       container.appendChild(link);
 
     } else {
-      if (part.trim() || part.includes('\n')) {
+      if (part.trim()) {
         var span = document.createElement('span');
         span.textContent = part;
         container.appendChild(span);
@@ -569,9 +608,11 @@ function loadMessages() {
         renderThread(msg, replyMap[msg._id] || [], messagesEl, index < topLevel.length - 1);
       });
       messagesEl.scrollTop = messagesEl.scrollHeight;
-      // Mark as read after messages render
-      markAsRead();
-      setUnreadCount(currentGroup, 0);
+      // Only clear badge if actually in chat
+      if (isInChat()) {
+        markAsRead();
+        setUnreadCount(currentGroup, 0);
+      }
     });
 }
 
@@ -635,21 +676,16 @@ function renderPrimaryMessage(msg, container) {
   header.appendChild(timeSpan);
   content.appendChild(header);
 
-  // Message wrapper — long press attaches here
   var wrapper = document.createElement('div');
   wrapper.className = 'msg-wrapper';
   renderMessageContent(msg.text, wrapper);
-
   if (msg.edited) {
     var editedTag = document.createElement('span');
     editedTag.className = 'msg-edited';
     editedTag.textContent = ' (edited)';
     wrapper.appendChild(editedTag);
   }
-
-  // Attach long press to wrapper (works for all content types including iframes)
   attachLongPress(wrapper, msg._id, isMe);
-
   content.appendChild(wrapper);
   row.appendChild(content);
   container.appendChild(row);
@@ -689,16 +725,13 @@ function renderReplyMessage(msg, container) {
   var wrapper = document.createElement('div');
   wrapper.className = 'msg-wrapper';
   renderMessageContent(msg.text, wrapper);
-
   if (msg.edited) {
     var editedTag = document.createElement('span');
     editedTag.className = 'msg-edited';
     editedTag.textContent = ' (edited)';
     wrapper.appendChild(editedTag);
   }
-
   attachLongPress(wrapper, msg._id, isMe);
-
   content.appendChild(wrapper);
   row.appendChild(content);
   container.appendChild(row);
@@ -710,17 +743,22 @@ function sendMessage() {
   var text = input.value.trim();
   if (!text || !db) return;
   input.value = '';
-  var msgData = { text: text, author: currentUser.name, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+  var msgData = {
+    text: text,
+    author: currentUser.name,
+    authorKey: currentMemberKey,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  };
   if (replyingTo) { msgData.replyTo = replyingTo.id; msgData.replyToAuthor = replyingTo.author; clearReply(); }
   db.collection('groups').doc(currentGroup).collection('messages').add(msgData);
 }
 
 // ---- LEAVE CHAT ----
 function leaveChat() {
-  if (messageListener) { messageListener(); messageListener = null; }
+  // Do NOT stop messageListener — keep it running for badge updates
   clearSavedUser();
   clearReply();
-  currentUser = null; currentGroup = null; currentGroupName = null;
+  currentUser = null; currentGroup = null; currentGroupName = null; currentMemberKey = null;
   hideInputBar();
   showCGScreen('select');
 }
@@ -748,7 +786,10 @@ function loadMembersList() {
     if (snap.empty) { listEl.innerHTML = '<div class="cg-empty-note">No members yet</div>'; return; }
 
     var approved = [], pending = [];
-    snap.forEach(function(d) { var data = d.data(); data._id = d.id; if (data.approved) approved.push(data); else pending.push(data); });
+    snap.forEach(function(d) {
+      var data = d.data(); data._id = d.id;
+      if (data.approved) approved.push(data); else pending.push(data);
+    });
 
     // Pending — admin only
     if (currentUser.isAdmin && pending.length > 0) {
@@ -760,7 +801,7 @@ function loadMembersList() {
       pendingList.className = 'cg-member-list';
       pending.forEach(function(m) {
         var div = document.createElement('div'); div.className = 'cg-member-row';
-        var nameSpan = document.createElement('span'); nameSpan.className = 'cg-member-name'; nameSpan.textContent = m.name;
+        var nameSpan = document.createElement('span'); nameSpan.className = 'cg-member-name'; nameSpan.textContent = m.displayName || m.name || m._id;
         var approveBtn = document.createElement('button'); approveBtn.className = 'cg-approve-btn'; approveBtn.textContent = 'Approve';
         approveBtn.addEventListener('click', (function(id) { return function() { approveMember(id); }; })(m._id));
         var denyBtn = document.createElement('button'); denyBtn.className = 'cg-deny-btn'; denyBtn.textContent = 'Deny';
@@ -771,7 +812,7 @@ function loadMembersList() {
       listEl.appendChild(pendingList);
     }
 
-    // Approved members — visible to everyone
+    // Approved — everyone sees this list
     var approvedLabel = document.createElement('div');
     approvedLabel.className = 'section-label';
     approvedLabel.textContent = 'MEMBERS';
@@ -785,7 +826,8 @@ function loadMembersList() {
     } else {
       approved.forEach(function(m) {
         var div = document.createElement('div'); div.className = 'cg-member-row';
-        var nameSpan = document.createElement('span'); nameSpan.className = 'cg-member-name'; nameSpan.textContent = m.name;
+        var nameSpan = document.createElement('span'); nameSpan.className = 'cg-member-name';
+        nameSpan.textContent = (m.displayName || m.name || m._id) + (m.isAdmin ? ' ⭐' : '');
         div.appendChild(nameSpan);
         if (currentUser.isAdmin) {
           var removeBtn = document.createElement('button'); removeBtn.className = 'cg-deny-btn'; removeBtn.textContent = 'Remove';
@@ -804,23 +846,23 @@ function approveMember(memberId) {
     .update({ approved: true }).then(loadMembersList);
 }
 function denyMember(memberId) {
-  db.collection('groups').doc(currentGroup).collection('members').doc(memberId).delete().then(function() {
-    db.collection('groups').doc(currentGroup).collection('privateMembers').doc(memberId).delete();
-    loadMembersList();
-  });
+  db.collection('groups').doc(currentGroup).collection('members').doc(memberId)
+    .delete().then(loadMembersList);
 }
 function removeMember(memberId) {
   if (confirm('Remove this member from the group?')) {
-    db.collection('groups').doc(currentGroup).collection('members').doc(memberId).delete().then(function() {
-      db.collection('groups').doc(currentGroup).collection('privateMembers').doc(memberId).delete();
-      loadMembersList();
-    });
+    db.collection('groups').doc(currentGroup).collection('members').doc(memberId)
+      .delete().then(loadMembersList);
   }
 }
 
 // ---- LOCAL STORAGE ----
 function saveUser(user) { localStorage.setItem('mhbc_cg_user', JSON.stringify(user)); }
-function getSavedUser() { var raw = localStorage.getItem('mhbc_cg_user'); if (!raw) return null; try { return JSON.parse(raw); } catch(e) { return null; } }
+function getSavedUser() {
+  var raw = localStorage.getItem('mhbc_cg_user');
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch(e) { return null; }
+}
 function clearSavedUser() { localStorage.removeItem('mhbc_cg_user'); }
 
 // ---- BIBLE PICKER ----
@@ -982,13 +1024,17 @@ window.onload = function() {
   setInterval(checkLiveBadge, 60000);
   tryGenerateQR();
 
-  // ---- AUTH ----
+  // ---- AUTH — anonymous sign-in for Firestore protection ----
   auth.onAuthStateChanged(function(user) {
     if (user) {
       currentUID = user.uid;
+      // Restore session if saved
       var savedUser = getSavedUser();
-      if (savedUser && savedUser.group && savedUser.name) {
+      if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) {
         currentGroup = savedUser.group;
+        currentGroupName = savedUser.groupName;
+        currentUser = savedUser;
+        currentMemberKey = savedUser.normalizedName;
         startUnreadWatcher(savedUser.group, savedUser.name);
       }
     } else {
