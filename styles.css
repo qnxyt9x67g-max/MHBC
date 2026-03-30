@@ -509,6 +509,12 @@ body {
   z-index: 200;
 }
 
+/* ============================================================
+   BADGE POSITION FIX — find and REPLACE the existing
+   .nav-badge and .nav-btn rules in styles.css with these
+   ============================================================ */
+
+/* Bottom nav button — needs relative positioning for badge */
 .nav-btn {
   flex: 1;
   display: flex;
@@ -542,9 +548,11 @@ body {
   font-family: 'Lato', sans-serif;
 }
 
+/* Badge — anchored to top-right of the icon area */
 .nav-badge {
   position: absolute;
-  top: 6px; right: 8px;
+  top: 4px;
+  right: calc(50% - 20px); /* centers over right side of icon */
   background: #d32f2f;
   color: white;
   font-size: 9px;
@@ -556,6 +564,8 @@ body {
   align-items: center;
   justify-content: center;
   padding: 0 4px;
+  pointer-events: none;
+  z-index: 10;
 }
 
 /* ---- CARE GROUPS ---- */
