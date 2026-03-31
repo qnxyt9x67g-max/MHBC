@@ -670,7 +670,7 @@ function renderThread(msg, replies, container, showDivider) {
 
 // ---- RENDER PRIMARY MESSAGE ----
 function renderPrimaryMessage(msg, container) {
-  var isMe = msg.author === currentUser.name;
+  var isMe = msg.authorUid === currentUID;
   var color = getBubbleColor(msg.author);
   var time = msg.timestamp ? new Date(msg.timestamp.toMillis()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
   var row = document.createElement('div');
@@ -711,7 +711,7 @@ function renderPrimaryMessage(msg, container) {
 
 // ---- RENDER REPLY MESSAGE ----
 function renderReplyMessage(msg, container) {
-  var isMe = msg.author === currentUser.name;
+  var isMe = msg.authorUid === currentUID;
   var color = getBubbleColor(msg.author);
   var time = msg.timestamp ? new Date(msg.timestamp.toMillis()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
   var row = document.createElement('div');
