@@ -1,7 +1,8 @@
 // ============================================================
-// MHBC APP — app.js v20
+// MHBC APP — app.js v21
 // Hybrid model: UID = trusted session, name+password = recovery
 // Admin assigned backend-only via Firebase console
+// v21: desktop edit/delete, legacy message ownership, returning user message
 // ============================================================
 
 var db = null;
@@ -9,8 +10,8 @@ var auth = null;
 var currentUID = null;
 var currentGroup = null;
 var currentGroupName = null;
-var currentUser = null;       // { name, normalizedName, group, groupName, isAdmin }
-var currentMemberKey = null;  // normalizedName for identity doc lookup
+var currentUser = null;
+var currentMemberKey = null;
 var messageListener = null;
 var unreadListener = null;
 var unreadCount = 0;
@@ -209,14 +210,22 @@ function selectGroup(groupId, groupName) {
   showCGScreen('login');
 }
 
+// ---- PENDING SCREEN MESSAGES ----
+function showFirstTimeMessage() {
+  var msgEl = document.getElementById('cg-pending-msg');
+  if (msgEl) {
+    msgEl.textContent = 'Your request to join has been sent! Your group leader will approve you shortly.';
+  }
+}
+
+function showReturningUserMessage() {
+  var msgEl = document.getElementById('cg-pending-msg');
+  if (msgEl) {
+    msgEl.textContent = 'We recognize your account. This device or browser needs to be approved by your group leader before you can continue.';
+  }
+}
+
 // ---- SUBMIT LOGIN ----
-// Flow:
-// 1. Verify room password against config hashes
-// 2. Look up identity doc by normalizedName
-// 3. If identity exists: verify personal password
-//    - If UID member doc exists: check approved/isAdmin and enter
-//    - If UID member doc missing (new device): create pending member doc
-// 4. If identity missing: create new identity + pending member doc
 function submitLogin() {
   var roomPass = document.getElementById('cg-room-password').value.trim();
   var userName = document.getElementById('cg-user-name').value.trim();
@@ -238,7 +247,6 @@ function submitLogin() {
   var normalized = normalizeName(userName);
   if (!normalized) { errEl.textContent = 'Please enter a valid name.'; return; }
 
-  // Step 1: Verify room password
   db.collection('config').doc('rooms').get().then(function(snap) {
     if (!snap.exists) { errEl.textContent = 'Configuration error. Contact your admin.'; return; }
     var config = snap.data();
@@ -249,14 +257,13 @@ function submitLogin() {
         return;
       }
 
-      // Step 2: Look up identity doc by normalizedName
       var identityRef = db.collection('groups').doc(currentGroup)
                           .collection('identities').doc(normalized);
 
       identityRef.get().then(function(identitySnap) {
 
         if (identitySnap.exists) {
-          // Identity found — verify personal password
+          // Known identity — verify personal password
           var identity = identitySnap.data();
 
           hashInput(userPassword, identity.passwordSalt).then(function(enteredHash) {
@@ -265,13 +272,13 @@ function submitLogin() {
               return;
             }
 
-            // Password correct — now check/create UID member doc
+            // Password correct — check UID member doc
             var memberRef = db.collection('groups').doc(currentGroup)
                               .collection('members').doc(currentUID);
 
             memberRef.get().then(function(memberSnap) {
               if (memberSnap.exists) {
-                // UID member doc exists — update lastLoginAt and enter
+                // Same device — update lastLoginAt and enter
                 memberRef.update({ lastLoginAt: Date.now() });
                 var memberData = memberSnap.data();
                 currentMemberKey = normalized;
@@ -286,11 +293,14 @@ function submitLogin() {
                 startUnreadWatcher(currentGroup, identity.displayName);
 
                 if (memberData.approved) { enterChat(); }
-                else { document.getElementById('cg-pending-title').textContent = currentGroupName; showCGScreen('pending'); }
+                else {
+                  document.getElementById('cg-pending-title').textContent = currentGroupName;
+                  showReturningUserMessage();
+                  showCGScreen('pending');
+                }
 
               } else {
-                // New device / cleared browser — create pending member doc for this UID
-                // Rules enforce: approved=false, isAdmin=false on create
+                // Recognized identity, new device/browser — create pending member doc
                 memberRef.set({
                   uid: currentUID,
                   normalizedName: normalized,
@@ -311,6 +321,7 @@ function submitLogin() {
                   saveUser(currentUser);
                   startUnreadWatcher(currentGroup, identity.displayName);
                   document.getElementById('cg-pending-title').textContent = currentGroupName;
+                  showReturningUserMessage();
                   showCGScreen('pending');
                 }).catch(function(err) { errEl.textContent = 'Session error: ' + err.message; });
               }
@@ -318,11 +329,10 @@ function submitLogin() {
           });
 
         } else {
-          // New user — create identity doc + pending member doc
+          // Brand new user — create identity + member docs
           var passwordSalt = generateSalt();
           hashInput(userPassword, passwordSalt).then(function(passwordHash) {
 
-            // Create identity doc (rules enforce approved=false, isAdmin=false)
             identityRef.set({
               displayName: userName,
               normalizedName: normalized,
@@ -332,7 +342,6 @@ function submitLogin() {
               isAdmin: false,
               createdAt: Date.now()
             }).then(function() {
-              // Create member doc keyed by UID
               var memberRef = db.collection('groups').doc(currentGroup)
                                 .collection('members').doc(currentUID);
               return memberRef.set({
@@ -356,6 +365,7 @@ function submitLogin() {
               saveUser(currentUser);
               startUnreadWatcher(currentGroup, userName);
               document.getElementById('cg-pending-title').textContent = currentGroupName;
+              showFirstTimeMessage();
               showCGScreen('pending');
             }).catch(function(err) { errEl.textContent = 'Registration error: ' + err.message; });
           });
@@ -367,7 +377,6 @@ function submitLogin() {
 }
 
 // ---- CHECK APPROVAL ----
-// Checks the UID-keyed member doc (trusted by rules)
 function checkApproval() {
   if (!currentUID || !currentGroup) return;
   db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).get().then(function(snap) {
@@ -385,7 +394,6 @@ function checkApprovalAndEnter() {
   if (!currentUID || !currentGroup) { showCGScreen('select'); return; }
   db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).get().then(function(snap) {
     if (snap.exists && snap.data().approved) {
-      // Refresh isAdmin from Firestore
       currentUser.isAdmin = snap.data().isAdmin === true;
       saveUser(currentUser);
       enterChat();
@@ -469,6 +477,15 @@ function clearReply() {
   if (bar) bar.style.display = 'none';
 }
 
+// ---- MESSAGE OWNERSHIP CHECK ----
+// Three-tier: UID (current session) → authorKey (same person, different UID) → display name (legacy)
+function isMyMessage(msg) {
+  if (msg.authorUid && currentUID && msg.authorUid === currentUID) return true;
+  if (msg.authorKey && currentMemberKey && msg.authorKey === currentMemberKey) return true;
+  if (!msg.authorUid && !msg.authorKey && msg.author && currentUser && msg.author === currentUser.name) return true;
+  return false;
+}
+
 // ---- LONG PRESS MENU ----
 function showMessageMenu(msgId, isMe) {
   var existing = document.getElementById('msg-menu');
@@ -527,14 +544,31 @@ function editMessage(msgId) {
   });
 }
 
-// ---- ATTACH LONG PRESS ----
+// ---- ATTACH LONG PRESS — touch + desktop ----
 function attachLongPress(wrapper, msgId, isMe) {
   if (!isMe && !currentUser.isAdmin) return;
+
+  // Mobile: touch long press
   wrapper.addEventListener('touchstart', function() {
     longPressTimer = setTimeout(function() { showMessageMenu(msgId, isMe); }, 600);
   });
   wrapper.addEventListener('touchend', function() { clearTimeout(longPressTimer); });
   wrapper.addEventListener('touchmove', function() { clearTimeout(longPressTimer); });
+
+  // Desktop: right-click context menu
+  wrapper.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    showMessageMenu(msgId, isMe);
+  });
+
+  // Desktop: mouse long press
+  var mouseTimer = null;
+  wrapper.addEventListener('mousedown', function(e) {
+    if (e.button !== 0) return;
+    mouseTimer = setTimeout(function() { showMessageMenu(msgId, isMe); }, 600);
+  });
+  wrapper.addEventListener('mouseup', function() { clearTimeout(mouseTimer); });
+  wrapper.addEventListener('mouseleave', function() { clearTimeout(mouseTimer); });
 }
 
 // ---- YOUTUBE ID EXTRACTOR ----
@@ -670,18 +704,22 @@ function renderThread(msg, replies, container, showDivider) {
 
 // ---- RENDER PRIMARY MESSAGE ----
 function renderPrimaryMessage(msg, container) {
-  var isMe = msg.authorUid === currentUID;
+  var isMe = isMyMessage(msg);
   var color = getBubbleColor(msg.author);
   var time = msg.timestamp ? new Date(msg.timestamp.toMillis()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+
   var row = document.createElement('div');
   row.className = 'cg-primary-row';
+
   var avatar = document.createElement('div');
   avatar.className = 'cg-avatar';
   avatar.textContent = msg.author.charAt(0).toUpperCase();
   avatar.style.background = color;
   row.appendChild(avatar);
+
   var content = document.createElement('div');
   content.className = 'cg-primary-content';
+
   var header = document.createElement('div');
   header.className = 'cg-primary-header';
   var nameSpan = document.createElement('span');
@@ -694,6 +732,7 @@ function renderPrimaryMessage(msg, container) {
   header.appendChild(nameSpan);
   header.appendChild(timeSpan);
   content.appendChild(header);
+
   var wrapper = document.createElement('div');
   wrapper.className = 'msg-wrapper';
   renderMessageContent(msg.text, wrapper);
@@ -711,18 +750,22 @@ function renderPrimaryMessage(msg, container) {
 
 // ---- RENDER REPLY MESSAGE ----
 function renderReplyMessage(msg, container) {
-  var isMe = msg.authorUid === currentUID;
+  var isMe = isMyMessage(msg);
   var color = getBubbleColor(msg.author);
   var time = msg.timestamp ? new Date(msg.timestamp.toMillis()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+
   var row = document.createElement('div');
   row.className = 'cg-reply-row';
+
   var avatar = document.createElement('div');
   avatar.className = 'cg-avatar cg-avatar-sm';
   avatar.textContent = msg.author.charAt(0).toUpperCase();
   avatar.style.background = color;
   row.appendChild(avatar);
+
   var content = document.createElement('div');
   content.className = 'cg-reply-content';
+
   var header = document.createElement('div');
   header.className = 'cg-primary-header';
   var nameSpan = document.createElement('span');
@@ -735,6 +778,7 @@ function renderReplyMessage(msg, container) {
   header.appendChild(nameSpan);
   header.appendChild(timeSpan);
   content.appendChild(header);
+
   var wrapper = document.createElement('div');
   wrapper.className = 'msg-wrapper';
   renderMessageContent(msg.text, wrapper);
@@ -751,7 +795,6 @@ function renderReplyMessage(msg, container) {
 }
 
 // ---- SEND MESSAGE ----
-// Includes authorUid so rules can verify ownership
 function sendMessage() {
   var input = document.getElementById('cg-msg-input');
   var text = input.value.trim();
@@ -805,7 +848,6 @@ function loadMembersList() {
       if (data.approved) approved.push(data); else pending.push(data);
     });
 
-    // Pending — admin only
     if (currentUser.isAdmin && pending.length > 0) {
       var pendingLabel = document.createElement('div');
       pendingLabel.className = 'section-label';
@@ -827,7 +869,6 @@ function loadMembersList() {
       listEl.appendChild(pendingList);
     }
 
-    // Approved members — visible to everyone
     var approvedLabel = document.createElement('div');
     approvedLabel.className = 'section-label';
     approvedLabel.textContent = 'MEMBERS';
@@ -855,8 +896,6 @@ function loadMembersList() {
   });
 }
 
-// Admin actions write to members/{uid} docs
-// Rules enforce: only admins can delete, only safe fields on update
 function approveMember(memberUid) {
   db.collection('groups').doc(currentGroup).collection('members').doc(memberUid)
     .update({ approved: true }).then(loadMembersList);
