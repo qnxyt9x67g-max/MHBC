@@ -940,19 +940,19 @@ window.onload = function() {
   setInterval(checkLiveBadge, 60000);
   tryGenerateQR();
 
-  auth.onAuthStateChanged(function(user) {
-    if (user) {
-      currentUID = user.uid;
-      var savedUser = getSavedUser();
-      if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) {
-        currentGroup = savedUser.group; currentGroupName = savedUser.groupName;
-        currentUser = savedUser; currentMemberKey = savedUser.normalizedName;
-        startUnreadWatcher(savedUser.group, savedUser.name);
-      }
-    } else {
-      auth.signInAnonymously().catch(function(err) {
-        console.error('Sign in failed:', err.code, err.message);
-      });
+ auth.onAuthStateChanged(function(user) {
+  if (user) {
+    authReady = true;
+    currentUID = user.uid;
+    var savedUser = getSavedUser();
+    if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) {
+      currentGroup = savedUser.group; currentGroupName = savedUser.groupName;
+      currentUser = savedUser; currentMemberKey = savedUser.normalizedName;
+      startUnreadWatcher(savedUser.group, savedUser.name);
     }
-  });
-};
+  } else {
+    auth.signInAnonymously().catch(function(err) {
+      console.error('Sign in failed:', err.code, err.message);
+    });
+  }
+});
