@@ -194,11 +194,15 @@ function submitLogin() {
   if (userPassword.length < 4) { errEl.textContent = 'Password must be at least 4 characters.'; return; }
 
   var authUser = auth.currentUser;
-  if (!authUser) {
-    errEl.textContent = 'Connecting... please wait and try again.';
-    auth.signInAnonymously().catch(function(err) { errEl.textContent = 'Auth error: ' + err.message; });
-    return;
-  }
+if (!authUser) {
+  errEl.textContent = 'Connecting...';
+  auth.signInAnonymously().then(function(result) {
+    currentUID = result.user.uid;
+    errEl.textContent = '';
+    submitLogin();
+  }).catch(function(err) { errEl.textContent = 'Auth error: ' + err.message; });
+  return;
+}
 
   currentUID = authUser.uid;
   var normalized = normalizeName(userName);
