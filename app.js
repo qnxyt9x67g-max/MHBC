@@ -720,32 +720,44 @@ function approveMember(memberUid) {
   });
 }
 
-// Deny: delete member doc + sync identity doc to approved:false
+// Helper: delete ALL member docs for a given normalizedName, then set identity approved:false
+function deleteAllSessionsForPerson(normalized) {
+  return db.collection('groups').doc(currentGroup).collection('members')
+    .where('normalizedName', '==', normalized).get()
+    .then(function(snap) {
+      var deletes = [];
+      snap.forEach(function(d) { deletes.push(d.ref.delete()); });
+      return Promise.all(deletes);
+    }).then(function() {
+      return db.collection('groups').doc(currentGroup).collection('identities')
+        .doc(normalized).update({ approved: false });
+    });
+}
+
+// Deny: delete ALL UID sessions for this person + mark identity not approved
 function denyMember(memberUid) {
   var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(memberUid);
   memberRef.get().then(function(snap) {
     var normalized = snap.exists ? snap.data().normalizedName : null;
-    return memberRef.delete().then(function() {
-      if (normalized) {
-        return db.collection('groups').doc(currentGroup).collection('identities')
-          .doc(normalized).update({ approved: false });
-      }
-    });
+    if (normalized) {
+      return deleteAllSessionsForPerson(normalized);
+    } else {
+      return memberRef.delete();
+    }
   }).then(loadMembersList);
 }
 
-// Remove: same as deny
+// Remove: delete ALL UID sessions for this person + mark identity not approved
 function removeMember(memberUid) {
   if (!confirm('Remove this member from the group?')) return;
   var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(memberUid);
   memberRef.get().then(function(snap) {
     var normalized = snap.exists ? snap.data().normalizedName : null;
-    return memberRef.delete().then(function() {
-      if (normalized) {
-        return db.collection('groups').doc(currentGroup).collection('identities')
-          .doc(normalized).update({ approved: false });
-      }
-    });
+    if (normalized) {
+      return deleteAllSessionsForPerson(normalized);
+    } else {
+      return memberRef.delete();
+    }
   }).then(loadMembersList);
 }
 
