@@ -19,7 +19,11 @@ var replyingTo = null;
 var longPressTimer = null;
 var audioUnlocked = false;
 var audioCtx = null;
-var authReady = false;
+
+var BUBBLE_COLORS = [
+  '#1a5276','#1a3a6e','#6c3483','#145a32','#784212',
+  '#1b4f72','#4a235a','#0e6655','#7b241c','#1f618d'
+];
 
 function getBubbleColor(name) {
   var hash = 0;
@@ -190,19 +194,13 @@ function submitLogin() {
   if (userPassword.length < 4) { errEl.textContent = 'Password must be at least 4 characters.'; return; }
 
   var authUser = auth.currentUser;
-if (!authReady || !auth.currentUser) {
-  errEl.textContent = 'Connecting... please try again in a moment.';
-  var checkInterval = setInterval(function() {
-    if (authReady && auth.currentUser) {
-      clearInterval(checkInterval);
-      currentUID = auth.currentUser.uid;
-      errEl.textContent = '';
-      submitLogin();
-    }
-  }, 300);
-  return;
-}
-currentUID = auth.currentUser.uid;
+  if (!authUser) {
+    errEl.textContent = 'Connecting... please wait and try again.';
+    auth.signInAnonymously().catch(function(err) { errEl.textContent = 'Auth error: ' + err.message; });
+    return;
+  }
+
+  currentUID = authUser.uid;
   var normalized = normalizeName(userName);
   if (!normalized) { errEl.textContent = 'Please enter a valid name.'; return; }
 
@@ -938,19 +936,19 @@ window.onload = function() {
   setInterval(checkLiveBadge, 60000);
   tryGenerateQR();
 
- auth.onAuthStateChanged(function(user) {
-  if (user) {
-    authReady = true;
-    currentUID = user.uid;
-    var savedUser = getSavedUser();
-    if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) {
-      currentGroup = savedUser.group; currentGroupName = savedUser.groupName;
-      currentUser = savedUser; currentMemberKey = savedUser.normalizedName;
-      startUnreadWatcher(savedUser.group, savedUser.name);
+  auth.onAuthStateChanged(function(user) {
+    if (user) {
+      currentUID = user.uid;
+      var savedUser = getSavedUser();
+      if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) {
+        currentGroup = savedUser.group; currentGroupName = savedUser.groupName;
+        currentUser = savedUser; currentMemberKey = savedUser.normalizedName;
+        startUnreadWatcher(savedUser.group, savedUser.name);
+      }
+    } else {
+      auth.signInAnonymously().catch(function(err) {
+        console.error('Sign in failed:', err.code, err.message);
+      });
     }
-  } else {
-    auth.signInAnonymously().catch(function(err) {
-      console.error('Sign in failed:', err.code, err.message);
-    });
-  }
-});
+  });
+};
