@@ -20,10 +20,6 @@ var longPressTimer = null;
 var audioUnlocked = false;
 var audioCtx = null;
 var authReady = false;
-var BUBBLE_COLORS = [
-  '#1a5276','#1a3a6e','#6c3483','#145a32','#784212',
-  '#1b4f72','#4a235a','#0e6655','#7b241c','#1f618d'
-];
 
 function getBubbleColor(name) {
   var hash = 0;
