@@ -243,50 +243,24 @@ function submitLogin() {
                   showReturningUserMessage(); showCGScreen('pending');
                 }
               } else {
-                // New device / cleared browser — restore from identity doc
-                // Rules require approved:false on CREATE, so we create first then update
-                var restoredApproved = identity.approved === true;
-                var restoredIsAdmin = identity.isAdmin === true;
-
+                // New device / cleared browser — create pending doc, nothing more
                 memberRef.set({
                   uid: currentUID, normalizedName: normalized,
                   displayName: identity.displayName,
                   approved: false, isAdmin: false,
                   createdAt: Date.now(), lastLoginAt: Date.now()
                 }).then(function() {
-                  // If they were previously approved, update now (rules allow self-update of safe fields)
-                  // For approved/isAdmin restore, we use a second write since rules allow it as an update
-                  if (restoredApproved || restoredIsAdmin) {
-                    return memberRef.update({
-                      approved: restoredApproved,
-                      isAdmin: restoredIsAdmin
-                    });
-                  }
-                }).then(function() {
-                  // Clean up old UID sessions for this normalizedName
-                  return db.collection('groups').doc(currentGroup).collection('members')
-                    .where('normalizedName', '==', normalized).get();
-                }).then(function(oldSnap) {
-                  var deletes = [];
-                  oldSnap.forEach(function(d) {
-                    if (d.id !== currentUID) deletes.push(d.ref.delete());
-                  });
-                  return Promise.all(deletes);
-                }).then(function() {
                   currentMemberKey = normalized;
                   currentUser = {
                     group: currentGroup, groupName: currentGroupName,
                     name: identity.displayName, normalizedName: normalized,
-                    isAdmin: restoredIsAdmin
+                    isAdmin: false
                   };
                   saveUser(currentUser);
                   startUnreadWatcher(currentGroup, identity.displayName);
-                  if (restoredApproved) {
-                    enterChat();
-                  } else {
-                    document.getElementById('cg-pending-title').textContent = currentGroupName;
-                    showReturningUserMessage(); showCGScreen('pending');
-                  }
+                  document.getElementById('cg-pending-title').textContent = currentGroupName;
+                  showReturningUserMessage();
+                  showCGScreen('pending');
                 }).catch(function(err) { errEl.textContent = 'Session error: ' + err.message; });
               }
             }).catch(function(err) { errEl.textContent = 'Member lookup error: ' + err.message; });
