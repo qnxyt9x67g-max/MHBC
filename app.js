@@ -194,17 +194,19 @@ function submitLogin() {
   if (userPassword.length < 4) { errEl.textContent = 'Password must be at least 4 characters.'; return; }
 
   var authUser = auth.currentUser;
-if (!authUser) {
-  errEl.textContent = 'Connecting...';
-  auth.signInAnonymously().then(function(result) {
-    currentUID = result.user.uid;
-    errEl.textContent = '';
-    submitLogin();
-  }).catch(function(err) { errEl.textContent = 'Auth error: ' + err.message; });
+if (!authReady || !auth.currentUser) {
+  errEl.textContent = 'Connecting... please try again in a moment.';
+  var checkInterval = setInterval(function() {
+    if (authReady && auth.currentUser) {
+      clearInterval(checkInterval);
+      currentUID = auth.currentUser.uid;
+      errEl.textContent = '';
+      submitLogin();
+    }
+  }, 300);
   return;
 }
-
-  currentUID = authUser.uid;
+currentUID = auth.currentUser.uid;
   var normalized = normalizeName(userName);
   if (!normalized) { errEl.textContent = 'Please enter a valid name.'; return; }
 
