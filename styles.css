@@ -16,7 +16,7 @@
   --border:      rgba(201,168,76,0.18);
   --radius:      14px;
   --radius-sm:   8px;
-  --nav-height:  72px;
+ --nav-height:  64px;
   --header-height: 60px;
 }
 
@@ -534,8 +534,8 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 8px 2px;
+  gap: 1px;
+  padding: 6px 2px;
   background: none;
   border: none;
   color: var(--text-dim);
@@ -545,6 +545,7 @@ body {
   -webkit-appearance: none;
   height: 100%;
   position: relative;
+  transform: translateY(-1px);
 }
 
 .nav-btn.active { color: var(--gold); }
