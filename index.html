@@ -352,12 +352,44 @@
 
       <!-- SCREEN 5: MEMBERS -->
       <div id="cg-members-screen" style="display:none;">
-        <div class="cg-login-header">
+        <div class="cg-members-header">
           <button class="cg-back-btn" id="cg-back-to-chat-members">← Back to Chat</button>
           <div class="cg-login-title">Members</div>
+          <button class="cg-change-pw-btn" id="cg-change-pw-btn">Change<br/>Password</button>
         </div>
         <div id="members-list">
           <div class="cg-loading">Loading...</div>
+        </div>
+      </div>
+
+      <!-- SCREEN 6: CHANGE PASSWORD -->
+      <div id="cg-changepassword-screen" style="display:none;">
+        <div class="cg-login-header">
+          <button class="cg-back-btn" id="cg-back-to-members-from-cp">← Back</button>
+          <div class="cg-login-title">Change Password</div>
+        </div>
+        <div class="cg-login-box">
+          <div class="cg-login-label">Current Password</div>
+          <div class="cg-input-wrap">
+            <input type="password" class="cg-input" id="cg-cp-current" placeholder="Enter current password" />
+            <button class="cg-eye-btn" id="cg-cp-eye-current">👁</button>
+          </div>
+          <div class="cg-login-label">New Password</div>
+          <div class="cg-input-wrap">
+            <input type="password" class="cg-input" id="cg-cp-new" placeholder="Enter new password" />
+            <button class="cg-eye-btn" id="cg-cp-eye-new">👁</button>
+          </div>
+          <div class="cg-login-label">Confirm New Password</div>
+          <div class="cg-input-wrap">
+            <input type="password" class="cg-input" id="cg-cp-confirm" placeholder="Confirm new password" />
+            <button class="cg-eye-btn" id="cg-cp-eye-confirm">👁</button>
+          </div>
+          <div class="cg-cp-btn-row">
+            <button class="cg-cancel-btn" id="cg-cp-cancel">Cancel</button>
+            <button class="cg-login-btn cg-cp-confirm-btn" id="cg-cp-submit">Confirm</button>
+          </div>
+          <div class="cg-login-error" id="cg-cp-error"></div>
+          <div class="cg-cp-success" id="cg-cp-success"></div>
         </div>
       </div>
 
