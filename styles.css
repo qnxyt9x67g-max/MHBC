@@ -16,7 +16,7 @@
   --border:      rgba(201,168,76,0.18);
   --radius:      14px;
   --radius-sm:   8px;
- --nav-height:  64px;
+  --nav-height:  72px;
   --header-height: 60px;
 }
 
@@ -351,7 +351,7 @@ body {
   line-height: 28px;
 }
 
-/* Gold icon — larger, bolder cross, consistent with app theme */
+/* Gold icon â larger, bolder cross, consistent with app theme */
 .link-icon.gold {
   background: rgba(201,168,76,0.15);
   color: var(--gold);
@@ -527,15 +527,15 @@ body {
   z-index: 200;
 }
 
-/* Bottom nav button — relative positioning for badge */
+/* Bottom nav button â relative positioning for badge */
 .nav-btn {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  padding: 6px 2px;
+  gap: 2px;
+  padding: 8px 2px;
   background: none;
   border: none;
   color: var(--text-dim);
@@ -545,7 +545,6 @@ body {
   -webkit-appearance: none;
   height: 100%;
   position: relative;
-  transform: translateY(-1px);
 }
 
 .nav-btn.active { color: var(--gold); }
@@ -562,7 +561,7 @@ body {
   font-family: 'Lato', sans-serif;
 }
 
-/* Badge — anchored to top-right of the icon area */
+/* Badge â anchored to top-right of the icon area */
 .nav-badge {
   position: absolute;
   top: 4px;
