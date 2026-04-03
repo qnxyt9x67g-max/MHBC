@@ -1110,28 +1110,23 @@ window.onload = function() {
   setInterval(checkLiveBadge, 60000);
   tryGenerateQR();
 
-  auth.onAuthStateChanged(function(user) {
-    if (user) {
-      authReady = true;
-      currentUID = user.uid;
-      var savedUser = getSavedUser();
-      if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) {
-        currentGroup = savedUser.group; currentGroupName = savedUser.groupName;
-        currentUser = savedUser; currentMemberKey = savedUser.normalizedName;
-        startUnreadWatcher(savedUser.group, savedUser.name);
-      }
-      // Auth is ready — hide the splash overlay
-      if (!appInitialized) {
-        appInitialized = true;
-        hideSplash();
-      }
-    } else {
-      authReady = false;
-      auth.signInAnonymously().catch(function(err) {
-        console.error('Sign in failed:', err.code, err.message);
-        // Sign-in failed — still hide splash so app isn't stuck
-        hideSplash();
-      });
+auth.onAuthStateChanged(function(user) {
+  if (user) {
+    authReady = true;
+    currentUID = user.uid;
+    var savedUser = getSavedUser();
+    if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) {
+      currentGroup = savedUser.group; currentGroupName = savedUser.groupName;
+      currentUser = savedUser; currentMemberKey = savedUser.normalizedName;
+      startUnreadWatcher(savedUser.group, savedUser.name);
     }
-  });
-};
+    finishAppInit();
+  } else {
+    authReady = false;
+    auth.signInAnonymously().catch(function(err) {
+      console.error('Sign in failed:', err.code, err.message);
+      // Sign-in failed — still hide splash so app isn't stuck
+      finishAppInit();
+    });
+  }
+});
