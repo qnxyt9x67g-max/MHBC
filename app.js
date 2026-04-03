@@ -34,12 +34,6 @@ function hideSplash() {
   }
 }
 
-function finishAppInit() {
-  if (appInitialized) return;
-  appInitialized = true;
-  hideSplash();
-}
-
 var BUBBLE_COLORS = [
   '#1a5276','#1a3a6e','#6c3483','#145a32','#784212',
   '#1b4f72','#4a235a','#0e6655','#7b241c','#1f618d'
@@ -1110,23 +1104,28 @@ window.onload = function() {
   setInterval(checkLiveBadge, 60000);
   tryGenerateQR();
 
-auth.onAuthStateChanged(function(user) {
-  if (user) {
-    authReady = true;
-    currentUID = user.uid;
-    var savedUser = getSavedUser();
-    if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) {
-      currentGroup = savedUser.group; currentGroupName = savedUser.groupName;
-      currentUser = savedUser; currentMemberKey = savedUser.normalizedName;
-      startUnreadWatcher(savedUser.group, savedUser.name);
+  auth.onAuthStateChanged(function(user) {
+    if (user) {
+      authReady = true;
+      currentUID = user.uid;
+      var savedUser = getSavedUser();
+      if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) {
+        currentGroup = savedUser.group; currentGroupName = savedUser.groupName;
+        currentUser = savedUser; currentMemberKey = savedUser.normalizedName;
+        startUnreadWatcher(savedUser.group, savedUser.name);
+      }
+      // Auth is ready — hide the splash overlay
+      if (!appInitialized) {
+        appInitialized = true;
+        hideSplash();
+      }
+    } else {
+      authReady = false;
+      auth.signInAnonymously().catch(function(err) {
+        console.error('Sign in failed:', err.code, err.message);
+        // Sign-in failed — still hide splash so app isn't stuck
+        hideSplash();
+      });
     }
-    finishAppInit();
-  } else {
-    authReady = false;
-    auth.signInAnonymously().catch(function(err) {
-      console.error('Sign in failed:', err.code, err.message);
-      // Sign-in failed — still hide splash so app isn't stuck
-      finishAppInit();
-    });
-  }
-});
+  });
+};
