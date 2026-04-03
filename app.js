@@ -135,7 +135,7 @@ function showPage(id) {
 }
 
 function showCGScreen(screen) {
-  ['select','login','pending','chat','members'].forEach(function(s) {
+  ['select','login','pending','chat','members','changepassword'].forEach(function(s) {
     var el = document.getElementById('cg-' + s + '-screen');
     if (el) el.style.display = 'none';
   });
@@ -761,7 +761,68 @@ function removeMember(memberUid) {
   }).then(loadMembersList);
 }
 
+// ---- CHANGE PASSWORD ----
+function showChangePassword() {
+  showCGScreen('changepassword');
+  // Clear fields
+  var fields = ['cg-cp-current','cg-cp-new','cg-cp-confirm'];
+  fields.forEach(function(id) { var el = document.getElementById(id); if (el) el.value = ''; });
+  var errEl = document.getElementById('cg-cp-error');
+  var okEl = document.getElementById('cg-cp-success');
+  if (errEl) errEl.textContent = '';
+  if (okEl) okEl.textContent = '';
+}
+
+function submitChangePassword() {
+  var currentPw = document.getElementById('cg-cp-current').value.trim();
+  var newPw = document.getElementById('cg-cp-new').value.trim();
+  var confirmPw = document.getElementById('cg-cp-confirm').value.trim();
+  var errEl = document.getElementById('cg-cp-error');
+  var okEl = document.getElementById('cg-cp-success');
+  errEl.textContent = '';
+  okEl.textContent = '';
+
+  if (!currentPw || !newPw || !confirmPw) { errEl.textContent = 'Please fill in all fields.'; return; }
+  if (newPw.length < 4) { errEl.textContent = 'New password must be at least 4 characters.'; return; }
+  if (newPw !== confirmPw) { errEl.textContent = "Passwords don't match."; return; }
+  if (newPw === currentPw) { errEl.textContent = 'New password must be different from current password.'; return; }
+  if (!currentMemberKey) { errEl.textContent = 'Session error. Please log in again.'; return; }
+
+  var identityRef = db.collection('groups').doc(currentGroup).collection('identities').doc(currentMemberKey);
+
+  identityRef.get().then(function(snap) {
+    if (!snap.exists) { errEl.textContent = 'Identity not found. Please log in again.'; return; }
+    var identity = snap.data();
+
+    hashInput(currentPw, identity.passwordSalt).then(function(enteredHash) {
+      if (enteredHash !== identity.passwordHash) {
+        errEl.textContent = 'Current password is incorrect.'; return;
+      }
+
+      // Current password verified — generate new salt and hash
+      var newSalt = generateSalt();
+      hashInput(newPw, newSalt).then(function(newHash) {
+        identityRef.update({
+          passwordSalt: newSalt,
+          passwordHash: newHash
+        }).then(function() {
+          okEl.textContent = 'Password changed successfully!';
+          // Clear fields
+          ['cg-cp-current','cg-cp-new','cg-cp-confirm'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.value = '';
+          });
+        }).catch(function(err) {
+          errEl.textContent = 'Error saving password: ' + err.message;
+        });
+      });
+    });
+  }).catch(function(err) {
+    errEl.textContent = 'Error reading identity: ' + err.message;
+  });
+}
+
 // ---- LOCAL STORAGE ----
+
 function saveUser(user) { localStorage.setItem('mhbc_cg_user', JSON.stringify(user)); }
 function getSavedUser() {
   var raw = localStorage.getItem('mhbc_cg_user');
@@ -888,6 +949,27 @@ window.onload = function() {
 
   var membersBtn = document.getElementById('cg-members-btn');
   if (membersBtn) membersBtn.addEventListener('click', showMembersPanel);
+
+  var changePwBtn = document.getElementById('cg-change-pw-btn');
+  if (changePwBtn) changePwBtn.addEventListener('click', showChangePassword);
+
+  var backToChatFromCP = document.getElementById('cg-back-to-members-from-cp');
+  if (backToChatFromCP) backToChatFromCP.addEventListener('click', function() { showCGScreen('members'); });
+
+  var cpSubmitBtn = document.getElementById('cg-cp-submit');
+  if (cpSubmitBtn) cpSubmitBtn.addEventListener('click', submitChangePassword);
+
+  var cpCancelBtn = document.getElementById('cg-cp-cancel');
+  if (cpCancelBtn) cpCancelBtn.addEventListener('click', function() { showCGScreen('members'); });
+
+  var cpEyeCurrent = document.getElementById('cg-cp-eye-current');
+  if (cpEyeCurrent) cpEyeCurrent.addEventListener('click', function() { toggleVisible('cg-cp-current', this); });
+
+  var cpEyeNew = document.getElementById('cg-cp-eye-new');
+  if (cpEyeNew) cpEyeNew.addEventListener('click', function() { toggleVisible('cg-cp-new', this); });
+
+  var cpEyeConfirm = document.getElementById('cg-cp-eye-confirm');
+  if (cpEyeConfirm) cpEyeConfirm.addEventListener('click', function() { toggleVisible('cg-cp-confirm', this); });
 
   var sendBtn = document.getElementById('cg-send-btn');
   if (sendBtn) sendBtn.addEventListener('click', function() { unlockAudio(); sendMessage(); });
