@@ -51,6 +51,63 @@ function generateSalt() {
   return salt;
 }
 
+// ---- LOGIN BRUTE-FORCE GUARD ----
+var LOGIN_GUARD_PREFIX = 'mhbc_login_guard_';
+var LOGIN_MAX_ATTEMPTS = 10;
+var LOGIN_LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+
+function getLoginGuardKey(groupId, normalizedName) {
+  return LOGIN_GUARD_PREFIX + groupId + '_' + normalizedName;
+}
+
+function getLoginGuard(groupId, normalizedName) {
+  var key = getLoginGuardKey(groupId, normalizedName);
+  var raw = localStorage.getItem(key);
+  if (!raw) return { failedCount: 0, lockoutUntil: 0 };
+  try {
+    var parsed = JSON.parse(raw);
+    return { failedCount: parsed.failedCount || 0, lockoutUntil: parsed.lockoutUntil || 0 };
+  } catch(e) { return { failedCount: 0, lockoutUntil: 0 }; }
+}
+
+function setLoginGuard(groupId, normalizedName, failedCount, lockoutUntil) {
+  var key = getLoginGuardKey(groupId, normalizedName);
+  localStorage.setItem(key, JSON.stringify({ failedCount: failedCount, lockoutUntil: lockoutUntil }));
+}
+
+function clearLoginGuard(groupId, normalizedName) {
+  localStorage.removeItem(getLoginGuardKey(groupId, normalizedName));
+}
+
+function recordFailedLogin(groupId, normalizedName) {
+  var now = Date.now();
+  var guard = getLoginGuard(groupId, normalizedName);
+  // If old lockout has expired, reset before counting new failures
+  if (guard.lockoutUntil && now >= guard.lockoutUntil) {
+    guard.failedCount = 0;
+    guard.lockoutUntil = 0;
+  }
+  guard.failedCount += 1;
+  if (guard.failedCount >= LOGIN_MAX_ATTEMPTS) {
+    guard.lockoutUntil = now + LOGIN_LOCKOUT_MS;
+  }
+  setLoginGuard(groupId, normalizedName, guard.failedCount, guard.lockoutUntil);
+}
+
+function getRemainingLockoutMs(groupId, normalizedName) {
+  var guard = getLoginGuard(groupId, normalizedName);
+  var now = Date.now();
+  if (guard.lockoutUntil && now < guard.lockoutUntil) return guard.lockoutUntil - now;
+  return 0;
+}
+
+function formatRemainingLockout(ms) {
+  var totalSeconds = Math.ceil(ms / 1000);
+  var minutes = Math.floor(totalSeconds / 60);
+  var seconds = totalSeconds % 60;
+  return minutes > 0 ? minutes + 'm ' + seconds + 's' : seconds + 's';
+}
+
 function initFirebase() {
   firebase.initializeApp({
     apiKey: "AIzaSyBYt5RR0YGB9u9n7QgvAGXnvmrb7-xTg-Y",
@@ -203,13 +260,27 @@ function submitLogin() {
   var normalized = normalizeName(userName);
   if (!normalized) { errEl.textContent = 'Please enter a valid name.'; return; }
 
+  // Brute-force guard — check before any Firebase calls
+  var remainingLockout = getRemainingLockoutMs(currentGroup, normalized);
+  if (remainingLockout > 0) {
+    errEl.textContent = 'Too many failed attempts. Please wait ' + formatRemainingLockout(remainingLockout) + ' before trying again.';
+    return;
+  }
+
   db.collection('config').doc('rooms').get().then(function(snap) {
     if (!snap.exists) { errEl.textContent = 'Configuration error. Contact your admin.'; return; }
     var config = snap.data();
 
     hashInput(roomPass, config[currentGroup + '_salt']).then(function(enteredRoomHash) {
       if (enteredRoomHash !== config[currentGroup + '_hash']) {
-        errEl.textContent = 'Incorrect room password. Check with your group leader.'; return;
+        recordFailedLogin(currentGroup, normalized);
+        var remainingAfterRoomFailure = getRemainingLockoutMs(currentGroup, normalized);
+        if (remainingAfterRoomFailure > 0) {
+          errEl.textContent = 'Too many failed attempts. Please wait ' + formatRemainingLockout(remainingAfterRoomFailure) + ' before trying again.';
+        } else {
+          errEl.textContent = 'Incorrect room password. Check with your group leader.';
+        }
+        return;
       }
 
       var identityRef = db.collection('groups').doc(currentGroup).collection('identities').doc(normalized);
@@ -220,8 +291,18 @@ function submitLogin() {
           var identity = identitySnap.data();
           hashInput(userPassword, identity.passwordSalt).then(function(enteredHash) {
             if (enteredHash !== identity.passwordHash) {
-              errEl.textContent = 'Incorrect password. Try again.'; return;
+              recordFailedLogin(currentGroup, normalized);
+              var remainingAfterFailure = getRemainingLockoutMs(currentGroup, normalized);
+              if (remainingAfterFailure > 0) {
+                errEl.textContent = 'Too many failed attempts. Please wait ' + formatRemainingLockout(remainingAfterFailure) + ' before trying again.';
+              } else {
+                errEl.textContent = 'Incorrect password. Try again.';
+              }
+              return;
             }
+
+            // Password correct — clear any accumulated failed attempts
+            clearLoginGuard(currentGroup, normalized);
 
             var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(currentUID);
             memberRef.get().then(function(memberSnap) {
@@ -281,6 +362,8 @@ function submitLogin() {
                 createdAt: Date.now(), lastLoginAt: Date.now()
               });
             }).then(function() {
+              // Both docs created successfully — clear guard
+              clearLoginGuard(currentGroup, normalized);
               currentMemberKey = normalized;
               currentUser = {
                 group: currentGroup, groupName: currentGroupName,
