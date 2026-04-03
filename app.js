@@ -34,6 +34,12 @@ function hideSplash() {
   }
 }
 
+function finishAppInit() {
+  if (appInitialized) return;
+  appInitialized = true;
+  hideSplash();
+}
+
 var BUBBLE_COLORS = [
   '#1a5276','#1a3a6e','#6c3483','#145a32','#784212',
   '#1b4f72','#4a235a','#0e6655','#7b241c','#1f618d'
