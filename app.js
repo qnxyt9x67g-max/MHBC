@@ -20,19 +20,6 @@ var longPressTimer = null;
 var audioUnlocked = false;
 var audioCtx = null;
 var authReady = false;
-var appInitialized = false;
-
-// ---- SPLASH OVERLAY ----
-function hideSplash() {
-  var splash = document.getElementById('app-splash');
-  if (splash && !splash.classList.contains('splash-hidden')) {
-    splash.classList.add('splash-hidden');
-    // Remove from DOM after fade completes
-    setTimeout(function() {
-      if (splash.parentNode) splash.parentNode.removeChild(splash);
-    }, 400);
-  }
-}
 
 var BUBBLE_COLORS = [
   '#1a5276','#1a3a6e','#6c3483','#145a32','#784212',
@@ -1114,17 +1101,11 @@ window.onload = function() {
         currentUser = savedUser; currentMemberKey = savedUser.normalizedName;
         startUnreadWatcher(savedUser.group, savedUser.name);
       }
-      // Auth is ready — hide the splash overlay
-      if (!appInitialized) {
-        appInitialized = true;
-        hideSplash();
-      }
+      
     } else {
       authReady = false;
       auth.signInAnonymously().catch(function(err) {
         console.error('Sign in failed:', err.code, err.message);
-        // Sign-in failed — still hide splash so app isn't stuck
-        hideSplash();
       });
     }
   });
