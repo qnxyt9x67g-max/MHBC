@@ -16,7 +16,7 @@
   --border:      rgba(201,168,76,0.18);
   --radius:      14px;
   --radius-sm:   8px;
-  --nav-height:  40px;
+  --nav-height:  48px;
   --header-height: 60px;
 }
 
@@ -521,9 +521,9 @@ body {
   background: var(--navy);
   border-top: 1px solid var(--border);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-around;
-  padding-top: 4px;
+  padding-top: 0px;
   padding-bottom: env(safe-area-inset-bottom, 0px);
   z-index: 200;
 }
@@ -535,7 +535,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 4px 2px 0;
+  padding: 2px 2px;
   background: none;
   border: none;
   color: var(--text-dim);
@@ -543,7 +543,7 @@ body {
   font-size: 10px;
   cursor: pointer;
   -webkit-appearance: none;
-  height: var(--nav-height);
+  height: 100%;
   position: relative;
 }
 
