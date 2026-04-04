@@ -415,9 +415,8 @@ function enterChat() {
   var mb = document.getElementById('cg-members-btn'); if (mb) mb.style.display = 'block';
   showCGScreen('chat'); loadMessages(); markAsRead(); setUnreadCount(currentGroup, 0);
   setTimeout(function() {
-    var messagesEl = document.getElementById('cg-messages');
-    if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
-  }, 300);
+  window.scrollTo(0, document.body.scrollHeight);
+}, 300);
 }
 
 // ---- UNREAD WATCHER ----
@@ -624,8 +623,8 @@ function loadMessages() {
         renderThread(msg, replyMap[msg._id] || [], messagesEl, index < topLevel.length - 1);
       });
                   setTimeout(function() {
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-      }, 300);
+  window.scrollTo(0, document.body.scrollHeight);
+}, 300);
       if (isInChat()) { markAsRead(); setUnreadCount(currentGroup, 0); }
     });
 }
@@ -712,8 +711,8 @@ function sendMessage() {
     var messagesEl = document.getElementById('cg-messages');
     if (messagesEl) {
             setTimeout(function() {
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-      }, 300);
+  window.scrollTo(0, document.body.scrollHeight);
+}, 300);
     }
   });
 }
