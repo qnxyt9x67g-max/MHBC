@@ -771,11 +771,21 @@ function loadMembersList() {
       }
     });
 
-    var approved = [], pending = [];
+        var approved = [], pending = [];
     Object.keys(personMap).forEach(function(key) {
       var m = personMap[key];
       if (m.approved) approved.push(m); else pending.push(m);
     });
+
+    // Sort both lists alphabetically by first name
+    function sortByName(a, b) {
+      var nameA = (a.displayName || a._id || '').toLowerCase();
+      var nameB = (b.displayName || b._id || '').toLowerCase();
+      return nameA < nameB ? -1 : nameA > nameB ? 1 : 0;
+    }
+    approved.sort(sortByName);
+    pending.sort(sortByName);
+
 
     if (currentUser.isAdmin && pending.length > 0) {
       var pendingLabel = document.createElement('div');
