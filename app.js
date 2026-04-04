@@ -619,7 +619,9 @@ function loadMessages() {
       topLevel.forEach(function(msg, index) {
         renderThread(msg, replyMap[msg._id] || [], messagesEl, index < topLevel.length - 1);
       });
-      messagesEl.scrollTop = messagesEl.scrollHeight;
+            setTimeout(function() {
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }, 80);
       if (isInChat()) { markAsRead(); setUnreadCount(currentGroup, 0); }
     });
 }
