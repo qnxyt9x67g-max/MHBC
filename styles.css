@@ -517,11 +517,11 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
+  min-height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
   background: var(--navy);
   border-top: 1px solid var(--border);
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   justify-content: space-around;
   padding-bottom: env(safe-area-inset-bottom, 0px);
   z-index: 200;
@@ -529,6 +529,7 @@ body {
 
 .nav-btn {
   flex: 1;
+  min-height: var(--nav-height);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -542,7 +543,6 @@ body {
   font-size: 10px;
   cursor: pointer;
   -webkit-appearance: none;
-  height: var(--nav-height);
   position: relative;
 }
 
