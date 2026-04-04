@@ -518,16 +518,16 @@ body {
   right: 0;
   bottom: 0;
   height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
-  padding-bottom: env(safe-area-inset-bottom, 0px);
   background: var(--navy);
   border-top: 1px solid var(--border);
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   justify-content: space-around;
+  padding-top: 4px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   z-index: 200;
 }
 
-/* Bottom nav button â relative positioning for badge */
 .nav-btn {
   flex: 1;
   display: flex;
@@ -535,7 +535,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 8px 2px;
+  padding: 4px 2px 0;
   background: none;
   border: none;
   color: var(--text-dim);
@@ -543,7 +543,7 @@ body {
   font-size: 10px;
   cursor: pointer;
   -webkit-appearance: none;
-  height: 100%;
+  height: var(--nav-height);
   position: relative;
 }
 
