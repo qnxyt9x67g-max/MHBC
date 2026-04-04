@@ -521,9 +521,8 @@ body {
   background: var(--navy);
   border-top: 1px solid var(--border);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-around;
-  padding-top: 0px;
   padding-bottom: env(safe-area-inset-bottom, 0px);
   z-index: 200;
 }
@@ -535,7 +534,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 2px 2px;
+  padding: 0 2px;
   background: none;
   border: none;
   color: var(--text-dim);
@@ -543,7 +542,7 @@ body {
   font-size: 10px;
   cursor: pointer;
   -webkit-appearance: none;
-  height: 100%;
+  height: var(--nav-height);
   position: relative;
 }
 
@@ -561,7 +560,6 @@ body {
   font-family: 'Lato', sans-serif;
 }
 
-/* Badge â anchored to top-right of the icon area */
 .nav-badge {
   position: absolute;
   top: 4px;
@@ -579,6 +577,10 @@ body {
   padding: 0 4px;
   pointer-events: none;
   z-index: 10;
+}
+
+@media (min-width: 768px) {
+  :root { --nav-height: 56px; }
 }
 
 /* ---- CARE GROUPS ---- */
