@@ -805,11 +805,12 @@ body {
 }
 
 .cg-messages {
-  padding: 12px 14px 100px;
+  padding: 12px 14px 20px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   min-height: 300px;
+  overflow-y: auto;
 }
 
 .cg-loading, .cg-no-msgs, .cg-empty-note {
