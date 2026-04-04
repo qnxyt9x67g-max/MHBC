@@ -805,7 +805,7 @@ body {
 }
 
 .cg-messages {
-  padding: 12px 14px 20px;
+  padding: 12px 14px 140px;
   display: flex;
   flex-direction: column;
   gap: 10px;
