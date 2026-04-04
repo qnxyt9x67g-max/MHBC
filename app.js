@@ -619,13 +619,17 @@ function loadMessages() {
         var msg = d.data(); msg._id = d.id;
         if (msg.replyTo && replyMap[msg.replyTo]) replyMap[msg.replyTo].push(msg);
       });
+            // Hide while rendering to prevent top-flash
+      messagesEl.style.visibility = 'hidden';
       topLevel.forEach(function(msg, index) {
         renderThread(msg, replyMap[msg._id] || [], messagesEl, index < topLevel.length - 1);
       });
-                  setTimeout(function() {
-  window.scrollTo(0, document.body.scrollHeight);
-}, 300);
+      setTimeout(function() {
+        window.scrollTo(0, document.body.scrollHeight);
+        messagesEl.style.visibility = 'visible';
+      }, 150);
       if (isInChat()) { markAsRead(); setUnreadCount(currentGroup, 0); }
+
     });
 }
 
