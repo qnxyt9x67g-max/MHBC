@@ -1171,3 +1171,16 @@ body {
   min-height: 18px;
 }
 
+@media (min-width: 768px) {
+  :root {
+    --nav-height: 56px;
+  }
+
+  .bottom-nav {
+    padding-top: 2px;
+  }
+
+  .nav-btn {
+    padding: 4px 2px 2px;
+  }
+}
