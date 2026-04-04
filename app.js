@@ -704,7 +704,14 @@ function sendMessage() {
     timestamp: firebase.firestore.FieldValue.serverTimestamp()
   };
   if (replyingTo) { msgData.replyTo = replyingTo.id; msgData.replyToAuthor = replyingTo.author; clearReply(); }
-  db.collection('groups').doc(currentGroup).collection('messages').add(msgData);
+  db.collection('groups').doc(currentGroup).collection('messages').add(msgData).then(function() {
+    var messagesEl = document.getElementById('cg-messages');
+    if (messagesEl) {
+      setTimeout(function() {
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }, 80);
+    }
+  });
 }
 
 function leaveChat() {
