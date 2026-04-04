@@ -636,7 +636,18 @@ function loadMessages() {
 function buildMessageRow(msg, isPrimary) {
   var isMe = isMyMessage(msg);
   var color = getBubbleColor(msg.author);
-  var time = msg.timestamp ? new Date(msg.timestamp.toMillis()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+  var time = '';
+if (msg.timestamp) {
+  var dt = new Date(msg.timestamp.toMillis());
+  time = dt.toLocaleDateString([], {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  }) + ' · ' + dt.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
 
   var row = document.createElement('div');
   row.className = isPrimary ? 'cg-primary-row' : 'cg-reply-row';
