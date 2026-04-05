@@ -580,11 +580,12 @@ body {
   padding: 0;
 }
 
+/* ---- NAV BADGE ---- */
 .nav-badge {
   position: absolute;
-  top: 6px;
+  top: 4px;
   left: 50%;
-  margin-left: 12px;
+  transform: translateX(10px);
   background: #d32f2f;
   color: white;
   font-size: 9px;
@@ -598,6 +599,14 @@ body {
   padding: 0 4px;
   pointer-events: none;
   z-index: 10;
+}
+
+/* ---- MOBILE TWEAK ---- */
+@media (max-width: 600px) {
+  .nav-badge {
+    top: 8px;
+    transform: translateX(8px);
+  }
 }
 
 @media (min-width: 768px) {
