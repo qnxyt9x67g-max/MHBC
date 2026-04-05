@@ -599,11 +599,11 @@ body {
   z-index: 10;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 600px) {
   :root { --nav-height: 56px; }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 600px) {
   .nav-badge {
     top: -13px;
   }
