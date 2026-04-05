@@ -603,6 +603,12 @@ body {
   :root { --nav-height: 56px; }
 }
 
+@media (min-width: 768px) {
+  .nav-badge {
+    top: 2px;
+  }
+}
+
 /* ---- CARE GROUPS ---- */
 .cg-group-list {
   display: flex;
