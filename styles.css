@@ -583,9 +583,8 @@ body {
 /* ---- NAV BADGE ---- */
 .nav-badge {
   position: absolute;
-  top: 4px;
-  left: 50%;
-  transform: translateX(10px);
+  top: 2px;
+  right: 18px;
   background: #d32f2f;
   color: white;
   font-size: 9px;
@@ -604,13 +603,9 @@ body {
 /* ---- MOBILE TWEAK ---- */
 @media (max-width: 600px) {
   .nav-badge {
-    top: 8px;
-    transform: translateX(8px);
+    top: 6px;
+    right: 14px;
   }
-}
-
-@media (min-width: 768px) {
-  :root { --nav-height: 56px; }
 }
 
 /* ---- CARE GROUPS ---- */
