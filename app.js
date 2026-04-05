@@ -997,10 +997,46 @@ function tryGenerateQR() {
 
 function checkLiveBadge() {
   var now = new Date();
-  var est = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (-5 * 3600000));
-  var day = est.getDay(), totalMins = est.getHours() * 60 + est.getMinutes();
+
+  var parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    weekday: 'short',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false
+  }).formatToParts(now);
+
+  var dayName = '';
+  var hour = 0;
+  var minute = 0;
+
+  parts.forEach(function(part) {
+    if (part.type === 'weekday') dayName = part.value;
+    if (part.type === 'hour') hour = parseInt(part.value, 10);
+    if (part.type === 'minute') minute = parseInt(part.value, 10);
+  });
+
+  var dayMap = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6
+  };
+
+  var day = dayMap[dayName];
+  var totalMins = hour * 60 + minute;
+
   var badge = document.getElementById('liveBadge');
-  if (badge) badge.style.display = ((day === 0 && totalMins >= 570 && totalMins <= 660) || (day === 3 && totalMins >= 1140 && totalMins <= 1200)) ? 'flex' : 'none';
+  if (badge) {
+    badge.style.display =
+      ((day === 0 && totalMins >= 565 && totalMins <= 660) ||   // Sun 9:25–11:00
+       (day === 3 && totalMins >= 1135 && totalMins <= 1200))   // Wed 6:55–8:00
+      ? 'flex'
+      : 'none';
+  }
 }
 
 // ---- INIT ----
