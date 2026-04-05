@@ -351,7 +351,7 @@ body {
   line-height: 28px;
 }
 
-/* Gold icon â larger, bolder cross, consistent with app theme */
+/* Gold icon Ã¢ÂÂ larger, bolder cross, consistent with app theme */
 .link-icon.gold {
   background: rgba(201,168,76,0.15);
   color: var(--gold);
@@ -580,11 +580,10 @@ body {
   padding: 0;
 }
 
-/* ---- NAV BADGE ---- */
 .nav-badge {
   position: absolute;
-  top: 2px;
-  right: 18px;
+  top: 4px;
+  right: calc(50% - 20px);
   background: #d32f2f;
   color: white;
   font-size: 9px;
@@ -600,12 +599,8 @@ body {
   z-index: 10;
 }
 
-/* ---- MOBILE TWEAK ---- */
-@media (max-width: 600px) {
-  .nav-badge {
-    top: 6px;
-    right: 14px;
-  }
+@media (min-width: 768px) {
+  :root { --nav-height: 56px; }
 }
 
 /* ---- CARE GROUPS ---- */
