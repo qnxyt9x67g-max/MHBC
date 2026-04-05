@@ -605,7 +605,7 @@ body {
 
 @media (min-width: 768px) {
   .nav-badge {
-    top: 2px;
+    top: -13px;
   }
 }
 
