@@ -582,8 +582,9 @@ body {
 
 .nav-badge {
   position: absolute;
-  top: 4px;
-  right: calc(50% - 20px);
+  top: 6px;
+  left: 50%;
+  margin-left: 12px;
   background: #d32f2f;
   color: white;
   font-size: 9px;
