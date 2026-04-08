@@ -1232,7 +1232,7 @@ body {
   font-size: 10px;
   color: white;
   line-height: 1;
-  transform: translate(0.5px, 0px);
+  transform: translate(1px, 1px);
 }
 
 /* Bottom nav watch icon */
