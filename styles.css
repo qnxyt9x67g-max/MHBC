@@ -1251,8 +1251,8 @@ body {
   font-size: 8px;
   color: white;
   line-height: 1;
-  transform: translate(0px, 0px);
+  transform: translate(1px, 1px);
 }
-.quick-btn[data-action="watch"] span:last-child {
-  margin-top: 2px;
+.quick-btn[data-action="watch"] {
+  padding-top: 4px;
 }
