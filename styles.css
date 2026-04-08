@@ -1253,7 +1253,10 @@ body {
   line-height: 1;
   transform: translate(0.5px, 0px);
 }
-.quick-btn[data-action="watch"] {
-  padding-top: 0px;
-  padding-bottom: 8px;
+.quick-btn[data-action="watch"] .quick-icon.play-icon {
+  margin-top: 8px;
+}
+
+.quick-btn[data-action="watch"] span:last-child {
+  margin-top: 5px;
 }
