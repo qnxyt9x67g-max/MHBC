@@ -1228,11 +1228,10 @@ body {
   margin-bottom: 1px;
 }
 
-.quick-icon.play-icon i {
-  font-size: 10px;
-  color: white;
-  line-height: 1;
-  transform: translate(1px, 1px);
+.quick-icon.play-icon svg {
+  width: 11px;
+  height: 11px;
+  display: block;
 }
 
 /* Bottom nav watch icon */
@@ -1247,19 +1246,12 @@ body {
   margin-bottom: 3px;
 }
 
-.nav-icon.play-icon i {
-  font-size: 8px;
-  color: white;
-  line-height: 1;
-  transform: translate(0.5px, 0px);
-}
-.quick-btn[data-action="watch"] .quick-icon.play-icon {
-  margin-top: 5px;
+.nav-icon.play-icon svg {
+  width: 9px;
+  height: 9px;
+  display: block;
 }
 
-.quick-btn[data-action="watch"] span:last-child {
-  margin-top: 3px;
-}
 /* ===== DESKTOP WIDTH CAP (tighter) ===== */
 @media (min-width: 768px) {
   .page-wrapper {
