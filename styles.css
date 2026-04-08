@@ -1254,7 +1254,7 @@ body {
   transform: translate(0.5px, 0px);
 }
 .quick-btn[data-action="watch"] .quick-icon.play-icon {
-  margin-top: 6px;
+  margin-top: 5px;
 }
 
 .quick-btn[data-action="watch"] span:last-child {
