@@ -182,18 +182,25 @@ function showPage(id) {
   if (activeBtn) activeBtn.classList.add('active');
   hideInputBar();
   if (id === 'care') {
-    var saved = getSavedUser();
-    if (saved) {
-      currentGroup = saved.group; currentGroupName = saved.groupName;
-      currentUser = saved; currentMemberKey = saved.normalizedName;
-      // Hide all care screens during async approval check to prevent flash
-      ['select','login','pending','chat','members','changepassword'].forEach(function(s) {
-        var el = document.getElementById('cg-' + s + '-screen');
-        if (el) el.style.display = 'none';
-      });
-      checkApprovalAndEnter();
-    } else { showCGScreen('select'); }
+  var lastGroup = getLastGroup();
+  var saved = lastGroup ? getSavedUser(lastGroup) : null;
+
+  if (saved) {
+    currentGroup = saved.group;
+    currentGroupName = saved.groupName;
+    currentUser = saved;
+    currentMemberKey = saved.normalizedName;
+
+    ['select','login','pending','chat','members','changepassword'].forEach(function(s) {
+      var el = document.getElementById('cg-' + s + '-screen');
+      if (el) el.style.display = 'none';
+    });
+
+    checkApprovalAndEnter();
+  } else {
+    showCGScreen('select');
   }
+}
 }
 
 function showCGScreen(screen) {
@@ -214,21 +221,31 @@ function toggleVisible(inputId, btn) {
 }
 
 function startOver() {
-  clearSavedUser();
-  currentUser = null; currentGroup = null; currentGroupName = null; currentMemberKey = null;
+  clearSavedUser(currentGroup);
+  currentUser = null;
+  currentGroup = null;
+  currentGroupName = null;
+  currentMemberKey = null;
   showCGScreen('select');
 }
 
 function selectGroup(groupId, groupName) {
-  currentGroup = groupId; currentGroupName = groupName;
-  var saved = getSavedUser();
-  if (saved && saved.group === groupId) {
-    currentUser = saved; currentMemberKey = saved.normalizedName;
-    checkApprovalAndEnter(); return;
+  currentGroup = groupId;
+  currentGroupName = groupName;
+
+  var saved = getSavedUser(groupId);
+  if (saved) {
+    currentUser = saved;
+    currentMemberKey = saved.normalizedName;
+    setLastGroup(groupId);
+    checkApprovalAndEnter();
+    return;
   }
+
   document.getElementById('cg-login-title').textContent = groupName;
   ['cg-room-password','cg-user-name','cg-user-pin'].forEach(function(id) {
-    var el = document.getElementById(id); if (el) el.value = '';
+    var el = document.getElementById(id);
+    if (el) el.value = '';
   });
   document.getElementById('cg-login-error').textContent = '';
   showCGScreen('login');
@@ -322,6 +339,7 @@ function submitLogin() {
                   isAdmin: memberData.isAdmin === true
                 };
                 saveUser(currentUser);
+                setLastGroup(currentGroup);
                 startUnreadWatcher(currentGroup, identity.displayName);
                 if (memberData.approved) { enterChat(); }
                 else {
@@ -343,6 +361,7 @@ function submitLogin() {
                     isAdmin: false
                   };
                   saveUser(currentUser);
+                  setLastGroup(currentGroup);
                   startUnreadWatcher(currentGroup, identity.displayName);
                   document.getElementById('cg-pending-title').textContent = currentGroupName;
                   showReturningUserMessage();
@@ -375,6 +394,7 @@ function submitLogin() {
                 name: userName, normalizedName: normalized, isAdmin: false
               };
               saveUser(currentUser);
+              setLastGroup(currentGroup);
               startUnreadWatcher(currentGroup, userName);
               document.getElementById('cg-pending-title').textContent = currentGroupName;
               showFirstTimeMessage(); showCGScreen('pending');
@@ -392,8 +412,12 @@ function checkApproval() {
   db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).get().then(function(snap) {
     if (snap.exists && snap.data().approved) {
       currentUser.isAdmin = snap.data().isAdmin === true;
-      saveUser(currentUser); enterChat();
-    } else { alert('Not approved yet. Please wait for your group leader to approve you.'); }
+      saveUser(currentUser);
+      setLastGroup(currentGroup);
+      enterChat();
+    } else {
+      alert('Not approved yet. Please wait for your group leader to approve you.');
+    }
   });
 }
 
@@ -402,12 +426,20 @@ function checkApprovalAndEnter() {
   db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).get().then(function(snap) {
     if (snap.exists && snap.data().approved) {
       currentUser.isAdmin = snap.data().isAdmin === true;
-      saveUser(currentUser); enterChat();
+      saveUser(currentUser);
+      setLastGroup(currentGroup);
+      enterChat();
     } else if (snap.exists) {
       document.getElementById('cg-pending-title').textContent = currentGroupName;
       showCGScreen('pending');
-    } else { clearSavedUser(); showCGScreen('select'); }
-  }).catch(function() { clearSavedUser(); showCGScreen('select'); });
+    } else {
+      clearSavedUser(currentGroup);
+      showCGScreen('select');
+    }
+  }).catch(function() {
+    clearSavedUser(currentGroup);
+    showCGScreen('select');
+  });
 }
 
 function enterChat() {
@@ -948,13 +980,46 @@ function submitChangePassword() {
 
 // ---- LOCAL STORAGE ----
 
-function saveUser(user) { localStorage.setItem('mhbc_cg_user', JSON.stringify(user)); }
-function getSavedUser() {
-  var raw = localStorage.getItem('mhbc_cg_user');
-  if (!raw) return null;
-  try { return JSON.parse(raw); } catch(e) { return null; }
+function getSavedUsers() {
+  var raw = localStorage.getItem('mhbc_cg_users');
+  if (!raw) return {};
+  try { return JSON.parse(raw); } catch (e) { return {}; }
 }
-function clearSavedUser() { localStorage.removeItem('mhbc_cg_user'); }
+
+function saveUser(user) {
+  var users = getSavedUsers();
+  users[user.group] = user;
+  localStorage.setItem('mhbc_cg_users', JSON.stringify(users));
+}
+
+function getSavedUser(groupId) {
+  var users = getSavedUsers();
+  if (!groupId) return null;
+  return users[groupId] || null;
+}
+
+function clearSavedUser(groupId) {
+  if (!groupId) {
+    localStorage.removeItem('mhbc_cg_users');
+    localStorage.removeItem('mhbc_cg_last_group');
+    return;
+  }
+  var users = getSavedUsers();
+  delete users[groupId];
+  localStorage.setItem('mhbc_cg_users', JSON.stringify(users));
+
+  if (localStorage.getItem('mhbc_cg_last_group') === groupId) {
+    localStorage.removeItem('mhbc_cg_last_group');
+  }
+}
+
+function setLastGroup(groupId) {
+  if (groupId) localStorage.setItem('mhbc_cg_last_group', groupId);
+}
+
+function getLastGroup() {
+  return localStorage.getItem('mhbc_cg_last_group');
+}
 
 // ---- BIBLE PICKER ----
 var chaptersMap = {
@@ -1168,12 +1233,16 @@ window.onload = function() {
     if (user) {
       authReady = true;
       currentUID = user.uid;
-      var savedUser = getSavedUser();
-      if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) {
-        currentGroup = savedUser.group; currentGroupName = savedUser.groupName;
-        currentUser = savedUser; currentMemberKey = savedUser.normalizedName;
-        startUnreadWatcher(savedUser.group, savedUser.name);
-      }
+      var lastGroup = getLastGroup();
+var savedUser = lastGroup ? getSavedUser(lastGroup) : null;
+
+if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) {
+  currentGroup = savedUser.group;
+  currentGroupName = savedUser.groupName;
+  currentUser = savedUser;
+  currentMemberKey = savedUser.normalizedName;
+  startUnreadWatcher(savedUser.group, savedUser.name);
+}
       
     } else {
       authReady = false;
