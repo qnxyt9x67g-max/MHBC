@@ -1214,36 +1214,33 @@ body {
   }
 }
 
-/* ===== PLAY BUTTON STYLE (iPhone-like) ===== */
-
 /* ===== PLAY BUTTON STYLE (YouTube-like) ===== */
 
 .play-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;            /* smaller */
-  height: 24px;
-  background: #ff0000;    /* YouTube red */
-  border-radius: 6px;     /* slightly tighter */
+  width: 22px;
+  height: 22px;
+  background: #ff0000;
+  border-radius: 5px;
 }
 
-/* triangle */
 .play-icon i {
-  font-size: 12px;        /* smaller */
+  font-size: 10px;
   color: white;
   line-height: 1;
-  transform: translateX(1px); /* slight optical centering */
+  transform: translate(1px, 1px);
 }
 
 /* bottom nav slightly smaller */
 .nav-icon.play-icon {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 5px;
 }
 
 .nav-icon.play-icon i {
-  font-size: 11px;
-  transform: translateX(1px);
+  font-size: 9px;
+  transform: translate(1px, 1px);
 }
