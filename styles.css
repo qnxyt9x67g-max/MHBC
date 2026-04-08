@@ -1260,17 +1260,18 @@ body {
 .quick-btn[data-action="watch"] span:last-child {
   margin-top: 3px;
 }
-/* ===== DESKTOP WIDTH CAP (final tuned) ===== */
+/* ===== DESKTOP WIDTH CAP (tighter) ===== */
 @media (min-width: 768px) {
   .page-wrapper {
-    max-width: 820px;
+    max-width: 620px;
     margin: 0 auto;
     width: 100%;
   }
 
   .app-header,
-  .bottom-nav {
-    width: min(100%, 820px);
+  .bottom-nav,
+  .cg-input-bar {
+    width: min(100%, 620px);
     left: 50%;
     right: auto;
     transform: translateX(-50%);
