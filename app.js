@@ -765,9 +765,13 @@ function sendMessage() {
 }
 
 function leaveChat() {
-  clearSavedUser(); clearReply();
-  currentUser = null; currentGroup = null; currentGroupName = null; currentMemberKey = null;
-  hideInputBar(); showCGScreen('select');
+  clearReply();
+  currentUser = null;
+  currentGroup = null;
+  currentGroupName = null;
+  currentMemberKey = null;
+  hideInputBar();
+  showCGScreen('select');
 }
 
 function markAsRead() {
