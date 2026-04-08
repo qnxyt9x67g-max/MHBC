@@ -1214,9 +1214,10 @@ body {
   }
 }
 
-/* ===== PLAY BUTTON STYLE (YouTube-like) ===== */
+/* ===== PLAY BUTTON STYLE ===== */
 
-.play-icon {
+/* Quick Access watch icon */
+.quick-icon.play-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1224,23 +1225,31 @@ body {
   height: 22px;
   background: #ff0000;
   border-radius: 5px;
+  margin-bottom: 2px;
 }
 
-.play-icon i {
+.quick-icon.play-icon i {
   font-size: 10px;
   color: white;
   line-height: 1;
-  transform: translate(1px, 1px);
+  transform: translate(1px, 0px);
 }
 
-/* bottom nav slightly smaller */
+/* Bottom nav watch icon */
 .nav-icon.play-icon {
-  width: 20px;
-  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: #ff0000;
   border-radius: 5px;
+  margin-bottom: 3px;
 }
 
 .nav-icon.play-icon i {
-  font-size: 9px;
-  transform: translate(1px, 1px);
+  font-size: 8px;
+  color: white;
+  line-height: 1;
+  transform: translate(1px, -1px);
 }
