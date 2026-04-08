@@ -692,8 +692,8 @@ function renderThread(msg, replies, container, showDivider) {
   var commentBar = document.createElement('div'); commentBar.className = 'cg-comment-bar';
   var replyBtn = document.createElement('button'); replyBtn.className = 'cg-comment-btn';
   replyBtn.textContent = replies.length > 0
-    ? '💬 ' + replies.length + (replies.length === 1 ? ' Comment' : ' Comments')
-    : '💬 Reply';
+  ? '💬 Reply · ' + replies.length + (replies.length === 1 ? ' Comment' : ' Comments')
+  : '💬 Reply';
   replyBtn.addEventListener('click', (function(id, author) {
     return function() { setReply(id, author); };
   })(msg._id, msg.author));
