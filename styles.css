@@ -1214,26 +1214,33 @@ body {
   }
 }
 
-/* PLAY BUTTON STYLE (iPhone-like) */
-.quick-icon i,
-.nav-icon i {
-  font-size: 14px;
-  color: white;
-  position: relative;
-  z-index: 2;
+/* ===== PLAY BUTTON STYLE (iPhone-like) ===== */
+
+/* Base play icon container (blue rounded box) */
+.play-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #4a90e2; /* iOS-style blue */
+  border-radius: 8px;
 }
 
-/* Blue rounded background */
-.quick-icon i::before,
-.nav-icon i::before {
-  content: '';
-  position: absolute;
-  width: 26px;
-  height: 26px;
-  background: #4a90e2; /* nice iOS-style blue */
-  border-radius: 8px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: -1;
+/* White triangle */
+.play-icon i {
+  font-size: 14px;
+  color: white;
+  line-height: 1;
+}
+
+/* Smaller version for bottom nav */
+.nav-icon.play-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+}
+
+.nav-icon.play-icon i {
+  font-size: 12px;
 }
