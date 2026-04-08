@@ -1216,31 +1216,34 @@ body {
 
 /* ===== PLAY BUTTON STYLE (iPhone-like) ===== */
 
-/* Base play icon container (blue rounded box) */
+/* ===== PLAY BUTTON STYLE (YouTube-like) ===== */
+
 .play-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: #4a90e2; /* iOS-style blue */
-  border-radius: 8px;
+  width: 24px;            /* smaller */
+  height: 24px;
+  background: #ff0000;    /* YouTube red */
+  border-radius: 6px;     /* slightly tighter */
 }
 
-/* White triangle */
+/* triangle */
 .play-icon i {
-  font-size: 14px;
+  font-size: 12px;        /* smaller */
   color: white;
   line-height: 1;
+  transform: translateX(1px); /* slight optical centering */
 }
 
-/* Smaller version for bottom nav */
+/* bottom nav slightly smaller */
 .nav-icon.play-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
 }
 
 .nav-icon.play-icon i {
-  font-size: 12px;
+  font-size: 11px;
+  transform: translateX(1px);
 }
