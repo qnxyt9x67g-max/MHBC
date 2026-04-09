@@ -1224,6 +1224,7 @@ function checkLiveBadge() {
 // ---- INIT ----
 window.onload = function() {
   initFirebase();
+  requestBadgePermission();
 
   var ls = localStorage.getItem('mhbc_lastseen');
   if (ls) { try { lastSeenTimestamps = JSON.parse(ls); } catch(e) {} }
