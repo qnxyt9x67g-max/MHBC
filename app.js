@@ -852,8 +852,10 @@ function leaveChat() {
 
 function markAsRead() {
   if (!currentGroup) return;
+
   lastSeenTimestamps[currentGroup] = Date.now();
   localStorage.setItem('mhbc_lastseen', JSON.stringify(lastSeenTimestamps));
+  setUnreadCount(currentGroup, 0);
 }
 
 // ---- MEMBERS PANEL ----
