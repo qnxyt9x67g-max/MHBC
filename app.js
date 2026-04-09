@@ -633,8 +633,9 @@ function sendInlineReply(parentId) {
   };
 
   db.collection('groups').doc(currentGroup).collection('messages').add(msgData).then(function() {
-    clearReply();
-  });
+  suppressNextAutoScroll = true;
+  clearReply();
+});
 }
 
 // ---- MESSAGE OWNERSHIP — three-tier fallback ----
