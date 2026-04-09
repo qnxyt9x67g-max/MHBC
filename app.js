@@ -663,23 +663,9 @@ function editMessage(msgId) {
   });
 }
 
-// ---- ATTACH LONG PRESS — touch + desktop ----
 function attachLongPress(wrapper, msgId, isMe) {
-  if (!isMe && !currentUser.isAdmin) return;
-
-  // Mobile / normal tap
-  wrapper.addEventListener('click', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    showMessageMenu(msgId, isMe);
-  });
-
-  // Desktop right-click
-  wrapper.addEventListener('contextmenu', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    showMessageMenu(msgId, isMe);
-  });
+  // No long press behavior anymore
+  return;
 }
 
 // ---- YOUTUBE ID EXTRACTOR ----
