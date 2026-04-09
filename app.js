@@ -672,7 +672,11 @@ function showMessageMenu(msgId, isMe) {
     deleteBtn.addEventListener('click', function() {
       menu.remove();
       if (confirm('Delete this message?')) {
-        db.collection('groups').doc(currentGroup).collection('messages').doc(msgId).delete();
+        suppressAutoScrollUntil = Date.now() + 2000;
+
+db.collection('groups').doc(currentGroup)
+  .collection('messages').doc(msgId)
+  .delete();
       }
     });
     menu.appendChild(deleteBtn);
