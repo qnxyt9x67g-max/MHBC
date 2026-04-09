@@ -1358,3 +1358,12 @@ body {
   color: var(--navy);
   font-weight: 700;
 }
+@media (min-width: 768px) {
+  .msg-menu {
+    width: min(100%, 620px);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    border-radius: 16px 16px 0 0;
+  }
+}
