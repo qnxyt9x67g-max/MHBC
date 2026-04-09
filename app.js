@@ -253,6 +253,8 @@ function toggleVisible(inputId, btn) {
 }
 
 function startOver() {
+  stopUnreadWatcher(currentGroup);
+  clearUnreadCount(currentGroup);
   clearSavedUser(currentGroup);
   currentUser = null;
   currentGroup = null;
