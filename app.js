@@ -15,6 +15,7 @@ var messageListener = null;
 var unreadListeners = {};
 var unreadCountsByGroup = {};
 var unreadCount = 0;
+var pendingListeners = {};
 var lastSeenTimestamps = {};
 var replyingTo = null;
 var longPressTimer = null;
