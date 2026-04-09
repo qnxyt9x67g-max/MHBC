@@ -1342,7 +1342,20 @@ if (enableRow) {
     alert('If prompted, tap "Allow" to enable notifications and badges.');
   });
 }
+var mainInput = document.getElementById('cg-msg-input');
+if (mainInput) {
+  function jumpToBottomForMainInput() {
+    if (replyingTo) {
+      clearReply();
+    }
+    setTimeout(function() {
+      window.scrollTo(0, document.body.scrollHeight);
+    }, 100);
+  }
 
+  mainInput.addEventListener('focus', jumpToBottomForMainInput);
+  mainInput.addEventListener('click', jumpToBottomForMainInput);
+}
   var ls = localStorage.getItem('mhbc_lastseen');
   if (ls) { try { lastSeenTimestamps = JSON.parse(ls); } catch(e) {} }
 
