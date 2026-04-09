@@ -204,8 +204,12 @@ function setUnreadCount(groupId, count) {
 
   var roomBadge = document.getElementById('badge-' + groupId);
   if (roomBadge) {
-    if (unreadCountsByGroup[groupId] > 0) {
-      roomBadge.textContent = unreadCountsByGroup[groupId] > 99 ? '99+' : String(unreadCountsByGroup[groupId]);
+    var unread = unreadCountsByGroup[groupId] || 0;
+var pending = pendingCountsByGroup[groupId] || 0;
+var total = unread + pending;
+
+if (total > 0) {
+  roomBadge.textContent = total > 99 ? '99+' : String(total);
       roomBadge.style.display = 'flex';
     } else {
       roomBadge.style.display = 'none';
