@@ -631,15 +631,23 @@ function startAllUnreadWatchers() {
   });
 }
 function startPendingWatcher(groupId) {
-  if (!currentUser || !currentUser.isAdmin) return;
+  if (!groupId || !currentUser || !currentUser.isAdmin) {
+    setPendingCount(groupId, 0);
+    return;
+  }
 
-  db.collection('groups').doc(groupId).collection('members')
+  if (pendingListeners[groupId]) {
+    pendingListeners[groupId]();
+    delete pendingListeners[groupId];
+  }
+
+  pendingListeners[groupId] = db.collection('groups').doc(groupId)
+    .collection('members')
     .where('approved', '==', false)
     .onSnapshot(function(snapshot) {
       setPendingCount(groupId, snapshot.size);
-      setTimeout(function() {
-        setPendingCount(groupId, snapshot.size);
-      }, 500);
+    }, function(err) {
+      console.error('Pending watcher error for', groupId, err);
     });
 }
 
