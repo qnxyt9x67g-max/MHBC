@@ -513,9 +513,10 @@ function checkApproval() {
   db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).get().then(function(snap) {
     if (snap.exists && snap.data().approved) {
       currentUser.isAdmin = snap.data().isAdmin === true;
-      saveUser(currentUser);
+saveUser(currentUser);
 setLastGroup(currentGroup);
 startAllUnreadWatchers();
+startPendingWatcher(currentGroup); // 🔥 ADD THIS
 enterChat();
     } else {
       alert('Not approved yet. Please wait for your group leader to approve you.');
@@ -528,9 +529,10 @@ function checkApprovalAndEnter() {
   db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).get().then(function(snap) {
     if (snap.exists && snap.data().approved) {
       currentUser.isAdmin = snap.data().isAdmin === true;
-      saveUser(currentUser);
+saveUser(currentUser);
 setLastGroup(currentGroup);
 startAllUnreadWatchers();
+startPendingWatcher(currentGroup); // 🔥 ADD THIS
 enterChat();
     } else if (snap.exists) {
       document.getElementById('cg-pending-title').textContent = currentGroupName;
