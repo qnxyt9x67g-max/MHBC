@@ -636,8 +636,12 @@ function startPendingWatcher(groupId) {
     .where('approved', '==', false)
     .onSnapshot(function(snapshot) {
       setPendingCount(groupId, snapshot.size);
+      setTimeout(function() {
+        setPendingCount(groupId, snapshot.size);
+      }, 500);
     });
 }
+
 function setReply(messageId, authorName) {
   replyingTo = { id: messageId, author: authorName };
 
