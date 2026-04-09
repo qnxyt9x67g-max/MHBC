@@ -781,9 +781,10 @@ function loadMessages() {
         renderThread(msg, replyMap[msg._id] || [], messagesEl, index < topLevel.length - 1);
       });
       setTimeout(function() {
-  if (!replyingTo) {
+  if (!replyingTo && !suppressNextAutoScroll) {
     window.scrollTo(0, document.body.scrollHeight);
   }
+  suppressNextAutoScroll = false;
   messagesEl.style.visibility = 'visible';
 }, 150);
       if (isInChat()) { markAsRead(); }
