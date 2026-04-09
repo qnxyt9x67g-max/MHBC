@@ -1325,8 +1325,9 @@ if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) 
   currentGroupName = savedUser.groupName;
   currentUser = savedUser;
   currentMemberKey = savedUser.normalizedName;
-  startUnreadWatcher(savedUser.group, savedUser.name);
 }
+
+startAllUnreadWatchers();
       
     } else {
       authReady = false;
