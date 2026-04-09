@@ -880,7 +880,9 @@ function renderPrimaryMessage(msg, container) { container.appendChild(buildMessa
 function renderReplyMessage(msg, container) { container.appendChild(buildMessageRow(msg, false)); }
 
 function renderThread(msg, replies, container, showDivider) {
-  var thread = document.createElement('div'); thread.className = 'cg-thread';
+  var thread = document.createElement('div');
+thread.className = 'cg-thread';
+thread.id = 'thread-' + msg._id;
   renderPrimaryMessage(msg, thread);
 
   var commentBar = document.createElement('div'); commentBar.className = 'cg-comment-bar';
