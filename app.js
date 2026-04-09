@@ -612,6 +612,29 @@ function clearReply() {
   if (bar) bar.style.display = 'none';
   loadMessages();
 }
+function sendInlineReply(parentId) {
+  var input = document.getElementById('inline-reply-input-' + parentId);
+  if (!input || !db || !currentUID) return;
+
+  var text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+
+  var msgData = {
+    text: text,
+    author: currentUser.name,
+    authorKey: currentMemberKey,
+    authorUid: currentUID,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    replyTo: parentId,
+    replyToAuthor: replyingTo ? replyingTo.author : ''
+  };
+
+  db.collection('groups').doc(currentGroup).collection('messages').add(msgData).then(function() {
+    clearReply();
+  });
+}
 
 // ---- MESSAGE OWNERSHIP — three-tier fallback ----
 function isMyMessage(msg) {
