@@ -485,29 +485,73 @@ function enterChat() {
 
 // ---- UNREAD WATCHER ----
 function startUnreadWatcher(groupId, userName) {
-  if (unreadListener) { unreadListener(); unreadListener = null; }
-  var initialized = false, lastCount = 0;
+  if (!groupId || !userName) return;
 
-  unreadListener = db.collection('groups').doc(groupId).collection('messages')
-    .orderBy('timestamp', 'asc').onSnapshot(function(snapshot) {
+  if (unreadListeners[groupId]) {
+    unreadListeners[groupId]();
+    delete unreadListeners[groupId];
+  }
+
+  var initialized = false;
+  var lastCount = 0;
+
+  unreadListeners[groupId] = db.collection('groups').doc(groupId)
+    .collection('messages')
+    .orderBy('timestamp', 'asc')
+    .onSnapshot(function(snapshot) {
       var lastSeen = lastSeenTimestamps[groupId] || 0;
-      var total = snapshot.size;
-      var newUnread = 0;
-      snapshot.forEach(function(d) {
-        var msg = d.data();
-        if (msg.author !== userName && msg.timestamp && msg.timestamp.toMillis() > lastSeen) newUnread++;
+      var count = 0;
+
+      snapshot.forEach(function(doc) {
+        var msg = doc.data();
+        var ts = msg.timestamp ? msg.timestamp.toMillis() : 0;
+
+        if (ts > lastSeen && msg.author !== userName) {
+          count++;
+        }
       });
-      if (!initialized) {
-        initialized = true; lastCount = total;
-        if (!isInChat()) setUnreadCount(groupId, newUnread); return;
+
+      if (initialized && count > lastCount && !isInChat()) {
+        playNotificationSound();
       }
-      var hasNew = total > lastCount; lastCount = total;
-      if (hasNew) {
-        if (newUnread > 0) playNotificationSound();
-        if (isInChat()) { markAsRead(); setUnreadCount(groupId, 0); }
-        else { setUnreadCount(groupId, newUnread); }
+
+      initialized = true;
+      lastCount = count;
+
+      if (isInChat() && currentGroup === groupId) {
+        setUnreadCount(groupId, 0);
+      } else {
+        setUnreadCount(groupId, count);
       }
-    }, function(err) { console.log('Watcher error:', err.message); });
+    }, function(err) {
+      console.error('Unread watcher error for', groupId, err);
+    });
+}
+
+function stopUnreadWatcher(groupId) {
+  if (unreadListeners[groupId]) {
+    unreadListeners[groupId]();
+    delete unreadListeners[groupId];
+  }
+}
+
+function stopAllUnreadWatchers() {
+  Object.keys(unreadListeners).forEach(function(groupId) {
+    unreadListeners[groupId]();
+  });
+  unreadListeners = {};
+}
+
+function startAllUnreadWatchers() {
+  stopAllUnreadWatchers();
+
+  var users = getSavedUsers();
+  Object.keys(users).forEach(function(groupId) {
+    var user = users[groupId];
+    if (user && user.name) {
+      startUnreadWatcher(groupId, user.name);
+    }
+  });
 }
 
 function setReply(messageId, authorName) {
