@@ -149,6 +149,29 @@ function playNotificationSound() {
 }
 
 // ---- BADGES ----
+// ---- BADGES ----
+
+// ---- APP ICON BADGE (iOS) ----
+function updateAppBadge(count) {
+  if (!('setAppBadge' in navigator)) return;
+
+  if (count > 0) {
+    navigator.setAppBadge(count).catch(function() {});
+  } else {
+    navigator.clearAppBadge().catch(function() {});
+  }
+}
+
+function requestBadgePermission() {
+  if (!('Notification' in window)) return;
+
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().then(function(permission) {
+      console.log('Notification permission:', permission);
+    });
+  }
+}
+
 function refreshCareNavBadge() {
   var navBadge = document.getElementById('nav-badge-care');
   var total = 0;
@@ -167,6 +190,8 @@ function refreshCareNavBadge() {
   } else {
     navBadge.style.display = 'none';
   }
+
+  updateAppBadge(total); // 👈 this is the key addition
 }
 
 function setUnreadCount(groupId, count) {
