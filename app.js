@@ -215,7 +215,24 @@ if (total > 0) {
       roomBadge.style.display = 'none';
     }
   }
+function setPendingCount(groupId, count) {
+  pendingCountsByGroup[groupId] = Math.max(0, count || 0);
 
+  var unread = unreadCountsByGroup[groupId] || 0;
+  var total = unread + pendingCountsByGroup[groupId];
+
+  var roomBadge = document.getElementById('badge-' + groupId);
+  if (roomBadge) {
+    if (total > 0) {
+      roomBadge.textContent = total > 99 ? '99+' : String(total);
+      roomBadge.style.display = 'flex';
+    } else {
+      roomBadge.style.display = 'none';
+    }
+  }
+
+  refreshCareNavBadge();
+}
   refreshCareNavBadge();
 }
 
