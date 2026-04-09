@@ -695,10 +695,16 @@ db.collection('groups').doc(currentGroup)
 
 function editMessage(msgId) {
   var msgRef = db.collection('groups').doc(currentGroup).collection('messages').doc(msgId);
+
   msgRef.get().then(function(snap) {
     if (!snap.exists) return;
+
     var newText = prompt('Edit your message:', snap.data().text);
+
     if (newText !== null && newText.trim() !== '' && newText.trim() !== snap.data().text) {
+
+      suppressAutoScrollUntil = Date.now() + 2000;
+
       msgRef.update({ text: newText.trim(), edited: true });
     }
   });
