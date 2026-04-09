@@ -634,8 +634,15 @@ function sendInlineReply(parentId) {
   };
 
   db.collection('groups').doc(currentGroup).collection('messages').add(msgData).then(function() {
-  suppressNextAutoScroll = true;
+  suppressAutoScrollUntil = Date.now() + 2000;
   clearReply();
+
+  setTimeout(function() {
+    var thread = document.getElementById('thread-' + parentId);
+    if (thread) {
+      thread.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 150);
 });
 }
 
