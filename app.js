@@ -593,15 +593,17 @@ function setReply(messageId, authorName) {
   replyingTo = { id: messageId, author: authorName };
 
   var bar = document.getElementById('cg-reply-bar');
-  var label = document.getElementById('cg-reply-label');
-  var input = document.getElementById('cg-msg-input');
+  if (bar) bar.style.display = 'none';
 
-  if (bar) bar.style.display = 'flex';
-  if (label) label.textContent = 'Replying to ' + authorName;
+  loadMessages();
 
-  if (input) {
-    input.focus({ preventScroll: true });
-  }
+  setTimeout(function() {
+    var inlineInput = document.getElementById('inline-reply-input-' + messageId);
+    if (inlineInput) {
+      inlineInput.focus();
+      inlineInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 100);
 }
 
 function clearReply() {
