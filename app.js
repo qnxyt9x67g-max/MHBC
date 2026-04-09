@@ -234,6 +234,16 @@ function setPendingCount(groupId, count) {
       roomBadge.style.display = 'none';
     }
   }
+  var membersBadge = document.getElementById('members-badge');
+  if (membersBadge) {
+    var pending = pendingCountsByGroup[groupId] || 0;
+    if (pending > 0) {
+      membersBadge.textContent = pending > 99 ? '99+' : String(pending);
+      membersBadge.style.display = 'flex';
+    } else {
+      membersBadge.style.display = 'none';
+    }
+  }
 
   refreshCareNavBadge();
 }
