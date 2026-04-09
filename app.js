@@ -180,8 +180,10 @@ function refreshCareNavBadge() {
   var total = 0;
 
   Object.keys(unreadCountsByGroup).forEach(function(groupId) {
-    total += unreadCountsByGroup[groupId] || 0;
-  });
+  var unread = unreadCountsByGroup[groupId] || 0;
+  var pending = pendingCountsByGroup[groupId] || 0;
+  total += unread + pending;
+});
 
   unreadCount = total;
 
