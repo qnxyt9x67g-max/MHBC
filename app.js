@@ -789,13 +789,40 @@ if (msg.timestamp) {
   var content = document.createElement('div');
   content.className = isPrimary ? 'cg-primary-content' : 'cg-reply-content';
 
-  var header = document.createElement('div'); header.className = 'cg-primary-header';
-  var nameSpan = document.createElement('span'); nameSpan.className = 'cg-primary-name';
-  nameSpan.textContent = msg.author; nameSpan.style.color = color;
-  var timeSpan = document.createElement('span'); timeSpan.className = 'cg-primary-time';
-  timeSpan.textContent = time;
-  header.appendChild(nameSpan); header.appendChild(timeSpan);
-  content.appendChild(header);
+  var header = document.createElement('div');
+header.className = 'cg-primary-header';
+
+var headerLeft = document.createElement('div');
+headerLeft.className = 'cg-primary-header-left';
+
+var nameSpan = document.createElement('span');
+nameSpan.className = 'cg-primary-name';
+nameSpan.textContent = msg.author;
+nameSpan.style.color = color;
+
+var timeSpan = document.createElement('span');
+timeSpan.className = 'cg-primary-time';
+timeSpan.textContent = time;
+
+headerLeft.appendChild(nameSpan);
+headerLeft.appendChild(timeSpan);
+
+header.appendChild(headerLeft);
+
+if (isMe || currentUser.isAdmin) {
+  var menuBtn = document.createElement('button');
+  menuBtn.className = 'msg-menu-trigger';
+  menuBtn.type = 'button';
+  menuBtn.textContent = '⋯';
+  menuBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    showMessageMenu(msg._id, isMe);
+  });
+  header.appendChild(menuBtn);
+}
+
+content.appendChild(header);
 
   var wrapper = document.createElement('div'); wrapper.className = 'msg-wrapper';
   renderMessageContent(msg.text, wrapper);
