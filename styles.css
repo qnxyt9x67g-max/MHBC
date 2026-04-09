@@ -1269,3 +1269,8 @@ body {
     transform: translateX(-50%);
   }
 }
+.msg-wrapper {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
