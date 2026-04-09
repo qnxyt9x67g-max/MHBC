@@ -880,6 +880,52 @@ function renderThread(msg, replies, container, showDivider) {
     return function() { setReply(id, author); };
   })(msg._id, msg.author));
   commentBar.appendChild(replyBtn); thread.appendChild(commentBar);
+  if (replyingTo && replyingTo.id === msg._id) {
+  var inlineReplyBox = document.createElement('div');
+  inlineReplyBox.className = 'cg-inline-reply-box';
+
+  var inlineReplyHeader = document.createElement('div');
+  inlineReplyHeader.className = 'cg-inline-reply-header';
+  inlineReplyHeader.textContent = 'Replying to ' + replyingTo.author;
+
+  var inlineReplyRow = document.createElement('div');
+  inlineReplyRow.className = 'cg-inline-reply-row';
+
+  var inlineInput = document.createElement('input');
+  inlineInput.type = 'text';
+  inlineInput.className = 'cg-inline-reply-input';
+  inlineInput.id = 'inline-reply-input-' + msg._id;
+  inlineInput.placeholder = 'Write a reply...';
+
+  inlineInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') sendInlineReply(msg._id);
+  });
+
+  var inlineSend = document.createElement('button');
+  inlineSend.className = 'cg-inline-reply-send';
+  inlineSend.type = 'button';
+  inlineSend.textContent = 'Send';
+  inlineSend.addEventListener('click', function() {
+    sendInlineReply(msg._id);
+  });
+
+  var inlineCancel = document.createElement('button');
+  inlineCancel.className = 'cg-inline-reply-cancel';
+  inlineCancel.type = 'button';
+  inlineCancel.textContent = 'Cancel';
+  inlineCancel.addEventListener('click', function() {
+    clearReply();
+  });
+
+  inlineReplyRow.appendChild(inlineInput);
+  inlineReplyRow.appendChild(inlineSend);
+  inlineReplyRow.appendChild(inlineCancel);
+
+  inlineReplyBox.appendChild(inlineReplyHeader);
+  inlineReplyBox.appendChild(inlineReplyRow);
+
+  thread.appendChild(inlineReplyBox);
+}
 
   if (replies.length > 0) {
     var repliesContainer = document.createElement('div'); repliesContainer.className = 'cg-replies-container';
