@@ -614,7 +614,15 @@ function startAllUnreadWatchers() {
     }
   });
 }
+function startPendingWatcher(groupId) {
+  if (!currentUser || !currentUser.isAdmin) return;
 
+  db.collection('groups').doc(groupId).collection('members')
+    .where('approved', '==', false)
+    .onSnapshot(function(snapshot) {
+      setPendingCount(groupId, snapshot.size);
+    });
+}
 function setReply(messageId, authorName) {
   replyingTo = { id: messageId, author: authorName };
 
