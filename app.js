@@ -477,7 +477,9 @@ function checkApprovalAndEnter() {
 function enterChat() {
   document.getElementById('cg-chat-title').textContent = currentGroupName;
   var mb = document.getElementById('cg-members-btn'); if (mb) mb.style.display = 'block';
-  showCGScreen('chat'); loadMessages(); markAsRead(); setUnreadCount(currentGroup, 0);
+  showCGScreen('chat');
+loadMessages();
+markAsRead();
   setTimeout(function() {
   window.scrollTo(0, document.body.scrollHeight);
 }, 300);
