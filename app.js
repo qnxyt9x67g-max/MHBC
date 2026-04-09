@@ -1068,7 +1068,18 @@ function loadMembersList() {
     approved.sort(sortByName);
     pending.sort(sortByName);
 
+var pendingCount = pending.length;
+setPendingCount(currentGroup, currentUser.isAdmin ? pendingCount : 0);
 
+var membersBadge = document.getElementById('members-badge');
+if (membersBadge) {
+  if (currentUser.isAdmin && pendingCount > 0) {
+    membersBadge.textContent = pendingCount > 99 ? '99+' : String(pendingCount);
+    membersBadge.style.display = 'flex';
+  } else {
+    membersBadge.style.display = 'none';
+  }
+}
     if (currentUser.isAdmin && pending.length > 0) {
       var pendingLabel = document.createElement('div');
       pendingLabel.className = 'section-label'; pendingLabel.textContent = 'PENDING REQUESTS';
