@@ -634,8 +634,8 @@ function startAllUnreadWatchers() {
     }
   });
 }
-function startPendingWatcher(groupId) {
-  if (!groupId || !currentUser || !currentUser.isAdmin) {
+function startPendingWatcher(groupId, isAdmin) {
+  if (!groupId || !isAdmin) {
     setPendingCount(groupId, 0);
     return;
   }
