@@ -650,7 +650,12 @@ function startPendingWatcher(groupId) {
       console.error('Pending watcher error for', groupId, err);
     });
 }
-
+function stopPendingWatcher(groupId) {
+  if (pendingListeners[groupId]) {
+    pendingListeners[groupId]();
+    delete pendingListeners[groupId];
+  }
+}
 function setReply(messageId, authorName) {
   replyingTo = { id: messageId, author: authorName };
 
