@@ -1224,6 +1224,15 @@ function checkLiveBadge() {
 // ---- INIT ----
 window.onload = function() {
   initFirebase();
+  // Enable Notifications button (iOS requires user interaction)
+var enableRow = document.getElementById('enableNotificationsRow');
+if (enableRow) {
+  enableRow.addEventListener('click', function () {
+    requestBadgePermission();
+
+    alert('If prompted, tap "Allow" to enable notifications and badges.');
+  });
+}
 
   var ls = localStorage.getItem('mhbc_lastseen');
   if (ls) { try { lastSeenTimestamps = JSON.parse(ls); } catch(e) {} }
