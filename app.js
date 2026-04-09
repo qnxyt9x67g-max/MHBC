@@ -1590,6 +1590,7 @@ if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) 
 }
 
 startAllUnreadWatchers();
+startAllPendingWatchers();
       
     } else {
       authReady = false;
