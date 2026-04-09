@@ -445,8 +445,9 @@ function checkApproval() {
     if (snap.exists && snap.data().approved) {
       currentUser.isAdmin = snap.data().isAdmin === true;
       saveUser(currentUser);
-      setLastGroup(currentGroup);
-      enterChat();
+setLastGroup(currentGroup);
+startAllUnreadWatchers();
+enterChat();
     } else {
       alert('Not approved yet. Please wait for your group leader to approve you.');
     }
