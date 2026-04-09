@@ -460,8 +460,9 @@ function checkApprovalAndEnter() {
     if (snap.exists && snap.data().approved) {
       currentUser.isAdmin = snap.data().isAdmin === true;
       saveUser(currentUser);
-      setLastGroup(currentGroup);
-      enterChat();
+setLastGroup(currentGroup);
+startAllUnreadWatchers();
+enterChat();
     } else if (snap.exists) {
       document.getElementById('cg-pending-title').textContent = currentGroupName;
       showCGScreen('pending');
