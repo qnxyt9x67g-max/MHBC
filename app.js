@@ -441,7 +441,7 @@ function submitLogin() {
                 saveUser(currentUser);
                 setLastGroup(currentGroup);
                 startAllUnreadWatchers();
-                startPendingWatcher(currentGroup);
+startAllPendingWatchers();
                 if (memberData.approved) { enterChat(); }
                 else {
                   document.getElementById('cg-pending-title').textContent = currentGroupName;
@@ -464,7 +464,7 @@ function submitLogin() {
                   saveUser(currentUser);
                   setLastGroup(currentGroup);
                   startAllUnreadWatchers();
-                  startPendingWatcher(currentGroup);
+startAllPendingWatchers();
                   document.getElementById('cg-pending-title').textContent = currentGroupName;
                   showReturningUserMessage();
                   showCGScreen('pending');
@@ -498,7 +498,7 @@ function submitLogin() {
               saveUser(currentUser);
               setLastGroup(currentGroup);
               startAllUnreadWatchers();
-              startPendingWatcher(currentGroup);
+startAllPendingWatchers();
               document.getElementById('cg-pending-title').textContent = currentGroupName;
               showFirstTimeMessage(); showCGScreen('pending');
             }).catch(function(err) { errEl.textContent = 'Registration error: ' + err.message; });
@@ -518,7 +518,7 @@ function checkApproval() {
 saveUser(currentUser);
 setLastGroup(currentGroup);
 startAllUnreadWatchers();
-startPendingWatcher(currentGroup); // 🔥 ADD THIS
+startAllPendingWatchers();
 enterChat();
     } else {
       alert('Not approved yet. Please wait for your group leader to approve you.');
@@ -534,7 +534,7 @@ function checkApprovalAndEnter() {
 saveUser(currentUser);
 setLastGroup(currentGroup);
 startAllUnreadWatchers();
-startPendingWatcher(currentGroup); // 🔥 ADD THIS
+startAllPendingWatchers();
 enterChat();
     } else if (snap.exists) {
       document.getElementById('cg-pending-title').textContent = currentGroupName;
