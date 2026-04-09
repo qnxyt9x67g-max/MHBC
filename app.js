@@ -426,6 +426,7 @@ function submitLogin() {
                 saveUser(currentUser);
                 setLastGroup(currentGroup);
                 startAllUnreadWatchers();
+                startPendingWatcher(currentGroup);
                 if (memberData.approved) { enterChat(); }
                 else {
                   document.getElementById('cg-pending-title').textContent = currentGroupName;
@@ -448,6 +449,7 @@ function submitLogin() {
                   saveUser(currentUser);
                   setLastGroup(currentGroup);
                   startAllUnreadWatchers();
+                  startPendingWatcher(currentGroup);
                   document.getElementById('cg-pending-title').textContent = currentGroupName;
                   showReturningUserMessage();
                   showCGScreen('pending');
@@ -481,6 +483,7 @@ function submitLogin() {
               saveUser(currentUser);
               setLastGroup(currentGroup);
               startAllUnreadWatchers();
+              startPendingWatcher(currentGroup);
               document.getElementById('cg-pending-title').textContent = currentGroupName;
               showFirstTimeMessage(); showCGScreen('pending');
             }).catch(function(err) { errEl.textContent = 'Registration error: ' + err.message; });
