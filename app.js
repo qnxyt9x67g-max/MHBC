@@ -205,16 +205,20 @@ function setUnreadCount(groupId, count) {
   var roomBadge = document.getElementById('badge-' + groupId);
   if (roomBadge) {
     var unread = unreadCountsByGroup[groupId] || 0;
-var pending = pendingCountsByGroup[groupId] || 0;
-var total = unread + pending;
+    var pending = pendingCountsByGroup[groupId] || 0;
+    var total = unread + pending;
 
-if (total > 0) {
-  roomBadge.textContent = total > 99 ? '99+' : String(total);
+    if (total > 0) {
+      roomBadge.textContent = total > 99 ? '99+' : String(total);
       roomBadge.style.display = 'flex';
     } else {
       roomBadge.style.display = 'none';
     }
   }
+
+  refreshCareNavBadge();
+}
+
 function setPendingCount(groupId, count) {
   pendingCountsByGroup[groupId] = Math.max(0, count || 0);
 
@@ -231,8 +235,6 @@ function setPendingCount(groupId, count) {
     }
   }
 
-  refreshCareNavBadge();
-}
   refreshCareNavBadge();
 }
 
