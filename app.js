@@ -660,6 +660,24 @@ function stopPendingWatcher(groupId) {
     delete pendingListeners[groupId];
   }
 }
+function stopAllPendingWatchers() {
+  Object.keys(pendingListeners).forEach(function(groupId) {
+    pendingListeners[groupId]();
+  });
+  pendingListeners = {};
+}
+
+function startAllPendingWatchers() {
+  stopAllPendingWatchers();
+
+  var users = getSavedUsers();
+  Object.keys(users).forEach(function(groupId) {
+    var user = users[groupId];
+    if (user) {
+      startPendingWatcher(groupId, user.isAdmin === true);
+    }
+  });
+}
 function setReply(messageId, authorName) {
   replyingTo = { id: messageId, author: authorName };
 
