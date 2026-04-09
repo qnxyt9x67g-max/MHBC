@@ -608,7 +608,9 @@ function setReply(messageId, authorName) {
 
 function clearReply() {
   replyingTo = null;
-  var bar = document.getElementById('cg-reply-bar'); if (bar) bar.style.display = 'none';
+  var bar = document.getElementById('cg-reply-bar');
+  if (bar) bar.style.display = 'none';
+  loadMessages();
 }
 
 // ---- MESSAGE OWNERSHIP — three-tier fallback ----
