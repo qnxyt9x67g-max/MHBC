@@ -661,26 +661,19 @@ function editMessage(msgId) {
 function attachLongPress(wrapper, msgId, isMe) {
   if (!isMe && !currentUser.isAdmin) return;
 
-  // Mobile touch
-  wrapper.addEventListener('touchstart', function() {
-    longPressTimer = setTimeout(function() { showMessageMenu(msgId, isMe); }, 600);
+  // Mobile / normal tap
+  wrapper.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    showMessageMenu(msgId, isMe);
   });
-  wrapper.addEventListener('touchend', function() { clearTimeout(longPressTimer); });
-  wrapper.addEventListener('touchmove', function() { clearTimeout(longPressTimer); });
 
   // Desktop right-click
   wrapper.addEventListener('contextmenu', function(e) {
-    e.preventDefault(); showMessageMenu(msgId, isMe);
+    e.preventDefault();
+    e.stopPropagation();
+    showMessageMenu(msgId, isMe);
   });
-
-  // Desktop mouse long press
-  var mouseTimer = null;
-  wrapper.addEventListener('mousedown', function(e) {
-    if (e.button !== 0) return;
-    mouseTimer = setTimeout(function() { showMessageMenu(msgId, isMe); }, 600);
-  });
-  wrapper.addEventListener('mouseup', function() { clearTimeout(mouseTimer); });
-  wrapper.addEventListener('mouseleave', function() { clearTimeout(mouseTimer); });
 }
 
 // ---- YOUTUBE ID EXTRACTOR ----
