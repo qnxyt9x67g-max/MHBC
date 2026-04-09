@@ -591,11 +591,17 @@ function startAllUnreadWatchers() {
 
 function setReply(messageId, authorName) {
   replyingTo = { id: messageId, author: authorName };
+
   var bar = document.getElementById('cg-reply-bar');
   var label = document.getElementById('cg-reply-label');
+  var input = document.getElementById('cg-msg-input');
+
   if (bar) bar.style.display = 'flex';
   if (label) label.textContent = 'Replying to ' + authorName;
-  document.getElementById('cg-msg-input').focus();
+
+  if (input) {
+    input.focus({ preventScroll: true });
+  }
 }
 
 function clearReply() {
