@@ -738,7 +738,7 @@ function loadMessages() {
         window.scrollTo(0, document.body.scrollHeight);
         messagesEl.style.visibility = 'visible';
       }, 150);
-      if (isInChat()) { markAsRead(); setUnreadCount(currentGroup, 0); }
+      if (isInChat()) { markAsRead(); }
 
     });
 }
