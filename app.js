@@ -236,15 +236,15 @@ function setPendingCount(groupId, count) {
     }
   }
   var membersBadge = document.getElementById('members-badge');
-  if (membersBadge) {
-    var pending = pendingCountsByGroup[groupId] || 0;
-    if (pending > 0) {
-      membersBadge.textContent = pending > 99 ? '99+' : String(pending);
-      membersBadge.style.display = 'flex';
-    } else {
-      membersBadge.style.display = 'none';
-    }
+if (membersBadge && groupId === currentGroup) {
+  var pending = pendingCountsByGroup[groupId] || 0;
+  if (pending > 0) {
+    membersBadge.textContent = pending > 99 ? '99+' : String(pending);
+    membersBadge.style.display = 'flex';
+  } else {
+    membersBadge.style.display = 'none';
   }
+}
 
   refreshCareNavBadge();
 }
