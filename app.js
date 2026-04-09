@@ -475,9 +475,11 @@ enterChat();
   showCGScreen('select');
 }
   }).catch(function() {
-    clearSavedUser(currentGroup);
-    showCGScreen('select');
-  });
+  stopUnreadWatcher(currentGroup);
+  clearUnreadCount(currentGroup);
+  clearSavedUser(currentGroup);
+  showCGScreen('select');
+});
 }
 
 function enterChat() {
