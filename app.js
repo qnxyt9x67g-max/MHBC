@@ -149,18 +149,49 @@ function playNotificationSound() {
 }
 
 // ---- BADGES ----
-function setUnreadCount(groupId, count) {
-  unreadCount = count;
-  var roomBadge = document.getElementById('badge-' + groupId);
+function refreshCareNavBadge() {
   var navBadge = document.getElementById('nav-badge-care');
-  if (count > 0) {
-    var label = count > 99 ? '99+' : String(count);
-    if (roomBadge) { roomBadge.textContent = label; roomBadge.style.display = 'flex'; }
-    if (navBadge) { navBadge.textContent = label; navBadge.style.display = 'flex'; }
+  var total = 0;
+
+  Object.keys(unreadCountsByGroup).forEach(function(groupId) {
+    total += unreadCountsByGroup[groupId] || 0;
+  });
+
+  unreadCount = total;
+
+  if (!navBadge) return;
+
+  if (total > 0) {
+    navBadge.textContent = total > 99 ? '99+' : String(total);
+    navBadge.style.display = 'flex';
   } else {
-    if (roomBadge) roomBadge.style.display = 'none';
-    if (navBadge) navBadge.style.display = 'none';
+    navBadge.style.display = 'none';
   }
+}
+
+function setUnreadCount(groupId, count) {
+  unreadCountsByGroup[groupId] = Math.max(0, count || 0);
+
+  var roomBadge = document.getElementById('badge-' + groupId);
+  if (roomBadge) {
+    if (unreadCountsByGroup[groupId] > 0) {
+      roomBadge.textContent = unreadCountsByGroup[groupId] > 99 ? '99+' : String(unreadCountsByGroup[groupId]);
+      roomBadge.style.display = 'flex';
+    } else {
+      roomBadge.style.display = 'none';
+    }
+  }
+
+  refreshCareNavBadge();
+}
+
+function clearUnreadCount(groupId) {
+  delete unreadCountsByGroup[groupId];
+
+  var roomBadge = document.getElementById('badge-' + groupId);
+  if (roomBadge) roomBadge.style.display = 'none';
+
+  refreshCareNavBadge();
 }
 
 function isInChat() {
