@@ -21,6 +21,7 @@ var longPressTimer = null;
 var audioUnlocked = false;
 var audioCtx = null;
 var authReady = false;
+var suppressNextAutoScroll = false;
 
 var BUBBLE_COLORS = [
   '#1a5276','#1a3a6e','#6c3483','#145a32','#784212',
