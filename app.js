@@ -469,9 +469,11 @@ enterChat();
       document.getElementById('cg-pending-title').textContent = currentGroupName;
       showCGScreen('pending');
     } else {
-      clearSavedUser(currentGroup);
-      showCGScreen('select');
-    }
+  stopUnreadWatcher(currentGroup);
+  clearUnreadCount(currentGroup);
+  clearSavedUser(currentGroup);
+  showCGScreen('select');
+}
   }).catch(function() {
     clearSavedUser(currentGroup);
     showCGScreen('select');
