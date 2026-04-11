@@ -25,7 +25,9 @@ var authReady = false;
 var suppressNextAutoScroll = false;
 var suppressAutoScrollUntil = 0;
 var pendingCountsByGroup = {};
-
+var MESSAGE_PAGE_SIZE = 100;
+var currentMessageLimit = MESSAGE_PAGE_SIZE;
+var viewedOriginalMessagesByGroup = {};
 var BUBBLE_COLORS = [
   '#1a5276','#1a3a6e','#6c3483','#145a32','#784212',
   '#1b4f72','#4a235a','#0e6655','#7b241c','#1f618d'
