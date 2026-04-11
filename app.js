@@ -1005,6 +1005,133 @@ function renderMissingParentReply(msg, container, showDivider) {
 
   container.appendChild(wrap);
 }
+function renderCurrentRoomMessages(allowAutoScroll) {
+  var messagesEl = document.getElementById('cg-messages');
+  var state = getCurrentRoomState();
+
+  messagesEl.innerHTML = '';
+
+  if (!state.orderedIds.length) {
+    messagesEl.innerHTML = '<div class="cg-no-msgs">No messages yet. Say hello! 👋</div>';
+    return;
+  }
+
+  var allMessages = state.orderedIds.map(function(id) {
+    return state.messagesById[id];
+  });
+
+  var loadedIds = {};
+  allMessages.forEach(function(msg) {
+    loadedIds[msg._id] = true;
+  });
+
+  var replyMap = {};
+  allMessages.forEach(function(msg) {
+    if (!msg.replyTo) {
+      replyMap[msg._id] = [];
+    }
+  });
+
+  allMessages.forEach(function(msg) {
+    if (msg.replyTo && replyMap[msg.replyTo]) {
+      replyMap[msg.replyTo].push(msg);
+    }
+  });
+
+  var renderItems = [];
+  allMessages.forEach(function(msg) {
+    if (!msg.replyTo) {
+      renderItems.push({
+        type: 'thread',
+        msg: msg,
+        replies: replyMap[msg._id] || []
+      });
+    } else if (!loadedIds[msg.replyTo]) {
+      renderItems.push({
+        type: 'missingParentReply',
+        msg: msg
+      });
+    }
+  });
+
+  messagesEl.style.visibility = 'hidden';
+
+  if (state.hasOlderMessages) {
+    var olderWrap = document.createElement('div');
+    olderWrap.className = 'cg-older-wrap';
+
+    var olderBtn = document.createElement('button');
+    olderBtn.className = 'cg-older-btn';
+    olderBtn.type = 'button';
+    olderBtn.textContent = 'Load Older Messages';
+    olderBtn.addEventListener('click', function() {
+      loadOlderMessages();
+    });
+
+    olderWrap.appendChild(olderBtn);
+    messagesEl.appendChild(olderWrap);
+  }
+
+  renderItems.forEach(function(item, index) {
+    var showDivider = index < renderItems.length - 1;
+
+    if (item.type === 'thread') {
+      renderThread(item.msg, item.replies, messagesEl, showDivider);
+    } else if (item.type === 'missingParentReply') {
+      renderMissingParentReply(item.msg, messagesEl, showDivider);
+    }
+  });
+
+  setTimeout(function() {
+    if (allowAutoScroll && !replyingTo && Date.now() > suppressAutoScrollUntil) {
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+    messagesEl.style.visibility = 'visible';
+  }, 150);
+
+  if (isInChat()) {
+    markAsRead();
+  }
+}
+
+function attachRecentMessagesListener() {
+  var state = getCurrentRoomState();
+  var newestTs = state.newestTimestamp || 0;
+
+  if (messageListener) {
+    messageListener();
+    messageListener = null;
+  }
+
+  if (!newestTs) return;
+
+  messageListener = db.collection('groups').doc(currentGroup)
+    .collection('messages')
+    .where('timestamp', '>=', firebase.firestore.Timestamp.fromMillis(newestTs))
+    .orderBy('timestamp', 'asc')
+    .onSnapshot(function(snapshot) {
+      var changed = false;
+
+      snapshot.docChanges().forEach(function(change) {
+        var id = change.doc.id;
+
+        if (change.type === 'removed') {
+          removeMessageFromRoomState(state, id);
+          changed = true;
+          return;
+        }
+
+        var msg = normalizeFirestoreMessage(change.doc);
+        mergeMessagesIntoRoomState(state, [msg]);
+        changed = true;
+      });
+
+      if (changed) {
+        saveRoomMessageCache(currentGroup, state);
+        renderCurrentRoomMessages(true);
+      }
+    });
+}
 // ---- LOAD MESSAGES ----
 function loadMessages() {
   if (messageListener) messageListener();
