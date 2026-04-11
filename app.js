@@ -556,6 +556,8 @@ enterChat();
 }
 
 function enterChat() {
+  currentMessageLimit = MESSAGE_PAGE_SIZE;
+  viewedOriginalMessagesByGroup[currentGroup] = {};
   document.getElementById('cg-chat-title').textContent = currentGroupName;
   var mb = document.getElementById('cg-members-btn'); if (mb) mb.style.display = 'block';
   showCGScreen('chat');
