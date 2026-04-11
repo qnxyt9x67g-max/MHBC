@@ -860,7 +860,92 @@ function renderMessageContent(text, container) {
     }
   });
 }
+function getMessageTime(msg) {
+  if (!msg || !msg.timestamp) return 0;
+  if (typeof msg.timestamp.toMillis === 'function') return msg.timestamp.toMillis();
+  if (typeof msg.timestamp.seconds === 'number') return msg.timestamp.seconds * 1000;
+  if (typeof msg.timestamp === 'number') return msg.timestamp;
+  return 0;
+}
 
+function loadOlderMessages() {
+  currentMessageLimit += MESSAGE_PAGE_SIZE;
+  suppressAutoScrollUntil = Date.now() + 2000;
+  loadMessages();
+}
+
+function viewOriginalMessage(parentId) {
+  if (!currentGroup || !parentId) return;
+
+  if (!viewedOriginalMessagesByGroup[currentGroup]) {
+    viewedOriginalMessagesByGroup[currentGroup] = {};
+  }
+
+  // Already fetched once for this room
+  if (viewedOriginalMessagesByGroup[currentGroup][parentId]) {
+    suppressAutoScrollUntil = Date.now() + 2000;
+    loadMessages();
+
+    setTimeout(function() {
+      var thread = document.getElementById('thread-' + parentId);
+      if (thread) thread.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 200);
+    return;
+  }
+
+  db.collection('groups').doc(currentGroup).collection('messages').doc(parentId).get().then(function(snap) {
+    if (!snap.exists) return;
+
+    var msg = snap.data();
+    msg._id = snap.id;
+
+    viewedOriginalMessagesByGroup[currentGroup][parentId] = msg;
+    suppressAutoScrollUntil = Date.now() + 2000;
+    loadMessages();
+
+    setTimeout(function() {
+      var thread = document.getElementById('thread-' + parentId);
+      if (thread) thread.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 200);
+  });
+}
+
+function renderMissingParentReply(msg, container, showDivider) {
+  var wrap = document.createElement('div');
+  wrap.className = 'cg-thread cg-missing-thread';
+
+  var info = document.createElement('div');
+  info.className = 'cg-missing-parent-bar';
+
+  var infoText = document.createElement('span');
+  infoText.className = 'cg-missing-parent-text';
+  infoText.textContent = 'Reply to an older message';
+
+  var viewBtn = document.createElement('button');
+  viewBtn.className = 'cg-missing-parent-btn';
+  viewBtn.type = 'button';
+  viewBtn.textContent = 'View original message';
+  viewBtn.addEventListener('click', function() {
+    viewOriginalMessage(msg.replyTo);
+  });
+
+  info.appendChild(infoText);
+  info.appendChild(viewBtn);
+  wrap.appendChild(info);
+
+  var repliesContainer = document.createElement('div');
+  repliesContainer.className = 'cg-replies-container';
+  renderReplyMessage(msg, repliesContainer);
+  wrap.appendChild(repliesContainer);
+
+  if (showDivider) {
+    var divider = document.createElement('div');
+    divider.className = 'cg-thread-divider';
+    wrap.appendChild(divider);
+  }
+
+  container.appendChild(wrap);
+}
 // ---- LOAD MESSAGES ----
 function loadMessages() {
   if (messageListener) messageListener();
