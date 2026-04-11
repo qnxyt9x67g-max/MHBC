@@ -874,10 +874,65 @@ function getMessageTime(msg) {
   return 0;
 }
 
+function refreshHasOlderMessages() {
+  var state = getCurrentRoomState();
+
+  if (!state.oldestTimestamp) {
+    state.hasOlderMessages = false;
+    renderCurrentRoomMessages(false);
+    return;
+  }
+
+  db.collection('groups').doc(currentGroup).collection('messages')
+    .where('timestamp', '<', firebase.firestore.Timestamp.fromMillis(state.oldestTimestamp))
+    .orderBy('timestamp', 'desc')
+    .limit(1)
+    .get()
+    .then(function(snap) {
+      state.hasOlderMessages = !snap.empty;
+      renderCurrentRoomMessages(false);
+    })
+    .catch(function() {
+      state.hasOlderMessages = false;
+      renderCurrentRoomMessages(false);
+    });
+}
+
 function loadOlderMessages() {
-  currentMessageLimit += MESSAGE_PAGE_SIZE;
+  var state = getCurrentRoomState();
+  if (!state.oldestTimestamp) return;
+
   suppressAutoScrollUntil = Date.now() + 2000;
-  loadMessages();
+
+  function fetchOlder(boundaryTs, allowFallback) {
+    db.collection('groups').doc(currentGroup).collection('messages')
+      .where('timestamp', '<=', firebase.firestore.Timestamp.fromMillis(boundaryTs))
+      .orderBy('timestamp', 'desc')
+      .limit(MESSAGE_PAGE_SIZE + 1)
+      .get()
+      .then(function(snap) {
+        var older = [];
+
+        snap.forEach(function(doc) {
+          var msg = normalizeFirestoreMessage(doc);
+          if (!state.messagesById[msg._id]) {
+            older.push(msg);
+          }
+        });
+
+        if (!older.length && allowFallback && boundaryTs > 0) {
+          fetchOlder(boundaryTs - 1, false);
+          return;
+        }
+
+        older.reverse();
+        mergeMessagesIntoRoomState(state, older);
+        saveRoomMessageCache(currentGroup, state);
+        refreshHasOlderMessages();
+      });
+  }
+
+  fetchOlder(state.oldestTimestamp, true);
 }
 
 function viewOriginalMessage(parentId) {
