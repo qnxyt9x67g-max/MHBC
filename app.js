@@ -1134,127 +1134,41 @@ function attachRecentMessagesListener() {
 }
 // ---- LOAD MESSAGES ----
 function loadMessages() {
-  if (messageListener) messageListener();
+  if (messageListener) {
+    messageListener();
+    messageListener = null;
+  }
 
   var messagesEl = document.getElementById('cg-messages');
+  var state = getCurrentRoomState();
+
+  if (state.orderedIds.length) {
+    renderCurrentRoomMessages(false);
+    refreshHasOlderMessages();
+    attachRecentMessagesListener();
+    return;
+  }
+
   messagesEl.innerHTML = '<div class="cg-loading">Loading messages...</div>';
 
-  messageListener = db.collection('groups').doc(currentGroup)
+  db.collection('groups').doc(currentGroup)
     .collection('messages')
     .orderBy('timestamp', 'desc')
-    .limit(currentMessageLimit)
-    .onSnapshot(function(snapshot) {
-      messagesEl.innerHTML = '';
+    .limit(MESSAGE_PAGE_SIZE)
+    .get()
+    .then(function(snapshot) {
+      var newest = snapshot.docs.map(function(doc) {
+        return normalizeFirestoreMessage(doc);
+      }).reverse();
 
-      if (snapshot.empty) {
-        messagesEl.innerHTML = '<div class="cg-no-msgs">No messages yet. Say hello! 👋</div>';
-        return;
-      }
-
-      var loaded = snapshot.docs.map(function(d) {
-        var msg = d.data();
-        msg._id = d.id;
-        return msg;
-      }).reverse(); // oldest -> newest for display
-
-      var viewedOriginals = [];
-      var viewedMap = viewedOriginalMessagesByGroup[currentGroup] || {};
-      Object.keys(viewedMap).forEach(function(id) {
-        viewedOriginals.push(viewedMap[id]);
-      });
-
-      var allMessagesMap = {};
-      loaded.forEach(function(msg) {
-        allMessagesMap[msg._id] = msg;
-      });
-      viewedOriginals.forEach(function(msg) {
-        if (!allMessagesMap[msg._id]) {
-          allMessagesMap[msg._id] = msg;
-        }
-      });
-
-      var allMessages = Object.keys(allMessagesMap).map(function(id) {
-        return allMessagesMap[id];
-      });
-
-      allMessages.sort(function(a, b) {
-        return getMessageTime(a) - getMessageTime(b);
-      });
-
-      var loadedIds = {};
-      allMessages.forEach(function(msg) {
-        loadedIds[msg._id] = true;
-      });
-
-      var replyMap = {};
-      allMessages.forEach(function(msg) {
-        if (!msg.replyTo) {
-          replyMap[msg._id] = [];
-        }
-      });
-
-      allMessages.forEach(function(msg) {
-        if (msg.replyTo && replyMap[msg.replyTo]) {
-          replyMap[msg.replyTo].push(msg);
-        }
-      });
-
-      var renderItems = [];
-      allMessages.forEach(function(msg) {
-        if (!msg.replyTo) {
-          renderItems.push({
-            type: 'thread',
-            msg: msg,
-            replies: replyMap[msg._id] || []
-          });
-        } else if (!loadedIds[msg.replyTo]) {
-          renderItems.push({
-            type: 'missingParentReply',
-            msg: msg
-          });
-        }
-      });
-
-      messagesEl.style.visibility = 'hidden';
-
-      // Show "Load Older Messages" only if we got a full page back.
-      // If fewer than currentMessageLimit are returned, there is nothing older left.
-      if (snapshot.size === currentMessageLimit) {
-        var olderWrap = document.createElement('div');
-        olderWrap.className = 'cg-older-wrap';
-
-        var olderBtn = document.createElement('button');
-        olderBtn.className = 'cg-older-btn';
-        olderBtn.type = 'button';
-        olderBtn.textContent = 'Load Older Messages';
-        olderBtn.addEventListener('click', function() {
-          loadOlderMessages();
-        });
-
-        olderWrap.appendChild(olderBtn);
-        messagesEl.appendChild(olderWrap);
-      }
-
-      renderItems.forEach(function(item, index) {
-        var showDivider = index < renderItems.length - 1;
-
-        if (item.type === 'thread') {
-          renderThread(item.msg, item.replies, messagesEl, showDivider);
-        } else if (item.type === 'missingParentReply') {
-          renderMissingParentReply(item.msg, messagesEl, showDivider);
-        }
-      });
-
-      setTimeout(function() {
-        if (!replyingTo && Date.now() > suppressAutoScrollUntil) {
-          window.scrollTo(0, document.body.scrollHeight);
-        }
-        messagesEl.style.visibility = 'visible';
-      }, 150);
-
-      if (isInChat()) {
-        markAsRead();
-      }
+      mergeMessagesIntoRoomState(state, newest);
+      saveRoomMessageCache(currentGroup, state);
+      renderCurrentRoomMessages(false);
+      refreshHasOlderMessages();
+      attachRecentMessagesListener();
+    })
+    .catch(function() {
+      messagesEl.innerHTML = '<div class="cg-no-msgs">Unable to load messages right now.</div>';
     });
 }
 
