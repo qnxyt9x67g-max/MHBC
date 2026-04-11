@@ -1450,11 +1450,19 @@ if (membersBadge) {
         var nameSpan = document.createElement('span'); nameSpan.className = 'cg-member-name';
         nameSpan.textContent = (m.displayName || m._id) + (m.isAdmin ? ' ⭐' : '');
         div.appendChild(nameSpan);
-        if (currentUser.isAdmin) {
-          var removeBtn = document.createElement('button'); removeBtn.className = 'cg-deny-btn'; removeBtn.textContent = 'Remove';
-          removeBtn.addEventListener('click', (function(id) { return function() { removeMember(id); }; })(m._id));
-          div.appendChild(removeBtn);
-        }
+        var canRemoveThisMember =
+  currentUser.isAdmin ||
+  (currentUser.normalizedName && m.normalizedName === currentUser.normalizedName);
+
+if (canRemoveThisMember) {
+  var removeBtn = document.createElement('button');
+  removeBtn.className = 'cg-deny-btn';
+  removeBtn.textContent = 'Remove';
+  removeBtn.addEventListener('click', (function(id) {
+    return function() { removeMember(id); };
+  })(m._id));
+  div.appendChild(removeBtn);
+}
         approvedList.appendChild(div);
       });
     }
