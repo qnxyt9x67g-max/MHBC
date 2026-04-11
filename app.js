@@ -938,31 +938,29 @@ function loadOlderMessages() {
 function viewOriginalMessage(parentId) {
   if (!currentGroup || !parentId) return;
 
-  if (!viewedOriginalMessagesByGroup[currentGroup]) {
-    viewedOriginalMessagesByGroup[currentGroup] = {};
-  }
+  var state = getCurrentRoomState();
 
-  // Already fetched once for this room
-  if (viewedOriginalMessagesByGroup[currentGroup][parentId]) {
+  if (state.messagesById[parentId]) {
     suppressAutoScrollUntil = Date.now() + 2000;
-    loadMessages();
+    renderCurrentRoomMessages(false);
 
     setTimeout(function() {
       var thread = document.getElementById('thread-' + parentId);
       if (thread) thread.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 200);
+
     return;
   }
 
   db.collection('groups').doc(currentGroup).collection('messages').doc(parentId).get().then(function(snap) {
     if (!snap.exists) return;
 
-    var msg = snap.data();
-    msg._id = snap.id;
+    var msg = normalizeFirestoreMessage(snap);
+    mergeMessagesIntoRoomState(state, [msg]);
+    saveRoomMessageCache(currentGroup, state);
 
-    viewedOriginalMessagesByGroup[currentGroup][parentId] = msg;
     suppressAutoScrollUntil = Date.now() + 2000;
-    loadMessages();
+    renderCurrentRoomMessages(false);
 
     setTimeout(function() {
       var thread = document.getElementById('thread-' + parentId);
