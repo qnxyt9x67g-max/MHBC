@@ -1524,7 +1524,155 @@ function setLastGroup(groupId) {
 function getLastGroup() {
   return localStorage.getItem('mhbc_cg_last_group');
 }
+function getRoomCacheKey(groupId) {
+  return ROOM_MESSAGE_CACHE_PREFIX + groupId;
+}
 
+function createEmptyRoomMessageState() {
+  return {
+    messagesById: {},
+    orderedIds: [],
+    newestTimestamp: 0,
+    oldestTimestamp: 0,
+    hasOlderMessages: false
+  };
+}
+
+function cacheMessageForStorage(msg) {
+  return {
+    _id: msg._id,
+    text: msg.text || '',
+    author: msg.author || '',
+    authorKey: msg.authorKey || null,
+    authorUid: msg.authorUid || null,
+    replyTo: msg.replyTo || null,
+    replyToAuthor: msg.replyToAuthor || null,
+    edited: msg.edited === true,
+    timestampMs: getMessageTime(msg)
+  };
+}
+
+function restoreCachedMessage(raw) {
+  return {
+    _id: raw._id,
+    text: raw.text || '',
+    author: raw.author || '',
+    authorKey: raw.authorKey || null,
+    authorUid: raw.authorUid || null,
+    replyTo: raw.replyTo || null,
+    replyToAuthor: raw.replyToAuthor || null,
+    edited: raw.edited === true,
+    timestamp: raw.timestampMs ? {
+      toMillis: function() { return raw.timestampMs; }
+    } : null
+  };
+}
+
+function recomputeRoomStateBounds(state) {
+  if (!state.orderedIds.length) {
+    state.newestTimestamp = 0;
+    state.oldestTimestamp = 0;
+    return;
+  }
+
+  var firstId = state.orderedIds[0];
+  var lastId = state.orderedIds[state.orderedIds.length - 1];
+
+  state.oldestTimestamp = getMessageTime(state.messagesById[firstId]);
+  state.newestTimestamp = getMessageTime(state.messagesById[lastId]);
+}
+
+function sortRoomStateIds(state) {
+  state.orderedIds.sort(function(a, b) {
+    var aMsg = state.messagesById[a];
+    var bMsg = state.messagesById[b];
+    var diff = getMessageTime(aMsg) - getMessageTime(bMsg);
+    if (diff !== 0) return diff;
+    return a.localeCompare(b);
+  });
+}
+
+function getRoomMessageCache(groupId) {
+  var raw = localStorage.getItem(getRoomCacheKey(groupId));
+  if (!raw) return createEmptyRoomMessageState();
+
+  try {
+    var parsed = JSON.parse(raw);
+    var state = createEmptyRoomMessageState();
+
+    (parsed.messages || []).forEach(function(rawMsg) {
+      var msg = restoreCachedMessage(rawMsg);
+      state.messagesById[msg._id] = msg;
+      state.orderedIds.push(msg._id);
+    });
+
+    sortRoomStateIds(state);
+    recomputeRoomStateBounds(state);
+    return state;
+  } catch (e) {
+    return createEmptyRoomMessageState();
+  }
+}
+
+function saveRoomMessageCache(groupId, state) {
+  try {
+    var idsToPersist = state.orderedIds.slice(-ROOM_MESSAGE_CACHE_MAX);
+    var messages = idsToPersist.map(function(id) {
+      return cacheMessageForStorage(state.messagesById[id]);
+    });
+
+    localStorage.setItem(getRoomCacheKey(groupId), JSON.stringify({
+      messages: messages
+    }));
+  } catch (e) {
+    console.warn('Room cache save skipped:', e);
+  }
+}
+
+function clearRoomMessageCache(groupId) {
+  if (groupId) {
+    localStorage.removeItem(getRoomCacheKey(groupId));
+  }
+}
+
+function getCurrentRoomState() {
+  if (!currentGroup) return createEmptyRoomMessageState();
+
+  if (!roomMessageStateByGroup[currentGroup]) {
+    roomMessageStateByGroup[currentGroup] = getRoomMessageCache(currentGroup);
+  }
+
+  return roomMessageStateByGroup[currentGroup];
+}
+
+function mergeMessagesIntoRoomState(state, messages) {
+  messages.forEach(function(msg) {
+    state.messagesById[msg._id] = msg;
+    if (state.orderedIds.indexOf(msg._id) === -1) {
+      state.orderedIds.push(msg._id);
+    }
+  });
+
+  sortRoomStateIds(state);
+  recomputeRoomStateBounds(state);
+}
+
+function removeMessageFromRoomState(state, messageId) {
+  if (!state.messagesById[messageId]) return;
+
+  delete state.messagesById[messageId];
+  state.orderedIds = state.orderedIds.filter(function(id) {
+    return id !== messageId;
+  });
+
+  recomputeRoomStateBounds(state);
+}
+
+function normalizeFirestoreMessage(doc) {
+  var msg = doc.data();
+  msg._id = doc.id;
+  return msg;
+}
 // ---- BIBLE PICKER ----
 var chaptersMap = {
   GEN:50,EXO:40,LEV:27,NUM:36,DEU:34,JOS:24,JDG:21,RUT:4,
