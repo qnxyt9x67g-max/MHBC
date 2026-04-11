@@ -559,6 +559,7 @@ enterChat();
 }
 
 function enterChat() {
+  roomMessageStateByGroup[currentGroup] = getRoomMessageCache(currentGroup);
   currentMessageLimit = MESSAGE_PAGE_SIZE;
   viewedOriginalMessagesByGroup[currentGroup] = {};
   document.getElementById('cg-chat-title').textContent = currentGroupName;
