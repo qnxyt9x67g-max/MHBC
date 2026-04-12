@@ -1525,7 +1525,7 @@ function denyMember(memberUid) {
 }
 
 // Remove: delete ALL UID sessions for this person + mark identity not approved
-function removeMember(memberUid) {
+function removeMember(uid, isSelf) {
   if (!confirm('Remove this member from the group?')) return;
   var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(memberUid);
   memberRef.get().then(function(snap) {
