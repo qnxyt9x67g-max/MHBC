@@ -1385,7 +1385,10 @@ function markAsRead() {
 }
 
 // ---- MEMBERS PANEL ----
-function showMembersPanel() { showCGScreen('members'); loadMembersList(); }
+function showMembersPanel() {
+  showCGScreen('members');
+  loadMembersList(false);
+}
 function renderMembersListFromData(members) {
   var listEl = document.getElementById('members-list');
   if (!listEl) return;
