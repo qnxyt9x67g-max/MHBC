@@ -876,10 +876,13 @@ function getMessageTime(msg) {
 
 function refreshHasOlderMessages() {
   var state = getCurrentRoomState();
+  var previousValue = state.hasOlderMessages;
 
   if (!state.oldestTimestamp) {
     state.hasOlderMessages = false;
-    renderCurrentRoomMessages(false);
+    if (previousValue !== state.hasOlderMessages) {
+      renderCurrentRoomMessages(false);
+    }
     return;
   }
 
@@ -890,11 +893,15 @@ function refreshHasOlderMessages() {
     .get()
     .then(function(snap) {
       state.hasOlderMessages = !snap.empty;
-      renderCurrentRoomMessages(false);
+      if (previousValue !== state.hasOlderMessages) {
+        renderCurrentRoomMessages(false);
+      }
     })
     .catch(function() {
       state.hasOlderMessages = false;
-      renderCurrentRoomMessages(false);
+      if (previousValue !== state.hasOlderMessages) {
+        renderCurrentRoomMessages(false);
+      }
     });
 }
 
