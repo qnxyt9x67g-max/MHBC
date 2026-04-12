@@ -1573,7 +1573,10 @@ function denyMember(memberUid) {
     } else {
       return memberRef.delete();
     }
-  }).then(loadMembersList);
+  }).then(function() {
+  clearMembersCache(currentGroup);
+  loadMembersList(true);
+});
 }
 
 // Remove: delete ALL UID sessions for this person + mark identity not approved
