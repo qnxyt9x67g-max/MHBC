@@ -1092,13 +1092,20 @@ function renderCurrentRoomMessages(allowAutoScroll) {
   });
 
   setTimeout(function() {
-  if (allowAutoScroll && !replyingTo && Date.now() > suppressAutoScrollUntil) {
+
+  // ALWAYS jump to bottom BEFORE showing UI on initial render
+  if (!allowAutoScroll) {
+    window.scrollTo(0, document.body.scrollHeight);
+    messagesEl.style.visibility = 'visible';
+    return;
+  }
+
+  // Normal behavior for live updates
+  if (!replyingTo && Date.now() > suppressAutoScrollUntil) {
     window.scrollTo(0, document.body.scrollHeight);
   }
-  if (!allowAutoScroll) {
-    messagesEl.style.visibility = 'visible';
-  }
-}, 150);
+
+}, 50);
 
   if (isInChat()) {
     markAsRead();
