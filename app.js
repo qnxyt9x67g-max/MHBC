@@ -794,14 +794,18 @@ function editMessage(msgId) {
   var msgRef = db.collection('groups').doc(currentGroup).collection('messages').doc(msgId);
 
   msgRef.get().then(function(snap) {
-    if (!snap.exists) return;
+    if (!snap.exists) {
+      var state = getCurrentRoomState();
+      removeMessageFromRoomState(state, msgId);
+      saveRoomMessageCache(currentGroup, state);
+      renderCurrentRoomMessages(false);
+      return;
+    }
 
     var newText = prompt('Edit your message:', snap.data().text);
 
     if (newText !== null && newText.trim() !== '' && newText.trim() !== snap.data().text) {
-
       suppressAutoScrollUntil = Date.now() + 2000;
-
       msgRef.update({ text: newText.trim(), edited: true });
     }
   });
