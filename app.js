@@ -1387,7 +1387,11 @@ function markAsRead() {
 // ---- MEMBERS PANEL ----
 function showMembersPanel() {
   showCGScreen('members');
-  loadMembersList(false);
+
+  var pendingCount = pendingCountsByGroup[currentGroup] || 0;
+  var forceRefresh = currentUser && currentUser.isAdmin && pendingCount > 0;
+
+  loadMembersList(forceRefresh);
 }
 function renderMembersListFromData(members) {
   var listEl = document.getElementById('members-list');
