@@ -1464,11 +1464,13 @@ if (membersBadge) {
         var canRemoveThisMember =
   currentUser.isAdmin ||
   (currentUser.normalizedName && m.normalizedName === currentUser.normalizedName);
-
+var isSelf =
+  currentUser.normalizedName &&
+  m.normalizedName === currentUser.normalizedName;
 if (canRemoveThisMember) {
   var removeBtn = document.createElement('button');
   removeBtn.className = 'cg-deny-btn';
-  removeBtn.textContent = 'Remove';
+  removeBtn.textContent = isSelf ? 'Leave Chat?' : 'Remove';
   removeBtn.addEventListener('click', (function(id) {
     return function() { removeMember(id); };
   })(m._id));
