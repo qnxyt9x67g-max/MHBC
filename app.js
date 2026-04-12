@@ -773,7 +773,22 @@ function showMessageMenu(msgId, isMe) {
 
 db.collection('groups').doc(currentGroup)
   .collection('messages').doc(msgId)
-  .delete();
+  .delete()
+  .then(function() {
+    var state = getCurrentRoomState();
+    removeMessageFromRoomState(state, msgId);
+    saveRoomMessageCache(currentGroup, state);
+    renderCurrentRoomMessages(false);
+  })
+  .catch(function(err) {
+    console.error('Delete failed:', err);
+
+    // If it was already deleted elsewhere, clean up stale cache anyway
+    var state = getCurrentRoomState();
+    removeMessageFromRoomState(state, msgId);
+    saveRoomMessageCache(currentGroup, state);
+    renderCurrentRoomMessages(false);
+  });
       }
     });
     menu.appendChild(deleteBtn);
