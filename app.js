@@ -1650,6 +1650,44 @@ function setLastGroup(groupId) {
 function getLastGroup() {
   return localStorage.getItem('mhbc_cg_last_group');
 }
+function getMembersCacheKey(groupId) {
+  return ROOM_MEMBERS_CACHE_PREFIX + groupId;
+}
+
+function saveMembersCache(groupId, members) {
+  try {
+    localStorage.setItem(getMembersCacheKey(groupId), JSON.stringify({
+      savedAt: Date.now(),
+      members: members
+    }));
+  } catch (e) {
+    console.warn('Members cache save skipped:', e);
+  }
+}
+
+function getMembersCache(groupId) {
+  var raw = localStorage.getItem(getMembersCacheKey(groupId));
+  if (!raw) return null;
+
+  try {
+    var parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.members)) return null;
+    return parsed;
+  } catch (e) {
+    return null;
+  }
+}
+
+function clearMembersCache(groupId) {
+  if (groupId) {
+    localStorage.removeItem(getMembersCacheKey(groupId));
+  }
+}
+
+function isMembersCacheFresh(cacheObj) {
+  if (!cacheObj || !cacheObj.savedAt) return false;
+  return (Date.now() - cacheObj.savedAt) < ROOM_MEMBERS_CACHE_TTL_MS;
+}
 function getRoomCacheKey(groupId) {
   return ROOM_MESSAGE_CACHE_PREFIX + groupId;
 }
