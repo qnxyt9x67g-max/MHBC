@@ -1092,11 +1092,13 @@ function renderCurrentRoomMessages(allowAutoScroll) {
   });
 
   setTimeout(function() {
-    if (allowAutoScroll && !replyingTo && Date.now() > suppressAutoScrollUntil) {
-      window.scrollTo(0, document.body.scrollHeight);
-    }
+  if (allowAutoScroll && !replyingTo && Date.now() > suppressAutoScrollUntil) {
+    window.scrollTo(0, document.body.scrollHeight);
+  }
+  if (!allowAutoScroll) {
     messagesEl.style.visibility = 'visible';
-  }, 150);
+  }
+}, 150);
 
   if (isInChat()) {
     markAsRead();
