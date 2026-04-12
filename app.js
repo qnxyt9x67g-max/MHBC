@@ -1405,6 +1405,8 @@ function markAsRead() {
 function showMembersPanel() {
   showCGScreen('members');
 
+  window.scrollTo(0, 0);
+
   var pendingCount = pendingCountsByGroup[currentGroup] || 0;
   var forceRefresh = currentUser && currentUser.isAdmin && pendingCount > 0;
 
