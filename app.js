@@ -1544,7 +1544,8 @@ function approveMember(memberUid) {
       db.collection('groups').doc(currentGroup).collection('identities')
         .doc(snap.data().normalizedName).update({ approved: true });
     }
-    loadMembersList();
+    clearMembersCache(currentGroup);
+loadMembersList(true);
   });
 }
 
