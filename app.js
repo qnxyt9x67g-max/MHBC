@@ -1061,7 +1061,9 @@ function renderCurrentRoomMessages(allowAutoScroll) {
     }
   });
 
+  if (!allowAutoScroll) {
   messagesEl.style.visibility = 'hidden';
+}
 
   if (state.hasOlderMessages) {
     var olderWrap = document.createElement('div');
