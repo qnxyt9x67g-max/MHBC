@@ -2078,7 +2078,17 @@ if (mainInput) {
   if (backToSelectFromPending) backToSelectFromPending.addEventListener('click', function() { showCGScreen('select'); });
 
   var backToChatFromMembers = document.getElementById('cg-back-to-chat-members');
-  if (backToChatFromMembers) backToChatFromMembers.addEventListener('click', function() { showCGScreen('chat'); });
+  if (backToChatFromMembers) {
+  backToChatFromMembers.addEventListener('click', function() {
+    showCGScreen('chat');
+
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        window.scrollTo(0, document.body.scrollHeight);
+      });
+    });
+  });
+}
 
   var leaveChatBtn = document.getElementById('cg-leave-chat');
   if (leaveChatBtn) leaveChatBtn.addEventListener('click', leaveChat);
