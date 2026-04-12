@@ -1532,7 +1532,7 @@ function denyMember(memberUid) {
 }
 
 // Remove: delete ALL UID sessions for this person + mark identity not approved
-function removeMember(uid, isSelf) {
+function removeMember(memberUid, isSelf) {
   var confirmMsg = isSelf ? 'Leave this chat?' : 'Remove this member from the chat?';
 if (!confirm(confirmMsg)) return;
   var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(memberUid);
