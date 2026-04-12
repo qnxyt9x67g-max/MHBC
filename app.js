@@ -1112,21 +1112,19 @@ function renderCurrentRoomMessages(allowAutoScroll) {
     }
   });
 
-  setTimeout(function() {
-
-  // ALWAYS jump to bottom BEFORE showing UI on initial render
+  requestAnimationFrame(function() {
   if (!allowAutoScroll) {
-    window.scrollTo(0, document.body.scrollHeight);
-    messagesEl.style.visibility = 'visible';
+    requestAnimationFrame(function() {
+      window.scrollTo(0, document.body.scrollHeight);
+      messagesEl.style.visibility = 'visible';
+    });
     return;
   }
 
-  // Normal behavior for live updates
   if (!replyingTo && Date.now() > suppressAutoScrollUntil) {
     window.scrollTo(0, document.body.scrollHeight);
   }
-
-}, 50);
+});
 
   if (isInChat()) {
     markAsRead();
