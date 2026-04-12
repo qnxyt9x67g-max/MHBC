@@ -1496,108 +1496,38 @@ function renderMembersListFromData(members) {
 
   listEl.appendChild(approvedList);
 }
-function loadMembersList() {
+function loadMembersList(forceRefresh) {
   var listEl = document.getElementById('members-list');
   if (!listEl) return;
-  listEl.innerHTML = '<div class="cg-loading">Loading...</div>';
+
+  var cache = getMembersCache(currentGroup);
+
+  if (!forceRefresh && cache && isMembersCacheFresh(cache)) {
+    renderMembersListFromData(cache.members);
+    return;
+  }
+
+  if (!cache) {
+    listEl.innerHTML = '<div class="cg-loading">Loading...</div>';
+  } else {
+    renderMembersListFromData(cache.members);
+  }
 
   db.collection('groups').doc(currentGroup).collection('members').get().then(function(snap) {
-    listEl.innerHTML = '';
-    if (snap.empty) { listEl.innerHTML = '<div class="cg-empty-note">No members yet</div>'; return; }
-
-    // Dedupe by normalizedName — keep most recently active UID per person
-    var personMap = {};
+    var members = [];
     snap.forEach(function(d) {
-      var data = d.data(); data._id = d.id;
-      var key = data.normalizedName || d.id;
-      if (!personMap[key]) {
-        personMap[key] = data;
-      } else {
-        var existing = personMap[key];
-        var existingTime = existing.lastLoginAt || existing.createdAt || 0;
-        var newTime = data.lastLoginAt || data.createdAt || 0;
-        if (newTime > existingTime) personMap[key] = data;
-      }
+      var m = d.data();
+      m._id = d.id;
+      members.push(m);
     });
 
-        var approved = [], pending = [];
-    Object.keys(personMap).forEach(function(key) {
-      var m = personMap[key];
-      if (m.approved) approved.push(m); else pending.push(m);
-    });
-
-    // Sort both lists alphabetically by first name
-    function sortByName(a, b) {
-      var nameA = (a.displayName || a._id || '').toLowerCase();
-      var nameB = (b.displayName || b._id || '').toLowerCase();
-      return nameA < nameB ? -1 : nameA > nameB ? 1 : 0;
+    saveMembersCache(currentGroup, members);
+    renderMembersListFromData(members);
+  }).catch(function(err) {
+    if (!cache) {
+      listEl.innerHTML = '<div class="cg-empty-note">Unable to load members.</div>';
     }
-    approved.sort(sortByName);
-    pending.sort(sortByName);
-
-var pendingCount = pending.length;
-setPendingCount(currentGroup, currentUser.isAdmin ? pendingCount : 0);
-
-var membersBadge = document.getElementById('members-badge');
-if (membersBadge) {
-  if (currentUser.isAdmin && pendingCount > 0) {
-    membersBadge.textContent = pendingCount > 99 ? '99+' : String(pendingCount);
-    membersBadge.style.display = 'flex';
-  } else {
-    membersBadge.style.display = 'none';
-  }
-}
-    if (currentUser.isAdmin && pending.length > 0) {
-      var pendingLabel = document.createElement('div');
-      pendingLabel.className = 'section-label'; pendingLabel.textContent = 'PENDING REQUESTS';
-      listEl.appendChild(pendingLabel);
-      var pendingList = document.createElement('div'); pendingList.className = 'cg-member-list';
-      pending.forEach(function(m) {
-        var div = document.createElement('div'); div.className = 'cg-member-row';
-        var nameSpan = document.createElement('span'); nameSpan.className = 'cg-member-name';
-        nameSpan.textContent = m.displayName || m._id;
-        var approveBtn = document.createElement('button'); approveBtn.className = 'cg-approve-btn'; approveBtn.textContent = 'Approve';
-        approveBtn.addEventListener('click', (function(id) { return function() { approveMember(id); }; })(m._id));
-        var denyBtn = document.createElement('button'); denyBtn.className = 'cg-deny-btn'; denyBtn.textContent = 'Deny';
-        denyBtn.addEventListener('click', (function(id) { return function() { denyMember(id); }; })(m._id));
-        div.appendChild(nameSpan); div.appendChild(approveBtn); div.appendChild(denyBtn);
-        pendingList.appendChild(div);
-      });
-      listEl.appendChild(pendingList);
-    }
-
-    var approvedLabel = document.createElement('div');
-    approvedLabel.className = 'section-label'; approvedLabel.textContent = 'MEMBERS';
-    listEl.appendChild(approvedLabel);
-    var approvedList = document.createElement('div'); approvedList.className = 'cg-member-list';
-
-    if (approved.length === 0) {
-      approvedList.innerHTML = '<div class="cg-empty-note">No approved members yet</div>';
-    } else {
-      approved.forEach(function(m) {
-        var div = document.createElement('div'); div.className = 'cg-member-row';
-        var nameSpan = document.createElement('span'); nameSpan.className = 'cg-member-name';
-        nameSpan.textContent = (m.displayName || m._id) + (m.isAdmin ? ' ⭐' : '');
-        div.appendChild(nameSpan);
-        var canRemoveThisMember =
-  currentUser.isAdmin ||
-  (currentUser.normalizedName && m.normalizedName === currentUser.normalizedName);
-var isSelf =
-  currentUser.normalizedName &&
-  m.normalizedName === currentUser.normalizedName;
-if (canRemoveThisMember) {
-  var removeBtn = document.createElement('button');
-  removeBtn.className = 'cg-deny-btn';
-  removeBtn.textContent = isSelf ? 'Leave Chat?' : 'Remove';
-  removeBtn.addEventListener('click', (function(id, isSelfFlag) {
-  return function() { removeMember(id, isSelfFlag); };
-})(m._id, isSelf));
-  div.appendChild(removeBtn);
-}
-        approvedList.appendChild(div);
-      });
-    }
-    listEl.appendChild(approvedList);
+    console.error('Members load error:', err);
   });
 }
 
