@@ -1591,7 +1591,10 @@ if (!confirm(confirmMsg)) return;
     } else {
       return memberRef.delete();
     }
-  }).then(loadMembersList);
+  }).then(function() {
+  clearMembersCache(currentGroup);
+  loadMembersList(true);
+});
 }
 
 // ---- CHANGE PASSWORD ----
