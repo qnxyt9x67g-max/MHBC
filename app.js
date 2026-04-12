@@ -1386,7 +1386,116 @@ function markAsRead() {
 
 // ---- MEMBERS PANEL ----
 function showMembersPanel() { showCGScreen('members'); loadMembersList(); }
+function renderMembersListFromData(members) {
+  var listEl = document.getElementById('members-list');
+  if (!listEl) return;
 
+  listEl.innerHTML = '';
+
+  var dedupMap = {};
+  members.forEach(function(m) {
+    var key = m.normalizedName || m._id;
+    if (!dedupMap[key] || ((m.lastLoginAt || 0) > (dedupMap[key].lastLoginAt || 0))) {
+      dedupMap[key] = m;
+    }
+  });
+
+  var deduped = Object.keys(dedupMap).map(function(k) { return dedupMap[k]; });
+
+  var pending = deduped.filter(function(m) { return !m.approved; });
+  var approved = deduped.filter(function(m) { return m.approved; });
+
+  pending.sort(function(a, b) {
+    return (a.displayName || '').localeCompare(b.displayName || '');
+  });
+
+  approved.sort(function(a, b) {
+    return (a.displayName || '').localeCompare(b.displayName || '');
+  });
+
+  if (currentUser.isAdmin && pending.length > 0) {
+    var pendingLabel = document.createElement('div');
+    pendingLabel.className = 'section-label';
+    pendingLabel.textContent = 'PENDING APPROVAL';
+    listEl.appendChild(pendingLabel);
+
+    var pendingList = document.createElement('div');
+    pendingList.className = 'cg-member-list';
+
+    pending.forEach(function(m) {
+      var div = document.createElement('div');
+      div.className = 'cg-member-row';
+
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'cg-member-name';
+      nameSpan.textContent = m.displayName || m._id;
+      div.appendChild(nameSpan);
+
+      var approveBtn = document.createElement('button');
+      approveBtn.className = 'cg-approve-btn';
+      approveBtn.textContent = 'Approve';
+      approveBtn.addEventListener('click', (function(id) {
+        return function() { approveMember(id); };
+      })(m._id));
+      div.appendChild(approveBtn);
+
+      var denyBtn = document.createElement('button');
+      denyBtn.className = 'cg-deny-btn';
+      denyBtn.textContent = 'Deny';
+      denyBtn.addEventListener('click', (function(id) {
+        return function() { denyMember(id); };
+      })(m._id));
+      div.appendChild(denyBtn);
+
+      pendingList.appendChild(div);
+    });
+
+    listEl.appendChild(pendingList);
+  }
+
+  var approvedLabel = document.createElement('div');
+  approvedLabel.className = 'section-label';
+  approvedLabel.textContent = 'MEMBERS';
+  listEl.appendChild(approvedLabel);
+
+  var approvedList = document.createElement('div');
+  approvedList.className = 'cg-member-list';
+
+  if (approved.length === 0) {
+    approvedList.innerHTML = '<div class="cg-empty-note">No approved members yet</div>';
+  } else {
+    approved.forEach(function(m) {
+      var div = document.createElement('div');
+      div.className = 'cg-member-row';
+
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'cg-member-name';
+      nameSpan.textContent = (m.displayName || m._id) + (m.isAdmin ? ' ⭐' : '');
+      div.appendChild(nameSpan);
+
+      var isSelf =
+        currentUser.normalizedName &&
+        m.normalizedName === currentUser.normalizedName;
+
+      var canRemoveThisMember =
+        currentUser.isAdmin || isSelf;
+
+      if (canRemoveThisMember) {
+        var removeBtn = document.createElement('button');
+        removeBtn.className = 'cg-deny-btn';
+        removeBtn.textContent = isSelf ? 'Leave Chat?' : 'Remove';
+        removeBtn.addEventListener('click', (function(id, isSelfFlag) {
+          return function() { removeMember(id, isSelfFlag); };
+        })(m._id, isSelf));
+        div.appendChild(removeBtn);
+      }
+
+      approvedList.appendChild(div);
+    });
+  }
+
+  listEl.appendChild(approvedList);
+}
 function loadMembersList() {
   var listEl = document.getElementById('members-list');
   if (!listEl) return;
