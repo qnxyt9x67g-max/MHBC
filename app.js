@@ -1590,13 +1590,32 @@ function deleteAllSessionsForPerson(normalized) {
 function denyMember(memberUid) {
   var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(memberUid);
   memberRef.get().then(function(snap) {
-    var normalized = snap.exists ? snap.data().normalizedName : null;
-    if (normalized) {
-      return deleteAllSessionsForPerson(normalized);
-    } else {
-      return memberRef.delete();
-    }
-  }).then(function() {
+  var normalized = snap.exists ? snap.data().normalizedName : null;
+
+  if (!normalized) {
+    return memberRef.delete();
+  }
+
+  if (isSelf) {
+    // 🔥 SELF CLEANUP (safe version)
+    return db.collection('groups').doc(leavingGroup)
+      .collection('members')
+      .where('normalizedName', '==', normalized)
+      .get()
+      .then(function(querySnap) {
+        var deletes = [];
+
+        querySnap.forEach(function(doc) {
+          deletes.push(doc.ref.delete());
+        });
+
+        return Promise.all(deletes);
+      });
+  }
+
+  // ADMIN path (unchanged)
+  return deleteAllSessionsForPerson(normalized);
+}).then(function() {
   clearMembersCache(currentGroup);
 
   if (isSelf) {
