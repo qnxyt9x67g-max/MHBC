@@ -1651,20 +1651,27 @@ function removeMember(memberUid, isSelf) {
 
   // For self-leave: exit UI immediately, then let cleanup continue in background
   if (isSelf) {
-    clearMembersCache(leavingGroup);
-    clearSavedUser(leavingGroup);
-    stopUnreadWatcher(leavingGroup);
-    stopPendingWatcher(leavingGroup);
-    clearUnreadCount(leavingGroup);
-    setPendingCount(leavingGroup, 0);
+  memberRef.update({
+    removalRequested: true,
+    removalRequestedAt: Date.now()
+  }).catch(function(err) {
+    console.error('Failed to flag removal request:', err);
+  });
 
-    currentUser = null;
-    currentGroup = null;
-    currentGroupName = null;
-    currentMemberKey = null;
+  clearMembersCache(leavingGroup);
+  clearSavedUser(leavingGroup);
+  stopUnreadWatcher(leavingGroup);
+  stopPendingWatcher(leavingGroup);
+  clearUnreadCount(leavingGroup);
+  setPendingCount(leavingGroup, 0);
 
-    showCGScreen('select');
-  }
+  currentUser = null;
+  currentGroup = null;
+  currentGroupName = null;
+  currentMemberKey = null;
+
+  showCGScreen('select');
+}
 
   memberRef.get().then(function(snap) {
     var normalized = snap.exists ? snap.data().normalizedName : null;
