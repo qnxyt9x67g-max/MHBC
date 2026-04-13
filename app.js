@@ -1570,7 +1570,11 @@ function loadMembersList(forceRefresh) {
 // Approve: update member doc + sync identity doc
 function approveMember(memberUid) {
   var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(memberUid);
-  memberRef.update({ approved: true }).then(function() {
+  memberRef.update({
+  approved: true,
+  removalRequested: false,
+  removalRequestedAt: firebase.firestore.FieldValue.delete()
+}).then(function() {
     return memberRef.get();
   }).then(function(snap) {
     if (snap.exists && snap.data().normalizedName) {
