@@ -1625,8 +1625,28 @@ function denyMember(memberUid) {
 // Remove: delete ALL UID sessions for this person + mark identity not approved
 function removeMember(memberUid, isSelf) {
   var confirmMsg = isSelf ? 'Leave this chat?' : 'Remove this member from the chat?';
-if (!confirm(confirmMsg)) return;
-  var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(memberUid);
+  if (!confirm(confirmMsg)) return;
+
+  var leavingGroup = currentGroup;
+  var memberRef = db.collection('groups').doc(leavingGroup).collection('members').doc(memberUid);
+
+  // For self-leave: exit UI immediately, then let cleanup continue in background
+  if (isSelf) {
+    clearMembersCache(leavingGroup);
+    clearSavedUser(leavingGroup);
+    stopUnreadWatcher(leavingGroup);
+    stopPendingWatcher(leavingGroup);
+    clearUnreadCount(leavingGroup);
+    setPendingCount(leavingGroup, 0);
+
+    currentUser = null;
+    currentGroup = null;
+    currentGroupName = null;
+    currentMemberKey = null;
+
+    showCGScreen('select');
+  }
+
   memberRef.get().then(function(snap) {
     var normalized = snap.exists ? snap.data().normalizedName : null;
     if (normalized) {
@@ -1635,9 +1655,18 @@ if (!confirm(confirmMsg)) return;
       return memberRef.delete();
     }
   }).then(function() {
-  clearMembersCache(currentGroup);
-  loadMembersList(true);
-});
+    clearMembersCache(leavingGroup);
+
+    if (!isSelf) {
+      loadMembersList(true);
+    }
+  }).catch(function(err) {
+    console.error('Remove member failed:', err);
+
+    if (!isSelf) {
+      alert('Unable to remove this member right now.');
+    }
+  });
 }
 
 // ---- CHANGE PASSWORD ----
