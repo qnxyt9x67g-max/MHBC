@@ -1495,17 +1495,18 @@ function renderMembersListFromData(members) {
 
       var nameSpan = document.createElement('span');
       nameSpan.className = 'cg-member-name';
-      var label = (m.displayName || m._id);
-
-if (m.removalRequested) {
-  label += ' (requested removal)';
-}
+      nameSpan.textContent = (m.displayName || m._id);
 
 if (m.isAdmin) {
-  label += ' ⭐';
+  nameSpan.textContent += ' ⭐';
 }
 
-nameSpan.textContent = label;
+if (m.removalRequested) {
+  var tag = document.createElement('span');
+  tag.className = 'cg-removal-tag';
+  tag.textContent = 'Requested Removal';
+  div.appendChild(tag);
+}
       div.appendChild(nameSpan);
 
       var isSelf =
