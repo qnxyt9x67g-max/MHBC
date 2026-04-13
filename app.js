@@ -1496,7 +1496,17 @@ function renderMembersListFromData(members) {
 
       var nameSpan = document.createElement('span');
       nameSpan.className = 'cg-member-name';
-      nameSpan.textContent = (m.displayName || m._id) + (m.isAdmin ? ' ⭐' : '');
+      var label = (m.displayName || m._id);
+
+if (m.removalRequested) {
+  label += ' (requested removal)';
+}
+
+if (m.isAdmin) {
+  label += ' ⭐';
+}
+
+nameSpan.textContent = label;
       div.appendChild(nameSpan);
 
       var isSelf =
