@@ -1446,3 +1446,12 @@ body {
 .cg-missing-parent-btn:active {
   opacity: 0.7;
 }
+.cg-removal-tag {
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 12px;
+  border-radius: 999px;
+  background-color: rgba(255, 193, 7, 0.15);
+  color: #ffc107;
+  font-weight: 600;
+}
