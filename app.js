@@ -1668,23 +1668,26 @@ function removeMember(memberUid, isSelf) {
   memberRef.update({
     removalRequested: true,
     removalRequestedAt: Date.now()
+  }).then(function() {
+    clearMembersCache(leavingGroup);
+    clearSavedUser(leavingGroup);
+    stopUnreadWatcher(leavingGroup);
+    stopPendingWatcher(leavingGroup);
+    clearUnreadCount(leavingGroup);
+    setPendingCount(leavingGroup, 0);
+
+    currentUser = null;
+    currentGroup = null;
+    currentGroupName = null;
+    currentMemberKey = null;
+
+    showCGScreen('select');
   }).catch(function(err) {
     console.error('Failed to flag removal request:', err);
+    alert('Something went wrong leaving the chat. Try again.');
   });
 
-  clearMembersCache(leavingGroup);
-  clearSavedUser(leavingGroup);
-  stopUnreadWatcher(leavingGroup);
-  stopPendingWatcher(leavingGroup);
-  clearUnreadCount(leavingGroup);
-  setPendingCount(leavingGroup, 0);
-
-  currentUser = null;
-  currentGroup = null;
-  currentGroupName = null;
-  currentMemberKey = null;
-
-  showCGScreen('select');
+  return;
 }
 
   memberRef.get().then(function(snap) {
