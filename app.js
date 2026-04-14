@@ -33,6 +33,13 @@ var ROOM_MESSAGE_CACHE_MAX = 500;
 var roomMessageStateByGroup = {};
 var ROOM_MEMBERS_CACHE_PREFIX = 'mhbc_members_cache_';
 var ROOM_MEMBERS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+var PRAYER_LINKS = {
+  c101: 'https://docs.google.com/spreadsheets/d/1-7kNm-5l8F1okka9bU4mpvQDXd2OusWYNQeC9PuJnZQ/edit?usp=drivesdk',
+  narthex: null,
+  fellowship1: null,
+  fellowship2: null,
+  trac: null
+};
 var BUBBLE_COLORS = [
   '#1a5276','#1a3a6e','#6c3483','#145a32','#784212',
   '#1b4f72','#4a235a','#0e6655','#7b241c','#1f618d'
