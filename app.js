@@ -579,7 +579,7 @@ function enterChat() {
   viewedOriginalMessagesByGroup[currentGroup] = {};
   var mainTitle = document.getElementById('cg-main-title');
 if (mainTitle) {
-  mainTitle.textContent = 'C.A.R.E. Groups: ' + currentGroupName;
+  mainTitle.innerHTML = 'C.A.R.E. Groups<br><span class="cg-room-title-line">' + currentGroupName + '</span>';
 }
 
 var prayerBtn = document.getElementById('cg-prayer-btn');
