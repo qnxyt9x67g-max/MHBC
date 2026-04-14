@@ -314,6 +314,12 @@ function showPage(id) {
 }
 
 function showCGScreen(screen) {
+  if (screen === 'select') {
+  var mainTitle = document.getElementById('cg-main-title');
+  if (mainTitle) {
+    mainTitle.textContent = 'C.A.R.E. Groups';
+  }
+}
   ['select','login','pending','chat','members','changepassword'].forEach(function(s) {
     var el = document.getElementById('cg-' + s + '-screen');
     if (el) el.style.display = 'none';
