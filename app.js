@@ -577,9 +577,9 @@ function enterChat() {
   roomMessageStateByGroup[currentGroup] = getRoomMessageCache(currentGroup);
   currentMessageLimit = MESSAGE_PAGE_SIZE;
   viewedOriginalMessagesByGroup[currentGroup] = {};
-  var chatTitleEl = document.getElementById('cg-chat-title');
-if (chatTitleEl) {
-  chatTitleEl.textContent = currentGroupName;
+  var mainTitle = document.getElementById('cg-main-title');
+if (mainTitle) {
+  mainTitle.textContent = 'C.A.R.E. Groups: ' + currentGroupName;
 }
 
 var prayerBtn = document.getElementById('cg-prayer-btn');
