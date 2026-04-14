@@ -572,6 +572,17 @@ function enterChat() {
   currentMessageLimit = MESSAGE_PAGE_SIZE;
   viewedOriginalMessagesByGroup[currentGroup] = {};
   document.getElementById('cg-chat-title').textContent = currentGroupName;
+  var prayerBtn = document.getElementById('cg-prayer-btn');
+if (prayerBtn) {
+  var prayerLink = PRAYER_LINKS[currentGroup];
+  prayerBtn.onclick = function() {
+    if (prayerLink) {
+      window.open(prayerLink, '_blank');
+    } else {
+      alert('Coming soon!');
+    }
+  };
+}
   var mb = document.getElementById('cg-members-btn'); if (mb) mb.style.display = 'block';
   showCGScreen('chat');
 loadMessages();
