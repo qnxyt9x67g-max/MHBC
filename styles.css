@@ -1455,3 +1455,40 @@ body {
   color: #ffc107;
   font-weight: 600;
 }
+#cg-chat-title {
+  display: none;
+}
+
+.cg-chat-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+#cg-leave-chat {
+  justify-self: start;
+}
+
+#cg-prayer-btn {
+  justify-self: center;
+  font-size: 10px;
+  line-height: 1.25;
+  text-align: center;
+  padding: 8px 10px;
+}
+
+#cg-members-btn {
+  justify-self: end;
+}
+
+#cg-main-title {
+  text-align: center;
+  font-size: 22px;
+  line-height: 1.15;
+}
+
+.cg-room-title-line {
+  display: block;
+  font-size: 18px;
+}
