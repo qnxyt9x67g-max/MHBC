@@ -191,27 +191,16 @@ function requestBadgePermission() {
 }
 
 function refreshCareNavBadge() {
+  // SUNDAY DEMO MODE: all badge UI turned off to reduce Firestore reads
+  unreadCount = 0;
+
   var navBadge = document.getElementById('nav-badge-care');
-  var total = 0;
-
-  Object.keys(unreadCountsByGroup).forEach(function(groupId) {
-  var unread = unreadCountsByGroup[groupId] || 0;
-  var pending = pendingCountsByGroup[groupId] || 0;
-  total += unread + pending;
-});
-
-  unreadCount = total;
-
-  if (!navBadge) return;
-
-  if (total > 0) {
-    navBadge.textContent = total > 99 ? '99+' : String(total);
-    navBadge.style.display = 'flex';
-  } else {
+  if (navBadge) {
     navBadge.style.display = 'none';
+    navBadge.textContent = '';
   }
 
-  updateAppBadge(total); // 👈 this is the key addition
+  updateAppBadge(0);
 }
 
 function setUnreadCount(groupId, count) {
