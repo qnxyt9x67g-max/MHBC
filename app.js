@@ -638,15 +638,9 @@ function stopAllUnreadWatchers() {
 }
 
 function startAllUnreadWatchers() {
+  // SUNDAY DEMO MODE: background unread watchers disabled
   stopAllUnreadWatchers();
-
-  var users = getSavedUsers();
-  Object.keys(users).forEach(function(groupId) {
-    var user = users[groupId];
-    if (user && user.name) {
-      startUnreadWatcher(groupId, user.name);
-    }
-  });
+  return;
 }
 function startPendingWatcher(groupId, isAdmin) {
   if (!groupId || !isAdmin) {
