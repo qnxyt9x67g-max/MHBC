@@ -706,7 +706,7 @@ function clearReply() {
   replyingTo = null;
   var bar = document.getElementById('cg-reply-bar');
   if (bar) bar.style.display = 'none';
-  loadMessages();
+  renderCurrentRoomMessages(false);
 }
 function sendInlineReply(parentId) {
   var input = document.getElementById('inline-reply-input-' + parentId);
