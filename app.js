@@ -266,6 +266,11 @@ function showPage(id) {
   if (activeBtn) activeBtn.classList.add('active');
   hideInputBar();
   if (id === 'care') {
+  stopAllUnreadWatchers();
+  stopAllPendingWatchers();
+  setPendingCount(null, 0);
+  refreshCareNavBadge();
+
   var lastGroup = getLastGroup();
   var saved = lastGroup ? getSavedUser(lastGroup) : null;
 
