@@ -676,15 +676,9 @@ function stopAllPendingWatchers() {
 }
 
 function startAllPendingWatchers() {
+  // SUNDAY DEMO MODE: background pending watchers disabled
   stopAllPendingWatchers();
-
-  var users = getSavedUsers();
-  Object.keys(users).forEach(function(groupId) {
-    var user = users[groupId];
-    if (user) {
-      startPendingWatcher(groupId, user.isAdmin === true);
-    }
-  });
+  return;
 }
 function setReply(messageId, authorName) {
   replyingTo = { id: messageId, author: authorName };
