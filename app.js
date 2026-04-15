@@ -1141,7 +1141,7 @@ function attachRecentMessagesListener() {
 
   messageListener = db.collection('groups').doc(currentGroup)
     .collection('messages')
-    .where('timestamp', '>=', firebase.firestore.Timestamp.fromMillis(newestTs))
+    .where('timestamp', '>', firebase.firestore.Timestamp.fromMillis(newestTs))
     .orderBy('timestamp', 'asc')
     .onSnapshot(function(snapshot) {
       var changed = false;
