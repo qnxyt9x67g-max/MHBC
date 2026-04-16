@@ -575,12 +575,14 @@ if (prayerBtn) {
 
 var mb = document.getElementById('cg-members-btn');
 if (mb) mb.style.display = 'block';
-  showCGScreen('chat');
-loadMessages();
+  var messagesEl = document.getElementById('cg-messages');
+if (messagesEl) {
+  messagesEl.style.visibility = 'hidden';
+}
+
+showCGScreen('chat');
+loadMessages(true);
 markAsRead();
-  setTimeout(function() {
-  window.scrollTo(0, document.body.scrollHeight);
-}, 300);
 }
 
 // ---- UNREAD WATCHER ----
