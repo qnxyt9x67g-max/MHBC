@@ -1859,6 +1859,7 @@ function createEmptyRoomMessageState() {
     orderedIds: [],
     newestTimestamp: 0,
     oldestTimestamp: 0,
+    newestUpdatedAt: 0,
     hasOlderMessages: false
   };
 }
