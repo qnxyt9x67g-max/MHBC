@@ -1136,31 +1136,23 @@ function renderCurrentRoomMessages(allowAutoScroll) {
 
 function attachRecentMessagesListener() {
   var state = getCurrentRoomState();
-  var newestTs = state.newestTimestamp || 0;
+  var newestUpdatedAt = state.newestUpdatedAt || 0;
 
   if (messageListener) {
     messageListener();
     messageListener = null;
   }
 
-  if (!newestTs) return;
+  if (!newestUpdatedAt) return;
 
   messageListener = db.collection('groups').doc(currentGroup)
     .collection('messages')
-    .where('timestamp', '>', firebase.firestore.Timestamp.fromMillis(newestTs))
-    .orderBy('timestamp', 'asc')
+    .where('updatedAt', '>', firebase.firestore.Timestamp.fromMillis(newestUpdatedAt))
+    .orderBy('updatedAt', 'asc')
     .onSnapshot(function(snapshot) {
       var changed = false;
 
       snapshot.docChanges().forEach(function(change) {
-        var id = change.doc.id;
-
-        if (change.type === 'removed') {
-          removeMessageFromRoomState(state, id);
-          changed = true;
-          return;
-        }
-
         var msg = normalizeFirestoreMessage(change.doc);
         mergeMessagesIntoRoomState(state, [msg]);
         changed = true;
