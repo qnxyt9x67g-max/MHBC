@@ -891,7 +891,13 @@ function getMessageTime(msg) {
   if (typeof msg.timestamp === 'number') return msg.timestamp;
   return 0;
 }
-
+function getUpdatedTime(msg) {
+  if (!msg) return 0;
+  if (msg.updatedAt && typeof msg.updatedAt.toMillis === 'function') return msg.updatedAt.toMillis();
+  if (msg.updatedAt && typeof msg.updatedAt.seconds === 'number') return msg.updatedAt.seconds * 1000;
+  if (typeof msg.updatedAt === 'number') return msg.updatedAt;
+  return getMessageTime(msg);
+}
 function refreshHasOlderMessages() {
   var state = getCurrentRoomState();
   var previousValue = state.hasOlderMessages;
