@@ -1202,7 +1202,7 @@ function attachRecentMessagesListener() {
     });
 }
 // ---- LOAD MESSAGES ----
-function loadMessages() {
+function loadMessages(scrollOnOpen) {
   if (messageListener) {
     messageListener();
     messageListener = null;
@@ -1212,7 +1212,7 @@ function loadMessages() {
   var state = getCurrentRoomState();
 
   if (state.orderedIds.length) {
-    renderCurrentRoomMessages(false);
+    renderCurrentRoomMessages(!!scrollOnOpen);
     refreshHasOlderMessages();
     attachRecentMessagesListener();
     return;
@@ -1232,7 +1232,7 @@ function loadMessages() {
 
       mergeMessagesIntoRoomState(state, newest);
       saveRoomMessageCache(currentGroup, state);
-      renderCurrentRoomMessages(false);
+      renderCurrentRoomMessages(!!scrollOnOpen);
       refreshHasOlderMessages();
       attachRecentMessagesListener();
     })
