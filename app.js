@@ -821,9 +821,22 @@ function editMessage(msgId) {
 
     var newText = prompt('Edit your message:', snap.data().text);
 
-    if (newText !== null && newText.trim() !== '' && newText.trim() !== snap.data().text) {
+        if (newText !== null && newText.trim() !== '' && newText.trim() !== snap.data().text) {
       suppressAutoScrollUntil = Date.now() + 2000;
-      msgRef.update({ text: newText.trim(), edited: true });
+      msgRef.update({
+        text: newText.trim(),
+        edited: true,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function() {
+        var state = getCurrentRoomState();
+        if (state.messagesById[msgId]) {
+          state.messagesById[msgId].text = newText.trim();
+          state.messagesById[msgId].edited = true;
+          state.messagesById[msgId].deleted = false;
+          saveRoomMessageCache(currentGroup, state);
+          renderCurrentRoomMessages(false);
+        }
+      });
     }
   });
 }
