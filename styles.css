@@ -1455,9 +1455,7 @@ body {
   color: #ffc107;
   font-weight: 600;
 }
-#cg-chat-title {
-  display: none;
-}
+
 
 .cg-chat-header {
   display: grid;
