@@ -1362,18 +1362,26 @@ function sendMessage() {
   var text = input.value.trim();
   if (!text || !db || !currentUID) return;
   input.value = '';
+
+  var nowTs = firebase.firestore.FieldValue.serverTimestamp();
+
   var msgData = {
-    text: text, author: currentUser.name,
-    authorKey: currentMemberKey, authorUid: currentUID,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    text: text,
+    author: currentUser.name,
+    authorKey: currentMemberKey,
+    authorUid: currentUID,
+    timestamp: nowTs,
+    updatedAt: nowTs,
+    edited: false,
+    deleted: false
   };
-  
+
   db.collection('groups').doc(currentGroup).collection('messages').add(msgData).then(function() {
     var messagesEl = document.getElementById('cg-messages');
     if (messagesEl) {
-            setTimeout(function() {
-  window.scrollTo(0, document.body.scrollHeight);
-}, 300);
+      setTimeout(function() {
+        window.scrollTo(0, document.body.scrollHeight);
+      }, 300);
     }
   });
 }
