@@ -814,6 +814,7 @@ function editMessage(msgId) {
   var msgRef = db.collection('groups').doc(currentGroup).collection('messages').doc(msgId);
 
   msgRef.get().then(function(snap) {
+
     if (!snap.exists) {
       var state = getCurrentRoomState();
       removeMessageFromRoomState(state, msgId);
@@ -824,23 +825,36 @@ function editMessage(msgId) {
 
     var newText = prompt('Edit your message:', snap.data().text);
 
-        if (newText !== null && newText.trim() !== '' && newText.trim() !== snap.data().text) {
+    if (newText !== null && newText.trim() !== '' && newText.trim() !== snap.data().text) {
+
       suppressAutoScrollUntil = Date.now() + 2000;
+
       msgRef.update({
         text: newText.trim(),
         edited: true,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(function() {
+
         var state = getCurrentRoomState();
+
         if (state.messagesById[msgId]) {
           state.messagesById[msgId].text = newText.trim();
           state.messagesById[msgId].edited = true;
           state.messagesById[msgId].deleted = false;
+
           saveRoomMessageCache(currentGroup, state);
           renderCurrentRoomMessages(false);
         }
+
+      }).catch(function(err) {
+        console.error('Edit failed:', err);
+        alert('Edit failed: ' + err.message);
       });
     }
+
+  }).catch(function(err) {
+    console.error('Edit lookup failed:', err);
+    alert('Edit failed: ' + err.message);
   });
 }
 
