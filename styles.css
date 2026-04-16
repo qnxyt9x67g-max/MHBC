@@ -1492,3 +1492,7 @@ body {
   display: block;
   font-size: 18px;
 }
+.msg-deleted {
+  font-style: italic;
+  opacity: 0.7;
+}
