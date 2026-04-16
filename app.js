@@ -768,29 +768,32 @@ function showMessageMenu(msgId, isMe) {
   if (isMe || currentUser.isAdmin) {
     var deleteBtn = document.createElement('button');
     deleteBtn.className = 'msg-menu-btn msg-menu-delete'; deleteBtn.textContent = '🗑️ Delete';
-    deleteBtn.addEventListener('click', function() {
+        deleteBtn.addEventListener('click', function() {
       menu.remove();
       if (confirm('Delete this message?')) {
         suppressAutoScrollUntil = Date.now() + 2000;
 
-db.collection('groups').doc(currentGroup)
-  .collection('messages').doc(msgId)
-  .delete()
-  .then(function() {
-    var state = getCurrentRoomState();
-    removeMessageFromRoomState(state, msgId);
-    saveRoomMessageCache(currentGroup, state);
-    renderCurrentRoomMessages(false);
-  })
-  .catch(function(err) {
-    console.error('Delete failed:', err);
-
-    // If it was already deleted elsewhere, clean up stale cache anyway
-    var state = getCurrentRoomState();
-    removeMessageFromRoomState(state, msgId);
-    saveRoomMessageCache(currentGroup, state);
-    renderCurrentRoomMessages(false);
-  });
+        db.collection('groups').doc(currentGroup)
+          .collection('messages').doc(msgId)
+          .update({
+            text: '',
+            deleted: true,
+            edited: false,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          })
+          .then(function() {
+            var state = getCurrentRoomState();
+            if (state.messagesById[msgId]) {
+              state.messagesById[msgId].text = '';
+              state.messagesById[msgId].deleted = true;
+              state.messagesById[msgId].edited = false;
+              saveRoomMessageCache(currentGroup, state);
+              renderCurrentRoomMessages(false);
+            }
+          })
+          .catch(function(err) {
+            console.error('Soft delete failed:', err);
+          });
       }
     });
     menu.appendChild(deleteBtn);
