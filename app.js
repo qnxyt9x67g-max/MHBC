@@ -838,7 +838,7 @@ function editMessage(msgId) {
 
     var textarea = document.createElement('textarea');
     textarea.value = currentText;
-    textarea.style.cssText = 'width:100%;box-sizing:border-box;background:#0a1628;color:#fff;border:1px solid #c9a84c;border-radius:8px;padding:10px;font-family:Lato,sans-serif;font-size:15px;min-height:80px;resize:none;';
+    textarea.style.cssText = 'width:100%;box-sizing:border-box;background:#0a1628;color:#fff;border:1px solid #c9a84c;border-radius:8px;padding:10px;font-family:Lato,sans-serif;font-size:16px;min-height:80px;resize:none;';
 
     var btnRow = document.createElement('div');
     btnRow.style.cssText = 'display:flex;justify-content:flex-end;gap:10px;margin-top:14px;';
