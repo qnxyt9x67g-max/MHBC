@@ -1322,15 +1322,22 @@ thread.className = 'cg-thread';
 thread.id = 'thread-' + msg._id;
   renderPrimaryMessage(msg, thread);
 
-  var commentBar = document.createElement('div'); commentBar.className = 'cg-comment-bar';
-  var replyBtn = document.createElement('button'); replyBtn.className = 'cg-comment-btn';
-  replyBtn.textContent = replies.length > 0
-  ? '💬 Reply · ' + replies.length + (replies.length === 1 ? ' Comment' : ' Comments')
-  : '💬 Reply';
-  replyBtn.addEventListener('click', (function(id, author) {
-    return function() { setReply(id, author); };
-  })(msg._id, msg.author));
-  commentBar.appendChild(replyBtn); thread.appendChild(commentBar);
+    var commentBar = document.createElement('div');
+  commentBar.className = 'cg-comment-bar';
+
+  if (!msg.deleted) {
+    var replyBtn = document.createElement('button');
+    replyBtn.className = 'cg-comment-btn';
+    replyBtn.textContent = replies.length > 0
+      ? '💬 Reply · ' + replies.length + (replies.length === 1 ? ' Comment' : ' Comments')
+      : '💬 Reply';
+    replyBtn.addEventListener('click', (function(id, author) {
+      return function() { setReply(id, author); };
+    })(msg._id, msg.author));
+    commentBar.appendChild(replyBtn);
+  }
+
+  thread.appendChild(commentBar);
   if (replyingTo && replyingTo.id === msg._id) {
   var inlineReplyBox = document.createElement('div');
   inlineReplyBox.className = 'cg-inline-reply-box';
