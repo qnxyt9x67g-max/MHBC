@@ -1896,8 +1896,12 @@ function restoreCachedMessage(raw) {
     replyTo: raw.replyTo || null,
     replyToAuthor: raw.replyToAuthor || null,
     edited: raw.edited === true,
+    deleted: raw.deleted === true,
     timestamp: raw.timestampMs ? {
       toMillis: function() { return raw.timestampMs; }
+    } : null,
+    updatedAt: (raw.updatedAtMs || raw.timestampMs) ? {
+      toMillis: function() { return raw.updatedAtMs || raw.timestampMs; }
     } : null
   };
 }
