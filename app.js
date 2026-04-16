@@ -816,7 +816,6 @@ function editMessage(msgId) {
   var msgRef = db.collection('groups').doc(currentGroup).collection('messages').doc(msgId);
 
   msgRef.get().then(function(snap) {
-
     if (!snap.exists) {
       var state = getCurrentRoomState();
       removeMessageFromRoomState(state, msgId);
@@ -825,35 +824,95 @@ function editMessage(msgId) {
       return;
     }
 
-    var newText = prompt('Edit your message:', snap.data().text);
+    var currentText = snap.data().text || '';
 
-    if (newText !== null && newText.trim() !== '' && newText.trim() !== snap.data().text) {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+    var box = document.createElement('div');
+    box.style.cssText = 'background:#1a2a44;border:1px solid #c9a84c;border-radius:12px;padding:20px;width:100%;max-width:400px;';
+
+    var label = document.createElement('div');
+    label.textContent = 'Edit your message:';
+    label.style.cssText = 'color:#c9a84c;font-family:Lato,sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;';
+
+    var textarea = document.createElement('textarea');
+    textarea.value = currentText;
+    textarea.style.cssText = 'width:100%;box-sizing:border-box;background:#0a1628;color:#fff;border:1px solid #c9a84c;border-radius:8px;padding:10px;font-family:Lato,sans-serif;font-size:15px;min-height:80px;resize:none;';
+
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;justify-content:flex-end;gap:10px;margin-top:14px;';
+
+    var cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = 'background:transparent;border:1px solid #c9a84c;color:#c9a84c;padding:8px 18px;border-radius:6px;font-family:Lato,sans-serif;font-size:13px;font-weight:700;cursor:pointer;';
+
+    var saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save';
+    saveBtn.style.cssText = 'background:#c9a84c;border:none;color:#0a1628;padding:8px 18px;border-radius:6px;font-family:Lato,sans-serif;font-size:13px;font-weight:700;cursor:pointer;';
+
+    function closeOverlay() {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    }
+
+    cancelBtn.addEventListener('click', function() {
+      closeOverlay();
+    });
+
+    saveBtn.addEventListener('click', function() {
+      var newText = textarea.value.trim();
+
+      if (!newText || newText === currentText) {
+        closeOverlay();
+        return;
+      }
 
       suppressAutoScrollUntil = Date.now() + 2000;
 
       msgRef.update({
-        text: newText.trim(),
+        text: newText,
         edited: true,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(function() {
-
         var state = getCurrentRoomState();
 
         if (state.messagesById[msgId]) {
-          state.messagesById[msgId].text = newText.trim();
+          state.messagesById[msgId].text = newText;
           state.messagesById[msgId].edited = true;
           state.messagesById[msgId].deleted = false;
-
           saveRoomMessageCache(currentGroup, state);
           renderCurrentRoomMessages(false);
         }
 
+        closeOverlay();
       }).catch(function(err) {
         console.error('Edit failed:', err);
         alert('Edit failed: ' + err.message);
       });
-    }
+    });
 
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) closeOverlay();
+    });
+
+    textarea.addEventListener('keydown', function(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        saveBtn.click();
+      }
+    });
+
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(saveBtn);
+    box.appendChild(label);
+    box.appendChild(textarea);
+    box.appendChild(btnRow);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    setTimeout(function() {
+      textarea.focus();
+      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    }, 100);
   }).catch(function(err) {
     console.error('Edit lookup failed:', err);
     alert('Edit failed: ' + err.message);
