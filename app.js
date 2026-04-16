@@ -1680,34 +1680,6 @@ function denyMember(memberUid) {
   });
 }
 
-  // ADMIN path (unchanged)
-  return deleteAllSessionsForPerson(normalized);
-}).then(function() {
-  clearMembersCache(currentGroup);
-
-  if (isSelf) {
-    stopUnreadWatcher(currentGroup);
-    stopPendingWatcher(currentGroup);
-    clearUnreadCount(currentGroup);
-    setPendingCount(currentGroup, 0);
-    clearSavedUser(currentGroup);
-
-    currentUser = null;
-    currentGroup = null;
-    currentGroupName = null;
-    currentMemberKey = null;
-
-    showCGScreen('select');
-    return;
-  }
-
-  loadMembersList(true);
-}).catch(function(err) {
-  console.error('Remove member failed:', err);
-  alert(isSelf ? 'Unable to leave this chat right now.' : 'Unable to remove this member right now.');
-});
-}
-
 // Remove: delete ALL UID sessions for this person + mark identity not approved
 function removeMember(memberUid, isSelf) {
   var confirmMsg = isSelf ? 'Leave this chat?' : 'Remove this member from the chat?';
