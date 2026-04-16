@@ -1153,17 +1153,18 @@ function renderCurrentRoomMessages(allowAutoScroll) {
   });
 
     requestAnimationFrame(function() {
-    if (!allowAutoScroll) {
-      messagesEl.style.visibility = 'visible';
-      return;
-    }
+  if (!allowAutoScroll) {
+    messagesEl.style.visibility = 'visible';
+    return;
+  }
 
+  requestAnimationFrame(function() {
     if (!replyingTo && Date.now() > suppressAutoScrollUntil) {
       window.scrollTo(0, document.body.scrollHeight);
     }
-
     messagesEl.style.visibility = 'visible';
   });
+});
 
   if (isInChat()) {
     markAsRead();
