@@ -717,12 +717,17 @@ function sendInlineReply(parentId) {
 
   input.value = '';
 
+    var nowTs = firebase.firestore.FieldValue.serverTimestamp();
+
   var msgData = {
     text: text,
     author: currentUser.name,
     authorKey: currentMemberKey,
     authorUid: currentUID,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    timestamp: nowTs,
+    updatedAt: nowTs,
+    edited: false,
+    deleted: false,
     replyTo: parentId,
     replyToAuthor: replyingTo ? replyingTo.author : ''
   };
