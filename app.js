@@ -1874,7 +1874,9 @@ function cacheMessageForStorage(msg) {
     replyTo: msg.replyTo || null,
     replyToAuthor: msg.replyToAuthor || null,
     edited: msg.edited === true,
-    timestampMs: getMessageTime(msg)
+    deleted: msg.deleted === true,
+    timestampMs: getMessageTime(msg),
+    updatedAtMs: getUpdatedTime(msg)
   };
 }
 
