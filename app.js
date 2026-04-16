@@ -1288,13 +1288,25 @@ if (isMe || currentUser.isAdmin) {
 
 content.appendChild(header);
 
-  var wrapper = document.createElement('div'); wrapper.className = 'msg-wrapper';
-  renderMessageContent(msg.text, wrapper);
-  if (msg.edited) {
-    var editedTag = document.createElement('span');
-    editedTag.className = 'msg-edited'; editedTag.textContent = ' (edited)';
-    wrapper.appendChild(editedTag);
+    var wrapper = document.createElement('div');
+  wrapper.className = 'msg-wrapper';
+
+  if (msg.deleted) {
+    var deletedSpan = document.createElement('span');
+    deletedSpan.className = 'msg-deleted';
+    deletedSpan.textContent = '(message deleted)';
+    wrapper.appendChild(deletedSpan);
+  } else {
+    renderMessageContent(msg.text, wrapper);
+
+    if (msg.edited) {
+      var editedTag = document.createElement('span');
+      editedTag.className = 'msg-edited';
+      editedTag.textContent = ' (edited)';
+      wrapper.appendChild(editedTag);
+    }
   }
+
   attachLongPress(wrapper, msg._id, isMe);
   content.appendChild(wrapper);
   row.appendChild(content);
