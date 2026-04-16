@@ -1910,6 +1910,7 @@ function recomputeRoomStateBounds(state) {
   if (!state.orderedIds.length) {
     state.newestTimestamp = 0;
     state.oldestTimestamp = 0;
+    state.newestUpdatedAt = 0;
     return;
   }
 
@@ -1918,6 +1919,13 @@ function recomputeRoomStateBounds(state) {
 
   state.oldestTimestamp = getMessageTime(state.messagesById[firstId]);
   state.newestTimestamp = getMessageTime(state.messagesById[lastId]);
+
+  var maxUpdatedAt = 0;
+  state.orderedIds.forEach(function(id) {
+    var updated = getUpdatedTime(state.messagesById[id]);
+    if (updated > maxUpdatedAt) maxUpdatedAt = updated;
+  });
+  state.newestUpdatedAt = maxUpdatedAt;
 }
 
 function sortRoomStateIds(state) {
