@@ -1504,8 +1504,26 @@ body {
 .yt-launch-icon img,
 .link-icon img,
 .nav-icon img {
-  width: 28px;
-  height: 28px;
   object-fit: contain;
   display: block;
+}
+
+.quick-icon img {
+  width: 26px;
+  height: 26px;
+}
+
+.yt-launch-icon img {
+  width: 34px;
+  height: 34px;
+}
+
+.link-icon img {
+  width: 20px;
+  height: 20px;
+}
+
+.nav-icon img {
+  width: 20px;
+  height: 20px;
 }
