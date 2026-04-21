@@ -233,7 +233,13 @@ body {
 }
 
 .quick-btn:active { background: var(--navy-light); }
-.quick-icon { font-size: 22px; }
+.quick-icon {
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+}
 
 /* ---- INSTALL CARD ---- */
 .install-card {
