@@ -1494,3 +1494,12 @@ body {
   font-style: italic;
   opacity: 0.7;
 }
+.quick-icon img,
+.yt-launch-icon img,
+.link-icon img,
+.nav-icon img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  display: block;
+}
