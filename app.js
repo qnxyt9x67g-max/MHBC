@@ -35,10 +35,10 @@ var ROOM_MEMBERS_CACHE_PREFIX = 'mhbc_members_cache_';
 var ROOM_MEMBERS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 var PRAYER_LINKS = {
   c101: 'https://docs.google.com/spreadsheets/d/1-7kNm-5l8F1okka9bU4mpvQDXd2OusWYNQeC9PuJnZQ/edit?usp=drivesdk',
-  narthex: null,
-  fellowship1: null,
-  fellowship2: null,
-  trac: null
+  narthex: 'https://docs.google.com/spreadsheets/d/1GZUm483lFgxLGM5o6NJBH3z5Fri2FCekFzuKNXF1TgM/edit?usp=drivesdk',
+  fellowship1: 'https://docs.google.com/spreadsheets/d/1Dw8g6q_dE-3ObNr5jbddJ5CIqnzo1NtbU3ZGjoTn1Ws/edit?usp=drivesdk',
+  fellowship2: 'https://docs.google.com/spreadsheets/d/1dVE3TlLK3svbtA2Qp-wxnQJE_ztXLwBzvCW32F0pDI8/edit?usp=drivesdk',
+  trac: 'https://docs.google.com/spreadsheets/d/1UlIxBJS2ZZlX5QnsjGIckcULLsZ6r7U6mNtaDVe3udQ/edit?usp=drivesdk'
 };
 var BUBBLE_COLORS = [
   '#1a5276','#1a3a6e','#6c3483','#145a32','#784212',
