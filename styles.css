@@ -1275,9 +1275,9 @@ body {
 }
 
 .nav-icon.play-icon svg {
-  width: 9px;
-  height: 9px;
-  display: block;
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 /* ===== DESKTOP WIDTH CAP (tighter) ===== */
