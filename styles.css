@@ -380,8 +380,8 @@ body {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: #1a0a0a;
-  border: 1px solid rgba(211,47,47,0.4);
+  background: var(--navy-card);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 20px 16px;
   margin: 0 14px;
