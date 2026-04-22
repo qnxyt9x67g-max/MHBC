@@ -1494,3 +1494,6 @@ body {
   font-style: italic;
   opacity: 0.7;
 }
+.quick-btn[data-action="watch"] span:last-child {
+  margin-top: 4px;
+}
