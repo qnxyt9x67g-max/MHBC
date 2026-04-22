@@ -233,13 +233,7 @@ body {
 }
 
 .quick-btn:active { background: var(--navy-light); }
-.quick-icon {
-  font-size: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 26px;
-}
+.quick-icon { font-size: 22px; }
 
 /* ---- INSTALL CARD ---- */
 .install-card {
@@ -380,8 +374,8 @@ body {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: var(--navy-card);
-  border: 1px solid var(--border);
+  background: #1a0a0a;
+  border: 1px solid rgba(211,47,47,0.4);
   border-radius: var(--radius);
   padding: 20px 16px;
   margin: 0 14px;
@@ -1264,20 +1258,20 @@ body {
 
 /* Bottom nav watch icon */
 .nav-icon.play-icon {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
-  margin-bottom: 0;
-  background: transparent;
-  border-radius: 0;
+  width: 18px;
+  height: 18px;
+  background: #ff0000;
+  border-radius: 5px;
+  margin-bottom: 3px;
 }
 
 .nav-icon.play-icon svg {
-  width: 0;
-  height: 0;
-  display: none;
+  width: 9px;
+  height: 9px;
+  display: block;
 }
 
 /* ===== DESKTOP WIDTH CAP (tighter) ===== */
@@ -1499,31 +1493,4 @@ body {
 .msg-deleted {
   font-style: italic;
   opacity: 0.7;
-}
-.quick-icon img,
-.yt-launch-icon img,
-.link-icon img,
-.nav-icon img {
-  object-fit: contain;
-  display: block;
-}
-
-.quick-icon img {
-  width: 26px;
-  height: 26px;
-}
-
-.yt-launch-icon img {
-  width: 34px;
-  height: 34px;
-}
-
-.link-icon img {
-  width: 20px;
-  height: 20px;
-}
-
-.nav-icon img {
-  width: 20px;
-  height: 20px;
 }
