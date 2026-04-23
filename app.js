@@ -601,6 +601,13 @@ enterChat();
 }
 
 function enterChat() {
+  if (!localStorage.getItem('care_notifs')) {
+  setTimeout(function() {
+    if (confirm("Enable care group notifications?")) {
+      requestPermission('care');
+    }
+  }, 1000);
+}
   roomMessageStateByGroup[currentGroup] = getRoomMessageCache(currentGroup);
   currentMessageLimit = MESSAGE_PAGE_SIZE;
   viewedOriginalMessagesByGroup[currentGroup] = {};
