@@ -139,6 +139,19 @@ function initFirebase() {
   db = firebase.firestore();
   auth = firebase.auth();
 }
+function listenForBadgeUpdates() {
+  if (!currentUID) return;
+
+  db.collection('users').doc(currentUID)
+    .onSnapshot(doc => {
+      if (!doc.exists) return;
+
+      const data = doc.data();
+      const total = data.totalUnread || 0;
+
+      updateAppBadge(total);
+    });
+}
 // ==========================
 // 🔔 FCM NOTIFICATIONS SETUP
 // ==========================
