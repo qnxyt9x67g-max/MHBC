@@ -260,15 +260,15 @@ function requestPermission(type) {
   localStorage.setItem(type + '_notifs_prompted', 'yes');
 
   if (!('Notification' in window)) {
-    alert('Notifications are not supported on this device.');
+    alert('Push notifications work after adding this app to your Home Screen.');
     return;
   }
 
   if (Notification.permission === 'granted') {
     localStorage.setItem(type + '_notifs_permission', 'granted');
     localStorage.setItem(type + '_notifs', 'yes');
+    alert('Notifications Enabled'); // moved BEFORE initMessaging
     initMessaging();
-    alert('Notifications Enabled');
     return;
   }
 
@@ -283,8 +283,8 @@ function requestPermission(type) {
     }
 
     localStorage.setItem(type + '_notifs', 'yes');
+    alert('Notifications Enabled'); // moved BEFORE initMessaging
     initMessaging();
-    alert('Notifications Enabled');
   });
 }
 
