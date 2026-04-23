@@ -625,10 +625,12 @@ enterChat();
 }
 
 function enterChat() {
-  if (!localStorage.getItem('care_notifs')) {
+  if (!localStorage.getItem('care_notifs_prompted')) {
   setTimeout(function() {
     if (confirm("Enable care group notifications?")) {
       requestPermission('care');
+    } else {
+      localStorage.setItem('care_notifs_prompted', 'yes');
     }
   }, 1000);
 }
