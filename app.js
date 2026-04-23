@@ -738,7 +738,10 @@ enterChat();
 }
 
 function enterChat() {
-  if (!localStorage.getItem('care_notifs_prompted')) {
+  if (
+  localStorage.getItem('care_notifs') !== 'yes' &&
+  !localStorage.getItem('care_notifs_prompted')
+) {
   setTimeout(function() {
     if (confirm("Enable care group notifications?")) {
       requestPermission('care');
