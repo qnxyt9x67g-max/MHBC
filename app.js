@@ -776,11 +776,44 @@ function enterChat() {
   !localStorage.getItem('care_notifs_prompted')
 ) {
   setTimeout(function() {
-    if (confirm("Enable care group notifications?")) {
-      requestPermission('care');
-    } else {
+    var overlay = document.createElement('div');
+    overlay.style.cssText =
+      'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+    var box = document.createElement('div');
+    box.style.cssText =
+      'background:#0f1e3a;border:1px solid #c9a84c;border-radius:14px;padding:20px;max-width:360px;width:100%;color:white;font-family:Lato,sans-serif;text-align:center;';
+
+    box.innerHTML =
+      '<div style="font-size:28px;margin-bottom:10px;">💬</div>' +
+      '<div style="font-size:18px;font-weight:700;margin-bottom:8px;">Enable Care Group Notifications?</div>' +
+      '<div style="font-size:14px;color:#dce6f5;line-height:1.4;margin-bottom:16px;">Get notified when people send messages in your C.A.R.E. Group.</div>';
+
+    var yesBtn = document.createElement('button');
+    yesBtn.textContent = 'Enable Notifications';
+    yesBtn.style.cssText =
+      'width:100%;padding:12px;border:none;border-radius:10px;background:#c9a84c;color:#0a1628;font-weight:700;font-size:15px;margin-bottom:10px;';
+
+    var noBtn = document.createElement('button');
+    noBtn.textContent = 'Not Now';
+    noBtn.style.cssText =
+      'width:100%;padding:12px;border:1px solid #c9a84c;border-radius:10px;background:transparent;color:#c9a84c;font-weight:700;font-size:15px;';
+
+    yesBtn.addEventListener('click', function() {
       localStorage.setItem('care_notifs_prompted', 'yes');
-    }
+      overlay.remove();
+      requestPermission('care');
+    });
+
+    noBtn.addEventListener('click', function() {
+      localStorage.setItem('care_notifs_prompted', 'yes');
+      overlay.remove();
+    });
+
+    box.appendChild(yesBtn);
+    box.appendChild(noBtn);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
   }, 1000);
 }
   roomMessageStateByGroup[currentGroup] = getRoomMessageCache(currentGroup);
