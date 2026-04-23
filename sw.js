@@ -43,8 +43,8 @@ messaging.onBackgroundMessage(function(payload) {
   self.registration.showNotification(title, options);
 
   if (payload.data && payload.data.badge) {
-    if (navigator.setAppBadge) {
-      navigator.setAppBadge(parseInt(payload.data.badge));
-    }
+    if ('setAppBadge' in navigator) {
+  navigator.setAppBadge(parseInt(payload.data.badge));
+}
   }
 });
