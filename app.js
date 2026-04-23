@@ -2234,6 +2234,7 @@ function checkLiveBadge() {
 // ---- INIT ----
 window.onload = function() {
   initFirebase();
+  checkChurchPrompt();
   // Enable Notifications button (iOS requires user interaction)
 var enableRow = document.getElementById('enableNotificationsRow');
 if (enableRow) {
