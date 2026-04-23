@@ -34,17 +34,21 @@ self.addEventListener('fetch', e => {
   );
 });
 messaging.onBackgroundMessage(function(payload) {
-  const title = payload.notification?.title || "MHBC";
+  const title = (payload.notification && payload.notification.title) || "MHBC";
+  const badgeCount = parseInt((payload.data && payload.data.badge) || "0", 10) || 0;
+
   const options = {
-    body: payload.notification?.body || "",
-    icon: "/icon.png"
+    body: (payload.notification && payload.notification.body) || "",
+    icon: "https://maxwellhillbaptistchurch.com/wp-content/uploads/2024/10/MaxwellHill-Baptist-Favicon.png",
+    badge: "https://maxwellhillbaptistchurch.com/wp-content/uploads/2024/10/MaxwellHill-Baptist-Favicon.png",
+    data: payload.data || {}
   };
 
   self.registration.showNotification(title, options);
 
-  if (payload.data && payload.data.badge) {
-    if ('setAppBadge' in navigator) {
-  navigator.setAppBadge(parseInt(payload.data.badge));
-}
+  if ('setAppBadge' in self.registration) {
+    self.registration.setAppBadge(badgeCount).catch(function() {});
+  } else if (badgeCount === 0 && 'clearAppBadge' in self.registration) {
+    self.registration.clearAppBadge().catch(function() {});
   }
 });
