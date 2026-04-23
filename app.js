@@ -2389,9 +2389,7 @@ window.onload = function() {
 var enableRow = document.getElementById('enableNotificationsRow');
 if (enableRow) {
   enableRow.addEventListener('click', function () {
-    requestBadgePermission();
-
-    alert('If prompted, tap "Allow" to enable notifications and badges.');
+    requestPermission('church');
   });
 }
 var mainInput = document.getElementById('cg-msg-input');
