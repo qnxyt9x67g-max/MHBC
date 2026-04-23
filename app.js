@@ -164,7 +164,7 @@ function initMessaging() {
 
   navigator.serviceWorker.ready.then(function(reg) {
     messaging.getToken({
-      vapidKey: "PASTE_YOUR_VAPID_KEY_HERE",
+      vapidKey: "BBPJw98hi9HkHDJHAJMXvUu6l9lmBMjJdTrKxLVLqx-KT5tcHDua9tq2FRxKanZxuSXJ6D0XRvITjWmVXGTMhKE",
       serviceWorkerRegistration: reg
     }).then(function(token) {
       if (token) saveToken(token);
