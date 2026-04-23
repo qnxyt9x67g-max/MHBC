@@ -259,13 +259,32 @@ function saveToken(token) {
 function requestPermission(type) {
   localStorage.setItem(type + '_notifs_prompted', 'yes');
 
+  if (!('Notification' in window)) {
+    alert('Notifications are not supported on this device.');
+    return;
+  }
+
+  if (Notification.permission === 'granted') {
+    localStorage.setItem(type + '_notifs_permission', 'granted');
+    localStorage.setItem(type + '_notifs', 'yes');
+    initMessaging();
+    alert('Notifications Enabled');
+    return;
+  }
+
   Notification.requestPermission().then(function(permission) {
     localStorage.setItem(type + '_notifs_permission', permission);
 
-    if (permission !== 'granted') return;
+    if (permission !== 'granted') {
+      if (permission === 'denied') {
+        alert('Notifications are turned off in your device/browser settings.');
+      }
+      return;
+    }
 
     localStorage.setItem(type + '_notifs', 'yes');
     initMessaging();
+    alert('Notifications Enabled');
   });
 }
 
