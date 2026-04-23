@@ -139,7 +139,55 @@ function initFirebase() {
   db = firebase.firestore();
   auth = firebase.auth();
 }
+// ==========================
+// 🔔 FCM NOTIFICATIONS SETUP
+// ==========================
+var messaging = null;
 
+function initMessaging() {
+  if (!('Notification' in window)) return;
+
+  messaging = firebase.messaging();
+
+  navigator.serviceWorker.ready.then(function(reg) {
+    messaging.getToken({
+      vapidKey: "PASTE_YOUR_VAPID_KEY_HERE",
+      serviceWorkerRegistration: reg
+    }).then(function(token) {
+      if (token) saveToken(token);
+    });
+  });
+}
+
+function saveToken(token) {
+  if (!currentUID) return;
+
+  db.collection('users').doc(currentUID).set({
+    tokens: firebase.firestore.FieldValue.arrayUnion(token)
+  }, { merge: true });
+}
+
+function requestPermission(type) {
+  Notification.requestPermission().then(function(permission) {
+    if (permission !== 'granted') return;
+
+    localStorage.setItem(type + '_notifs', 'yes');
+    initMessaging();
+  });
+}
+
+// ==========================
+// 🔔 FIRST-TIME PROMPTS
+// ==========================
+function checkChurchPrompt() {
+  if (!localStorage.getItem('church_notifs')) {
+    setTimeout(function() {
+      if (confirm("Enable church notifications?")) {
+        requestPermission('church');
+      }
+    }, 1000);
+  }
+}
 // ---- AUDIO ----
 function unlockAudio() {
   if (audioUnlocked) return;
