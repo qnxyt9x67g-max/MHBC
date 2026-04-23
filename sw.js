@@ -11,8 +11,9 @@ firebase.initializeApp({
 });
 
 const messaging = firebase.messaging();
-// MHBC Service Worker — basic caching for PWA
-const CACHE = 'mhbc-v1';
+
+// MHBC Service Worker — caching + background notifications
+const CACHE = 'mhbc-v2';
 
 const ASSETS = [
   './',
@@ -23,8 +24,21 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE).then(c => c.addAll(ASSETS))
+  );
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(
+        keys
+          .filter(key => key !== CACHE)
+          .map(key => caches.delete(key))
+      )
+    ).then(() => self.clients.claim())
   );
 });
 
@@ -33,6 +47,7 @@ self.addEventListener('fetch', e => {
     caches.match(e.request).then(r => r || fetch(e.request))
   );
 });
+
 messaging.onBackgroundMessage(function(payload) {
   const title = (payload.notification && payload.notification.title) || "MHBC";
   const badgeCount = parseInt((payload.data && payload.data.badge) || "0", 10) || 0;
