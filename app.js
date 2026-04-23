@@ -1567,11 +1567,28 @@ function leaveChat() {
 }
 
 function markAsRead() {
-  if (!currentGroup) return;
+  if (!currentUID || !currentGroup) return;
 
-  lastSeenTimestamps[currentGroup] = Date.now();
-  localStorage.setItem('mhbc_lastseen', JSON.stringify(lastSeenTimestamps));
-  setUnreadCount(currentGroup, 0);
+  const userRef = db.collection('users').doc(currentUID);
+
+  userRef.get().then(doc => {
+    if (!doc.exists) return;
+
+    let data = doc.data();
+    let unread = data.unread || {};
+
+    unread[currentGroup] = 0;
+
+    let totalUnread = 0;
+    Object.values(unread).forEach(v => totalUnread += v);
+
+    userRef.update({
+      unread: unread,
+      totalUnread: totalUnread
+    });
+
+    updateAppBadge(totalUnread);
+  });
 }
 
 // ---- MEMBERS PANEL ----
