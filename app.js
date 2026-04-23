@@ -2386,10 +2386,19 @@ window.onload = function() {
 }
   checkChurchPrompt();
   // Enable Notifications button (iOS requires user interaction)
-var enableRow = document.getElementById('enableNotificationsRow');
-if (enableRow) {
-  enableRow.addEventListener('click', function () {
+var enableChurchRow = document.getElementById('enableChurchNotificationsRow');
+if (enableChurchRow) {
+  enableChurchRow.addEventListener('click', function (e) {
+    e.preventDefault();
     requestPermission('church');
+  });
+}
+
+var enableCareRow = document.getElementById('enableCareNotificationsRow');
+if (enableCareRow) {
+  enableCareRow.addEventListener('click', function (e) {
+    e.preventDefault();
+    requestPermission('care');
   });
 }
 var mainInput = document.getElementById('cg-msg-input');
