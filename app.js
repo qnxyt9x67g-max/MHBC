@@ -202,16 +202,49 @@ var messaging = null;
 
 function initMessaging() {
   if (!('Notification' in window)) return;
+  if (!('serviceWorker' in navigator)) return;
+  if (Notification.permission !== 'granted') return;
+  if (!currentUID) return;
 
   messaging = firebase.messaging();
 
-  navigator.serviceWorker.ready.then(function(reg) {
-    messaging.getToken({
-      vapidKey: "BBPJw98hi9HkHDJHAJMXvUu6l9lmBMjJdTrKxLVLqx-KT5tcHDua9tq2FRxKanZxuSXJ6D0XRvITjWmVXGTMhKE",
-      serviceWorkerRegistration: reg
-    }).then(function(token) {
-      if (token) saveToken(token);
+  navigator.serviceWorker.register('./sw.js').then(function(reg) {
+    return navigator.serviceWorker.ready.then(function() {
+      return messaging.getToken({
+        vapidKey: "BBPJw98hi9HkHDJHAJMXvUu6l9lmBMjJdTrKxLVLqx-KT5tcHDua9tq2FRxKanZxuSXJ6D0XRvITjWmVXGTMhKE",
+        serviceWorkerRegistration: reg
+      });
     });
+  }).then(function(token) {
+    if (token) {
+      saveToken(token);
+      console.log('FCM token saved');
+    } else {
+      console.log('No FCM token returned');
+    }
+  }).catch(function(err) {
+    console.error('initMessaging failed:', err);
+  });
+
+  messaging.onMessage(function(payload) {
+    console.log('Foreground message received:', payload);
+
+    var title = (payload.notification && payload.notification.title) || 'MHBC';
+    var body = (payload.notification && payload.notification.body) || '';
+
+    if (body && document.visibilityState !== 'visible') {
+      try {
+        new Notification(title, {
+          body: body,
+          icon: 'https://maxwellhillbaptistchurch.com/wp-content/uploads/2024/10/MaxwellHill-Baptist-Favicon.png'
+        });
+      } catch (e) {}
+    }
+
+    if (payload.data && payload.data.badge) {
+      var badgeNum = parseInt(payload.data.badge, 10) || 0;
+      updateAppBadge(badgeNum);
+    }
   });
 }
 
