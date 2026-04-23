@@ -181,7 +181,11 @@ function saveToken(token) {
 }
 
 function requestPermission(type) {
+  localStorage.setItem(type + '_notifs_prompted', 'yes');
+
   Notification.requestPermission().then(function(permission) {
+    localStorage.setItem(type + '_notifs_permission', permission);
+
     if (permission !== 'granted') return;
 
     localStorage.setItem(type + '_notifs', 'yes');
@@ -193,10 +197,12 @@ function requestPermission(type) {
 // 🔔 FIRST-TIME PROMPTS
 // ==========================
 function checkChurchPrompt() {
-  if (!localStorage.getItem('church_notifs')) {
+  if (!localStorage.getItem('church_notifs_prompted')) {
     setTimeout(function() {
       if (confirm("Enable church notifications?")) {
         requestPermission('church');
+      } else {
+        localStorage.setItem('church_notifs_prompted', 'yes');
       }
     }, 1000);
   }
