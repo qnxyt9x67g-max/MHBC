@@ -258,51 +258,69 @@ function requestBadgePermission() {
 }
 
 function refreshCareNavBadge() {
-  // SUNDAY DEMO MODE: all badge UI turned off to reduce Firestore reads
-  unreadCount = 0;
-
   var navBadge = document.getElementById('nav-badge-care');
-  if (navBadge) {
+  var total = 0;
+  Object.keys(unreadCountsByGroup).forEach(function(groupId) {
+    var unread = unreadCountsByGroup[groupId] || 0;
+    var pending = pendingCountsByGroup[groupId] || 0;
+    total += unread + pending;
+  });
+  unreadCount = total;
+  if (!navBadge) return;
+  if (total > 0) {
+    navBadge.textContent = total > 99 ? '99+' : String(total);
+    navBadge.style.display = 'flex';
+  } else {
     navBadge.style.display = 'none';
-    navBadge.textContent = '';
   }
-
-  updateAppBadge(0);
+  updateAppBadge(total);
 }
+
 
 function setUnreadCount(groupId, count) {
-  // SUNDAY DEMO MODE: unread badges turned off
-  unreadCountsByGroup[groupId] = 0;
-
+  unreadCountsByGroup[groupId] = Math.max(0, count || 0);
   var roomBadge = document.getElementById('badge-' + groupId);
   if (roomBadge) {
-    roomBadge.style.display = 'none';
-    roomBadge.textContent = '';
+    var unread = unreadCountsByGroup[groupId] || 0;
+    var pending = pendingCountsByGroup[groupId] || 0;
+    var total = unread + pending;
+    if (total > 0) {
+      roomBadge.textContent = total > 99 ? '99+' : String(total);
+      roomBadge.style.display = 'flex';
+    } else {
+      roomBadge.style.display = 'none';
+    }
   }
-
   refreshCareNavBadge();
 }
+
 
 function setPendingCount(groupId, count) {
-  // SUNDAY DEMO MODE: pending badges turned off
-  if (groupId) {
-    pendingCountsByGroup[groupId] = 0;
-  }
-
-  var roomBadge = groupId ? document.getElementById('badge-' + groupId) : null;
+  pendingCountsByGroup[groupId] = Math.max(0, count || 0);
+  var unread = unreadCountsByGroup[groupId] || 0;
+  var total = unread + pendingCountsByGroup[groupId];
+  var roomBadge = document.getElementById('badge-' + groupId);
   if (roomBadge) {
-    roomBadge.style.display = 'none';
-    roomBadge.textContent = '';
+    if (total > 0) {
+      roomBadge.textContent = total > 99 ? '99+' : String(total);
+      roomBadge.style.display = 'flex';
+    } else {
+      roomBadge.style.display = 'none';
+    }
   }
-
   var membersBadge = document.getElementById('members-badge');
-  if (membersBadge) {
-    membersBadge.style.display = 'none';
-    membersBadge.textContent = '';
+  if (membersBadge && groupId === currentGroup) {
+    var pending = pendingCountsByGroup[groupId] || 0;
+    if (pending > 0) {
+      membersBadge.textContent = pending > 99 ? '99+' : String(pending);
+      membersBadge.style.display = 'flex';
+    } else {
+      membersBadge.style.display = 'none';
+    }
   }
-
   refreshCareNavBadge();
 }
+
 
 function clearUnreadCount(groupId) {
   delete unreadCountsByGroup[groupId];
@@ -1337,7 +1355,8 @@ function attachRecentMessagesListener() {
 
       if (changed) {
         saveRoomMessageCache(currentGroup, state);
-        renderCurrentRoomMessages(true);
+        renderCurrentRoomMessages(isInChat());
+
       }
     });
 }
