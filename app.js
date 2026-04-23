@@ -2541,9 +2541,20 @@ if (mainInput) {
 
   auth.onAuthStateChanged(function(user) {
     if (user) {
-      authReady = true;
-      currentUID = user.uid;
-      var lastGroup = getLastGroup();
+  authReady = true;
+  currentUID = user.uid;
+
+  db.collection('users').doc(currentUID).set({
+    uid: currentUID
+  }, { merge: true });
+
+  listenForBadgeUpdates();
+
+  if (Notification.permission === 'granted') {
+    initMessaging();
+  }
+
+  var lastGroup = getLastGroup();
 var savedUser = lastGroup ? getSavedUser(lastGroup) : null;
 
 if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) {
