@@ -59,7 +59,6 @@ messaging.onBackgroundMessage(function(payload) {
     data: payload.data || {}
   };
 
-  self.registration.showNotification(title, options);
 
   if ('setAppBadge' in self.registration) {
     self.registration.setAppBadge(badgeCount).catch(function() {});
