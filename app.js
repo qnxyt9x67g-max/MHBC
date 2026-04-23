@@ -143,12 +143,55 @@ function listenForBadgeUpdates() {
   if (!currentUID) return;
 
   db.collection('users').doc(currentUID)
-    .onSnapshot(doc => {
+    .onSnapshot(function(doc) {
       if (!doc.exists) return;
 
-      const data = doc.data();
-      const total = data.totalUnread || 0;
+      var data = doc.data() || {};
+      var unreadMap = data.unread || {};
+      var total = data.totalUnread || 0;
 
+      // clear all known room badges first
+      ['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(groupId) {
+        unreadCountsByGroup[groupId] = 0;
+      });
+
+      // rebuild room badges from unread map
+      Object.keys(unreadMap).forEach(function(groupId) {
+        unreadCountsByGroup[groupId] = Math.max(0, unreadMap[groupId] || 0);
+      });
+
+      // update each room badge
+      ['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(groupId) {
+        var roomBadge = document.getElementById('badge-' + groupId);
+        var unread = unreadCountsByGroup[groupId] || 0;
+        var pending = pendingCountsByGroup[groupId] || 0;
+        var roomTotal = unread + pending;
+
+        if (roomBadge) {
+          if (roomTotal > 0) {
+            roomBadge.textContent = roomTotal > 99 ? '99+' : String(roomTotal);
+            roomBadge.style.display = 'flex';
+          } else {
+            roomBadge.style.display = 'none';
+            roomBadge.textContent = '';
+          }
+        }
+      });
+
+      // update care groups nav badge
+      unreadCount = total;
+      var navBadge = document.getElementById('nav-badge-care');
+      if (navBadge) {
+        if (total > 0) {
+          navBadge.textContent = total > 99 ? '99+' : String(total);
+          navBadge.style.display = 'flex';
+        } else {
+          navBadge.style.display = 'none';
+          navBadge.textContent = '';
+        }
+      }
+
+      // update app icon badge
       updateAppBadge(total);
     });
 }
