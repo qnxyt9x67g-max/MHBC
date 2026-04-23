@@ -2346,6 +2346,11 @@ function checkLiveBadge() {
 // ---- INIT ----
 window.onload = function() {
   initFirebase();
+  if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(function(err) {
+    console.error('Service worker registration failed:', err);
+  });
+}
   checkChurchPrompt();
   // Enable Notifications button (iOS requires user interaction)
 var enableRow = document.getElementById('enableNotificationsRow');
