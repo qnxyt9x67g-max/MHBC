@@ -2725,7 +2725,12 @@ if (mainInput) {
   if (cpEyeConfirm) cpEyeConfirm.addEventListener('click', function() { toggleVisible('cg-cp-confirm', this); });
 
   var sendBtn = document.getElementById('cg-send-btn');
-  if (sendBtn) sendBtn.addEventListener('click', function() { unlockAudio(); sendMessage(); });
+if (sendBtn) {
+  sendBtn.addEventListener('click', function() {
+    unlockAudio();
+    sendMessage();
+  });
+}
 
   var replyCancel = document.getElementById('cg-reply-cancel');
   if (replyCancel) replyCancel.addEventListener('click', clearReply);
@@ -2737,7 +2742,14 @@ if (mainInput) {
   if (eyePin) eyePin.addEventListener('click', function() { toggleVisible('cg-user-pin', this); });
 
   var msgInput = document.getElementById('cg-msg-input');
-  if (msgInput) msgInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') sendMessage(); });
+if (msgInput) {
+  msgInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      unlockAudio();
+      sendMessage();
+    }
+  });
+}
 
   var locationCard = document.getElementById('location-card');
   if (locationCard) locationCard.addEventListener('click', function() {
