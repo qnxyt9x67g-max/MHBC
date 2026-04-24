@@ -1576,6 +1576,7 @@ renderItems.forEach(function(item, index) {
   var itemTime = getMessageTime(item.msg);
 
   if (
+  state.showNewMessageDivider &&
   newMessageBoundaryTs > 0 &&
   !newMessageDividerInserted &&
   itemTime > newMessageBoundaryTs &&
