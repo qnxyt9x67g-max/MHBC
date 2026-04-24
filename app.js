@@ -1047,6 +1047,7 @@ function sendInlineReply(parentId) {
   };
 
   db.collection('groups').doc(currentGroup).collection('messages').add(msgData).then(function() {
+  playSendSound();
   suppressAutoScrollUntil = Date.now() + 2000;
   clearReply();
 
