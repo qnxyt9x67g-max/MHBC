@@ -377,6 +377,7 @@ function unlockAudio() {
 }
 
 function playNotificationSound() {
+  unlockAudio();
   if (!audioCtx) return;
   try {
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -390,7 +391,9 @@ function playNotificationSound() {
   } catch(e) {}
 }
 function playSendSound() {
+  unlockAudio();
   if (!audioCtx) return;
+
   try {
     if (audioCtx.state === 'suspended') audioCtx.resume();
 
