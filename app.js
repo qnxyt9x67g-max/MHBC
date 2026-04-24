@@ -835,6 +835,20 @@ function setLastOpenedTimestamp(groupId) {
   if (!groupId) return;
   localStorage.setItem(getLastOpenedKey(groupId), String(Date.now()));
 }
+function refreshCurrentMembersBadge() {
+  var membersBadge = document.getElementById('members-badge');
+  if (!membersBadge || !currentGroup) return;
+
+  var currentPending = pendingCountsByGroup[currentGroup] || 0;
+
+  if (currentPending > 0) {
+    membersBadge.textContent = currentPending > 99 ? '99+' : String(currentPending);
+    membersBadge.style.display = 'flex';
+  } else {
+    membersBadge.style.display = 'none';
+    membersBadge.textContent = '';
+  }
+}
 function enterChat() {
   if (
   localStorage.getItem('care_notifs') !== 'yes' &&
