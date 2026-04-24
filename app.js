@@ -1909,25 +1909,35 @@ function leaveChat() {
 function markAsRead() {
   if (!currentUID || !currentGroup) return;
 
+  setUnreadCount(currentGroup, 0);
+
   const userRef = db.collection('users').doc(currentUID);
 
   userRef.get().then(doc => {
     if (!doc.exists) return;
 
-    let data = doc.data();
+    let data = doc.data() || {};
     let unread = data.unread || {};
+    let pending = data.pending || {};
 
     unread[currentGroup] = 0;
 
     let totalUnread = 0;
-    Object.values(unread).forEach(v => totalUnread += v);
+    Object.values(unread).forEach(v => totalUnread += Number(v) || 0);
 
-    userRef.update({
+    let totalPending = 0;
+    Object.values(pending).forEach(v => totalPending += Number(v) || 0);
+
+    let badgeTotal = totalUnread + totalPending;
+
+    userRef.set({
       unread: unread,
-      totalUnread: totalUnread
-    });
+      totalUnread: totalUnread,
+      totalPending: totalPending,
+      badgeTotal: badgeTotal
+    }, { merge: true });
 
-    updateAppBadge(totalUnread);
+    updateAppBadge(badgeTotal);
   });
 }
 
