@@ -924,10 +924,7 @@ if (mb) {
   setPendingCount(currentGroup, pendingCountsByGroup[currentGroup] || 0);
 }
   refreshCurrentMembersBadge();
-  var messagesEl = document.getElementById('cg-messages');
-if (messagesEl) {
-  messagesEl.style.visibility = 'hidden';
-}
+  
 
 showCGScreen('chat');
 loadMessages(true);
@@ -1503,7 +1500,8 @@ function renderCurrentRoomMessages(allowAutoScroll) {
 
   if (!state.orderedIds.length) {
     messagesEl.innerHTML = '<div class="cg-no-msgs">No messages yet. Say hello! 👋</div>';
-    return;
+messagesEl.style.visibility = 'visible';
+return;
   }
 
   var allMessages = state.orderedIds.map(function(id) {
