@@ -1187,6 +1187,8 @@ function editMessage(msgId) {
         edited: true,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(function() {
+        playSendSound();
+
         var state = getCurrentRoomState();
 
         if (state.messagesById[msgId]) {
