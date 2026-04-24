@@ -44,7 +44,22 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request))
+    fetch(e.request)
+      .then(response => {
+        var copy = response.clone();
+
+        caches.open(CACHE).then(cache => {
+          if (
+            e.request.method === 'GET' &&
+            e.request.url.startsWith(self.location.origin)
+          ) {
+            cache.put(e.request, copy);
+          }
+        });
+
+        return response;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
 
