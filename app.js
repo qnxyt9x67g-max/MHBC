@@ -2363,10 +2363,13 @@ function restoreCachedMessage(raw) {
 }
 
 function recomputeRoomStateBounds(state) {
+  var boundary = state.newMessageBoundaryTs || 0;
+
   if (!state.orderedIds.length) {
     state.newestTimestamp = 0;
     state.oldestTimestamp = 0;
     state.newestUpdatedAt = 0;
+    state.newMessageBoundaryTs = boundary;
     return;
   }
 
@@ -2381,7 +2384,9 @@ function recomputeRoomStateBounds(state) {
     var updated = getUpdatedTime(state.messagesById[id]);
     if (updated > maxUpdatedAt) maxUpdatedAt = updated;
   });
+
   state.newestUpdatedAt = maxUpdatedAt;
+  state.newMessageBoundaryTs = boundary;
 }
 
 function sortRoomStateIds(state) {
