@@ -148,16 +148,31 @@ function listenForBadgeUpdates() {
 
       var data = doc.data() || {};
       var unreadMap = data.unread || {};
-      var total = data.totalUnread || 0;
+      var pendingMap = data.pending || {};
+      var totalUnread = data.totalUnread || 0;
+      var totalPending = data.totalPending || 0;
+      var total = data.badgeTotal != null
+        ? data.badgeTotal
+        : totalUnread + totalPending;
 
       // clear all known room badges first
       ['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(groupId) {
         unreadCountsByGroup[groupId] = 0;
+        pendingCountsByGroup[groupId] = 0;
       });
 
-      // rebuild room badges from unread map
+      // rebuild room unread badges from unread map
       Object.keys(unreadMap).forEach(function(groupId) {
-        unreadCountsByGroup[groupId] = Math.max(0, unreadMap[groupId] || 0);
+        if (groupId && groupId !== 'null') {
+          unreadCountsByGroup[groupId] = Math.max(0, unreadMap[groupId] || 0);
+        }
+      });
+
+      // rebuild pending/admin badges from pending map
+      Object.keys(pendingMap).forEach(function(groupId) {
+        if (groupId && groupId !== 'null') {
+          pendingCountsByGroup[groupId] = Math.max(0, pendingMap[groupId] || 0);
+        }
       });
 
       // update each room badge
@@ -178,7 +193,21 @@ function listenForBadgeUpdates() {
         }
       });
 
-      // update care groups nav badge
+      // update Members button badge for current room
+      var membersBadge = document.getElementById('members-badge');
+      if (membersBadge && currentGroup) {
+        var currentPending = pendingCountsByGroup[currentGroup] || 0;
+
+        if (currentPending > 0) {
+          membersBadge.textContent = currentPending > 99 ? '99+' : String(currentPending);
+          membersBadge.style.display = 'flex';
+        } else {
+          membersBadge.style.display = 'none';
+          membersBadge.textContent = '';
+        }
+      }
+
+      // update Care Groups nav badge
       unreadCount = total;
       var navBadge = document.getElementById('nav-badge-care');
       if (navBadge) {
