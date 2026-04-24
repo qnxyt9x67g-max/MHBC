@@ -1685,13 +1685,10 @@ function loadMessages(scrollOnOpen) {
       refreshHasOlderMessages();
       attachRecentMessagesListener();
     })
-    .catch(function() {
-      .catch(function(err) {
-  console.error('LOAD MESSAGES FAILED:', err);
-  messagesEl.innerHTML = '<div class="cg-no-msgs">Unable to load messages right now.<br>' + err.message + '</div>';
-  messagesEl.style.visibility = 'visible';
-});
-messagesEl.style.visibility = 'visible';
+    .catch(function(err) {
+      console.error('LOAD MESSAGES FAILED:', err);
+      messagesEl.innerHTML = '<div class="cg-no-msgs">Unable to load messages right now.<br>' + err.message + '</div>';
+      messagesEl.style.visibility = 'visible';
     });
 }
 
