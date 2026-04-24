@@ -1038,6 +1038,7 @@ function sendInlineReply(parentId) {
   if (!text) return;
 
   input.value = '';
+  playSendSound();
 
     var nowTs = firebase.firestore.FieldValue.serverTimestamp();
 
@@ -1055,7 +1056,7 @@ function sendInlineReply(parentId) {
   };
 
   db.collection('groups').doc(currentGroup).collection('messages').add(msgData).then(function() {
-  playSendSound();
+  
   suppressAutoScrollUntil = Date.now() + 2000;
   clearReply();
 
@@ -1835,6 +1836,7 @@ function sendMessage() {
   var text = input.value.trim();
   if (!text || !db || !currentUID) return;
   input.value = '';
+  playSendSound();
 
   var nowTs = firebase.firestore.FieldValue.serverTimestamp();
 
@@ -1850,7 +1852,7 @@ function sendMessage() {
   };
 
   db.collection('groups').doc(currentGroup).collection('messages').add(msgData).then(function() {
-  playSendSound();
+  
 
   var messagesEl = document.getElementById('cg-messages');
   if (messagesEl) {
