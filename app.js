@@ -1570,10 +1570,11 @@ renderItems.forEach(function(item, index) {
   var itemTime = getMessageTime(item.msg);
 
   if (
-    newMessageBoundaryTs > 0 &&
-    !newMessageDividerInserted &&
-    itemTime > newMessageBoundaryTs
-  ) {
+  newMessageBoundaryTs > 0 &&
+  !newMessageDividerInserted &&
+  itemTime > newMessageBoundaryTs &&
+  !isMyMessage(item.msg)
+) {
     messagesEl.appendChild(createNewMessageDivider());
     newMessageDividerInserted = true;
   }
