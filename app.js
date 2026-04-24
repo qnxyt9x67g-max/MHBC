@@ -917,6 +917,10 @@ if (messagesEl) {
 showCGScreen('chat');
 loadMessages(true);
 markAsRead();
+
+setTimeout(function() {
+  setLastOpenedTimestamp(currentGroup);
+}, 1500);
 }
 
 // ---- UNREAD WATCHER ----
