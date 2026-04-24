@@ -389,7 +389,27 @@ function playNotificationSound() {
     osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.4);
   } catch(e) {}
 }
+function playSendSound() {
+  if (!audioCtx) return;
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
 
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.frequency.value = 760;
+    osc.type = 'sine';
+
+    gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.16);
+
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.16);
+  } catch(e) {}
+}
 // ---- BADGES ----
 // ---- BADGES ----
 
@@ -1785,13 +1805,15 @@ function sendMessage() {
   };
 
   db.collection('groups').doc(currentGroup).collection('messages').add(msgData).then(function() {
-    var messagesEl = document.getElementById('cg-messages');
-    if (messagesEl) {
-      setTimeout(function() {
-        window.scrollTo(0, document.body.scrollHeight);
-      }, 300);
-    }
-  });
+  playSendSound();
+
+  var messagesEl = document.getElementById('cg-messages');
+  if (messagesEl) {
+    setTimeout(function() {
+      window.scrollTo(0, document.body.scrollHeight);
+    }, 300);
+  }
+});
 }
 
 function leaveChat() {
