@@ -821,7 +821,20 @@ enterChat();
   showCGScreen('select');
 });
 }
+function getLastOpenedKey(groupId) {
+  return 'mhbc_last_opened_' + groupId;
+}
 
+function getLastOpenedTimestamp(groupId) {
+  var raw = localStorage.getItem(getLastOpenedKey(groupId));
+  var value = parseInt(raw, 10);
+  return isNaN(value) ? 0 : value;
+}
+
+function setLastOpenedTimestamp(groupId) {
+  if (!groupId) return;
+  localStorage.setItem(getLastOpenedKey(groupId), String(Date.now()));
+}
 function enterChat() {
   if (
   localStorage.getItem('care_notifs') !== 'yes' &&
@@ -869,8 +882,9 @@ function enterChat() {
   }, 1000);
 }
   roomMessageStateByGroup[currentGroup] = getRoomMessageCache(currentGroup);
-  roomMessageStateByGroup[currentGroup].newMessageBoundaryTs =
-  roomMessageStateByGroup[currentGroup].newestTimestamp || 0;
+
+var previousOpenedTs = getLastOpenedTimestamp(currentGroup);
+roomMessageStateByGroup[currentGroup].newMessageBoundaryTs = previousOpenedTs || 0;
   currentMessageLimit = MESSAGE_PAGE_SIZE;
   viewedOriginalMessagesByGroup[currentGroup] = {};
   var mainTitle = document.getElementById('cg-main-title');
