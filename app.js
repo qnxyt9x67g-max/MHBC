@@ -2297,7 +2297,8 @@ function createEmptyRoomMessageState() {
     newestTimestamp: 0,
     oldestTimestamp: 0,
     newestUpdatedAt: 0,
-    hasOlderMessages: false
+    hasOlderMessages: false,
+    newMessageBoundaryTs: 0
   };
 }
 
