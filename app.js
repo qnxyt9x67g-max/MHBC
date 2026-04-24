@@ -2441,9 +2441,12 @@ function getRoomMessageCache(groupId) {
       state.orderedIds.push(msg._id);
     });
 
-    sortRoomStateIds(state);
-    recomputeRoomStateBounds(state);
-    return state;
+    state.orderedIds.sort(function(a, b) {
+  return getMessageTime(state.messagesById[a]) - getMessageTime(state.messagesById[b]);
+});
+
+recomputeRoomStateBounds(state);
+return state;
   } catch (e) {
     return createEmptyRoomMessageState();
   }
@@ -2488,8 +2491,11 @@ function mergeMessagesIntoRoomState(state, messages) {
     }
   });
 
-  sortRoomStateIds(state);
-  recomputeRoomStateBounds(state);
+  state.orderedIds.sort(function(a, b) {
+  return getMessageTime(state.messagesById[a]) - getMessageTime(state.messagesById[b]);
+});
+
+recomputeRoomStateBounds(state);
 }
 
 function removeMessageFromRoomState(state, messageId) {
