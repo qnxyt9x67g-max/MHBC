@@ -1642,8 +1642,17 @@ function attachRecentMessagesListener() {
       });
 
       if (changed) {
-        saveRoomMessageCache(currentGroup, state);
-        renderCurrentRoomMessages(isInChat());
+  if (isInChat()) {
+    state.newMessageBoundaryTs = Date.now();
+  }
+
+  saveRoomMessageCache(currentGroup, state);
+  renderCurrentRoomMessages(isInChat());
+
+  if (incomingFromOtherPerson) {
+    playNotificationSound();
+  }
+}
 
         if (incomingFromOtherPerson) {
           playNotificationSound();
