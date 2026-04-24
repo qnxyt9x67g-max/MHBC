@@ -923,6 +923,7 @@ if (mb) {
   mb.style.display = 'block';
   setPendingCount(currentGroup, pendingCountsByGroup[currentGroup] || 0);
 }
+  refreshCurrentMembersBadge();
   var messagesEl = document.getElementById('cg-messages');
 if (messagesEl) {
   messagesEl.style.visibility = 'hidden';
