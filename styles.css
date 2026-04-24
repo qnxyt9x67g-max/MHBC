@@ -1497,3 +1497,16 @@ body {
 .quick-btn[data-action="watch"] span:last-child {
   transform: translateY(4px);
 }
+.cg-new-message-divider {
+  margin: 14px 12px;
+  padding: 8px 10px;
+  border-top: 1px solid rgba(201,168,76,0.35);
+  border-bottom: 1px solid rgba(201,168,76,0.35);
+  color: #c9a84c;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.04em;
+  background: rgba(201,168,76,0.07);
+  border-radius: 8px;
+}
