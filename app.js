@@ -2426,16 +2426,6 @@ function recomputeRoomStateBounds(state) {
   state.newMessageBoundaryTs = boundary;
 }
 
-function sortRoomStateIds(state) {
-  state.orderedIds.sort(function(a, b) {
-    var aMsg = state.messagesById[a];
-    var bMsg = state.messagesById[b];
-    var diff = getMessageTime(aMsg) - getMessageTime(bMsg);
-    if (diff !== 0) return diff;
-    return a.localeCompare(b);
-  });
-}
-
 function getRoomMessageCache(groupId) {
   var raw = localStorage.getItem(getRoomCacheKey(groupId));
   if (!raw) return createEmptyRoomMessageState();
