@@ -1687,6 +1687,7 @@ function loadMessages(scrollOnOpen) {
     })
     .catch(function() {
       messagesEl.innerHTML = '<div class="cg-no-msgs">Unable to load messages right now.</div>';
+messagesEl.style.visibility = 'visible';
     });
 }
 
