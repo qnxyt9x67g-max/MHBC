@@ -1649,10 +1649,6 @@ function attachRecentMessagesListener() {
       });
 
       if (changed) {
-  if (isInChat()) {
-    state.newMessageBoundaryTs = Date.now();
-  }
-
   saveRoomMessageCache(currentGroup, state);
   renderCurrentRoomMessages(isInChat());
 
