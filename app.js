@@ -1653,11 +1653,6 @@ function attachRecentMessagesListener() {
     playNotificationSound();
   }
 }
-
-        if (incomingFromOtherPerson) {
-          playNotificationSound();
-        }
-      }
     });
 }
 // ---- LOAD MESSAGES ----
