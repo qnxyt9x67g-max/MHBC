@@ -1524,15 +1524,28 @@ function renderCurrentRoomMessages(allowAutoScroll) {
     messagesEl.appendChild(olderWrap);
   }
 
-  renderItems.forEach(function(item, index) {
-    var showDivider = index < renderItems.length - 1;
+  var newMessageDividerInserted = false;
+var newMessageBoundaryTs = state.newMessageBoundaryTs || 0;
 
-    if (item.type === 'thread') {
-      renderThread(item.msg, item.replies, messagesEl, showDivider);
-    } else if (item.type === 'missingParentReply') {
-      renderMissingParentReply(item.msg, messagesEl, showDivider);
-    }
-  });
+renderItems.forEach(function(item, index) {
+  var showDivider = index < renderItems.length - 1;
+  var itemTime = getMessageTime(item.msg);
+
+  if (
+    newMessageBoundaryTs > 0 &&
+    !newMessageDividerInserted &&
+    itemTime > newMessageBoundaryTs
+  ) {
+    messagesEl.appendChild(createNewMessageDivider());
+    newMessageDividerInserted = true;
+  }
+
+  if (item.type === 'thread') {
+    renderThread(item.msg, item.replies, messagesEl, showDivider);
+  } else if (item.type === 'missingParentReply') {
+    renderMissingParentReply(item.msg, messagesEl, showDivider);
+  }
+});
 
     requestAnimationFrame(function() {
   if (!allowAutoScroll) {
