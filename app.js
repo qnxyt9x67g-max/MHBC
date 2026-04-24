@@ -898,7 +898,13 @@ function enterChat() {
   roomMessageStateByGroup[currentGroup] = getRoomMessageCache(currentGroup);
 
 var previousOpenedTs = getLastOpenedTimestamp(currentGroup);
-roomMessageStateByGroup[currentGroup].newMessageBoundaryTs = previousOpenedTs || 0;
+var hadUnreadAtEntry = (unreadCountsByGroup[currentGroup] || 0) > 0;
+
+roomMessageStateByGroup[currentGroup].newMessageBoundaryTs =
+  hadUnreadAtEntry ? (previousOpenedTs || 0) : 0;
+
+roomMessageStateByGroup[currentGroup].showNewMessageDivider =
+  hadUnreadAtEntry && previousOpenedTs > 0;
   currentMessageLimit = MESSAGE_PAGE_SIZE;
   viewedOriginalMessagesByGroup[currentGroup] = {};
   var mainTitle = document.getElementById('cg-main-title');
