@@ -866,6 +866,8 @@ function enterChat() {
   }, 1000);
 }
   roomMessageStateByGroup[currentGroup] = getRoomMessageCache(currentGroup);
+  roomMessageStateByGroup[currentGroup].newMessageBoundaryTs =
+  roomMessageStateByGroup[currentGroup].newestTimestamp || 0;
   currentMessageLimit = MESSAGE_PAGE_SIZE;
   viewedOriginalMessagesByGroup[currentGroup] = {};
   var mainTitle = document.getElementById('cg-main-title');
