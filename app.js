@@ -1579,8 +1579,7 @@ renderItems.forEach(function(item, index) {
   state.showNewMessageDivider &&
   newMessageBoundaryTs > 0 &&
   !newMessageDividerInserted &&
-  itemTime > newMessageBoundaryTs &&
-  !isMyMessage(item.msg)
+  itemTime > newMessageBoundaryTs
 ) {
     messagesEl.appendChild(createNewMessageDivider());
     newMessageDividerInserted = true;
