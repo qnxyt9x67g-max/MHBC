@@ -891,7 +891,10 @@ if (prayerBtn) {
 }
 
 var mb = document.getElementById('cg-members-btn');
-if (mb) mb.style.display = 'block';
+if (mb) {
+  mb.style.display = 'block';
+  setPendingCount(currentGroup, pendingCountsByGroup[currentGroup] || 0);
+}
   var messagesEl = document.getElementById('cg-messages');
 if (messagesEl) {
   messagesEl.style.visibility = 'hidden';
