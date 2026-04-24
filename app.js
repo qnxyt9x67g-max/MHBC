@@ -1560,9 +1560,21 @@ function attachRecentMessagesListener() {
     .orderBy('updatedAt', 'asc')
     .onSnapshot(function(snapshot) {
       var changed = false;
+      var incomingFromOtherPerson = false;
 
       snapshot.docChanges().forEach(function(change) {
         var msg = normalizeFirestoreMessage(change.doc);
+
+        if (
+          change.type === 'added' &&
+          isInChat() &&
+          currentGroup &&
+          msg.authorUid &&
+          msg.authorUid !== currentUID
+        ) {
+          incomingFromOtherPerson = true;
+        }
+
         mergeMessagesIntoRoomState(state, [msg]);
         changed = true;
       });
@@ -1571,6 +1583,9 @@ function attachRecentMessagesListener() {
         saveRoomMessageCache(currentGroup, state);
         renderCurrentRoomMessages(isInChat());
 
+        if (incomingFromOtherPerson) {
+          playNotificationSound();
+        }
       }
     });
 }
