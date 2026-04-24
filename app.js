@@ -1449,6 +1449,12 @@ function renderMissingParentReply(msg, container, showDivider) {
 
   container.appendChild(wrap);
 }
+function createNewMessageDivider() {
+  var divider = document.createElement('div');
+  divider.className = 'cg-new-message-divider';
+  divider.textContent = 'New messages since you were last here';
+  return divider;
+}
 function renderCurrentRoomMessages(allowAutoScroll) {
   var messagesEl = document.getElementById('cg-messages');
   var state = getCurrentRoomState();
