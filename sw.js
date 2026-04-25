@@ -13,7 +13,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // MHBC Service Worker — caching + background notifications
-const CACHE = 'mhbc-v2';
+const CACHE = 'mhbc-v3';
 
 const ASSETS = [
   './',
@@ -63,21 +63,23 @@ self.addEventListener('fetch', e => {
   );
 });
 
-messaging.onBackgroundMessage(function(payload) {
-  const title = (payload.notification && payload.notification.title) || "MHBC";
-  const badgeCount = parseInt((payload.data && payload.data.badge) || "0", 10) || 0;
+function updateClosedAppBadge(badgeCount) {
+  badgeCount = parseInt(badgeCount || "0", 10) || 0;
 
-  const options = {
-    body: (payload.notification && payload.notification.body) || "",
-    icon: "https://maxwellhillbaptistchurch.com/wp-content/uploads/2024/10/MaxwellHill-Baptist-Favicon.png",
-    badge: "https://maxwellhillbaptistchurch.com/wp-content/uploads/2024/10/MaxwellHill-Baptist-Favicon.png",
-    data: payload.data || {}
-  };
-
-
-  if ('setAppBadge' in self.registration) {
-    self.registration.setAppBadge(badgeCount).catch(function() {});
-  } else if (badgeCount === 0 && 'clearAppBadge' in self.registration) {
-    self.registration.clearAppBadge().catch(function() {});
+  if (badgeCount > 0 && 'setAppBadge' in self.registration) {
+    return self.registration.setAppBadge(badgeCount).catch(function() {});
   }
+
+  if (badgeCount <= 0 && 'clearAppBadge' in self.registration) {
+    return self.registration.clearAppBadge().catch(function() {});
+  }
+
+  return Promise.resolve();
+}
+
+messaging.onBackgroundMessage(function(payload) {
+  const badgeCount = (payload.data && payload.data.badge) || "0";
+
+  // Update iPhone/Mac installed-app badge while app is closed/backgrounded.
+  return updateClosedAppBadge(badgeCount);
 });
