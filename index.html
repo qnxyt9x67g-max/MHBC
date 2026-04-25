@@ -376,6 +376,10 @@
 
       <!-- SCREEN 5: MEMBERS -->
       <div id="cg-members-screen" style="display:none;">
+        <button id="church-alert-btn" class="cg-admin-alert-btn" style="display:none;">
+          🚨 Send Church Alert
+        </button>
+
         <div class="cg-members-header" style="display:flex; justify-content:space-between;">
   <button class="cg-back-btn" id="cg-back-to-chat-members">← Back to Chat</button>
   <button class="cg-change-pw-btn" id="cg-change-pw-btn">Change<br/>Password</button>
@@ -538,6 +542,18 @@
       <button class="cg-send-btn" id="cg-send-btn">Send</button>
     </div>
   </div>
+  <div id="church-alert-modal" class="church-alert-modal" style="display:none;">
+  <div class="church-alert-box">
+    <h3>Send Church Alert</h3>
+
+    <input id="church-alert-title" type="text" placeholder="Alert title">
+
+    <textarea id="church-alert-body" placeholder="Alert message"></textarea>
+
+    <button id="church-alert-send">Send Alert</button>
+    <button id="church-alert-cancel">Cancel</button>
+  </div>
+</div>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
