@@ -1916,6 +1916,14 @@ function leaveChat() {
 function markAsRead() {
   if (!currentUID || !currentGroup) return;
 
+  // 👇 LOCAL guard (prevents unnecessary writes while actively in chat)
+  var localUnread = unreadCountsByGroup[currentGroup] || 0;
+
+  if (localUnread <= 0) {
+    setUnreadCount(currentGroup, 0);
+    return;
+  }
+
   setUnreadCount(currentGroup, 0);
 
   const userRef = db.collection('users').doc(currentUID);
@@ -1926,6 +1934,11 @@ function markAsRead() {
     let data = doc.data() || {};
     let unread = data.unread || {};
     let pending = data.pending || {};
+
+    // 👇 FIRESTORE guard (prevents duplicate writes)
+    if ((Number(unread[currentGroup]) || 0) <= 0) {
+      return;
+    }
 
     unread[currentGroup] = 0;
 
