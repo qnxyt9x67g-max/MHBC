@@ -1960,11 +1960,16 @@ function markAsRead() {
     updateAppBadge(badgeTotal);
   });
 }
+function showChurchAlertButtonIfAdmin() {
+  var btn = document.getElementById('church-alert-btn');
+  if (!btn) return;
 
+  btn.style.display = currentUser && currentUser.isAdmin ? 'block' : 'none';
+}
 // ---- MEMBERS PANEL ----
 function showMembersPanel() {
   showCGScreen('members');
-
+showChurchAlertButtonIfAdmin();
   window.scrollTo(0, 0);
 
   var forceRefresh = currentUser && currentUser.isAdmin;
