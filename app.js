@@ -2814,34 +2814,34 @@ if (msgInput) {
   setInterval(checkLiveBadge, 60000);
   tryGenerateQR();
 
-  auth.onAuthStateChanged(function(user) {
+    auth.onAuthStateChanged(function(user) {
     if (user) {
-  authReady = true;
-  currentUID = user.uid;
+      authReady = true;
+      currentUID = user.uid;
 
-  db.collection('users').doc(currentUID).set({
-    uid: currentUID
-  }, { merge: true });
+      db.collection('users').doc(currentUID).set({
+        uid: currentUID
+      }, { merge: true });
 
-  listenForBadgeUpdates();
+      listenForBadgeUpdates();
 
-  if (Notification.permission === 'granted') {
-    initMessaging();
-  }
+      if (Notification.permission === 'granted') {
+        initMessaging();
+      }
 
-  var lastGroup = getLastGroup();
-var savedUser = lastGroup ? getSavedUser(lastGroup) : null;
+      var lastGroup = getLastGroup();
+      var savedUser = lastGroup ? getSavedUser(lastGroup) : null;
 
-if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) {
-  currentGroup = savedUser.group;
-  currentGroupName = savedUser.groupName;
-  currentUser = savedUser;
-  currentMemberKey = savedUser.normalizedName;
-}
+      if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) {
+        currentGroup = savedUser.group;
+        currentGroupName = savedUser.groupName;
+        currentUser = savedUser;
+        currentMemberKey = savedUser.normalizedName;
+      }
 
-startAllUnreadWatchers();
-startAllPendingWatchers();
-      
+      startAllUnreadWatchers();
+      startAllPendingWatchers();
+
     } else {
       authReady = false;
       auth.signInAnonymously().catch(function(err) {
@@ -2849,4 +2849,47 @@ startAllPendingWatchers();
       });
     }
   });
+
+  var alertBtn = document.getElementById('church-alert-btn');
+  if (alertBtn) {
+    alertBtn.addEventListener('click', function() {
+      document.getElementById('church-alert-modal').style.display = 'flex';
+    });
+  }
+
+  var alertCancel = document.getElementById('church-alert-cancel');
+  if (alertCancel) {
+    alertCancel.addEventListener('click', function() {
+      document.getElementById('church-alert-modal').style.display = 'none';
+    });
+  }
+
+  var alertSend = document.getElementById('church-alert-send');
+  if (alertSend) {
+    alertSend.addEventListener('click', function() {
+      var title = document.getElementById('church-alert-title').value.trim();
+      var body = document.getElementById('church-alert-body').value.trim();
+
+      if (!title || !body) {
+        alert('Please enter both a title and message.');
+        return;
+      }
+
+      db.collection('churchAlerts').add({
+        title: title,
+        body: body,
+        createdBy: currentUID,
+        createdByName: currentUser ? currentUser.name : '',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function() {
+        document.getElementById('church-alert-title').value = '';
+        document.getElementById('church-alert-body').value = '';
+        document.getElementById('church-alert-modal').style.display = 'none';
+        alert('Church alert sent.');
+      }).catch(function(err) {
+        alert('Alert failed: ' + err.message);
+      });
+    });
+  }
+
 };
