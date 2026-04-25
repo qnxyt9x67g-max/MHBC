@@ -1510,3 +1510,63 @@ body {
   background: rgba(201,168,76,0.07);
   border-radius: 8px;
 }
+.cg-admin-alert-btn {
+  margin: 14px 30px 18px;
+  padding: 12px 16px;
+  border: 1px solid #c9a84c;
+  border-radius: 10px;
+  background: rgba(201,168,76,0.12);
+  color: #c9a84c;
+  font-weight: 800;
+  font-size: 15px;
+  width: calc(100% - 60px);
+}
+
+.church-alert-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.6);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.church-alert-box {
+  width: 100%;
+  max-width: 420px;
+  background: #10203a;
+  border: 1px solid #c9a84c;
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.church-alert-box h3 {
+  color: #c9a84c;
+  margin-top: 0;
+}
+
+.church-alert-box input,
+.church-alert-box textarea {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #c9a84c;
+  background: #0a1628;
+  color: white;
+  font-size: 16px;
+}
+
+.church-alert-box textarea {
+  min-height: 110px;
+}
+
+.church-alert-box button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  border-radius: 8px;
+  font-weight: 800;
+}
