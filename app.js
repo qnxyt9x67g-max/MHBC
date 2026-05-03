@@ -1969,13 +1969,17 @@ function showChurchAlertButtonIfAdmin() {
 // ---- MEMBERS PANEL ----
 function showMembersPanel() {
   showCGScreen('members');
-showChurchAlertButtonIfAdmin();
+  showChurchAlertButtonIfAdmin();
   window.scrollTo(0, 0);
 
-  var forceRefresh = currentUser && currentUser.isAdmin;
+  // Clear the pending badge when admin opens members panel
+  var membersBadge = document.getElementById('members-badge');
+  if (membersBadge) { membersBadge.style.display = 'none'; membersBadge.textContent = ''; }
 
+  var forceRefresh = currentUser && currentUser.isAdmin;
   loadMembersList(forceRefresh);
 }
+
 function renderMembersListFromData(members) {
   var listEl = document.getElementById('members-list');
   if (!listEl) return;
