@@ -1972,13 +1972,20 @@ function showMembersPanel() {
   showChurchAlertButtonIfAdmin();
   window.scrollTo(0, 0);
 
-  // Clear the pending badge when admin opens members panel
   var membersBadge = document.getElementById('members-badge');
   if (membersBadge) { membersBadge.style.display = 'none'; membersBadge.textContent = ''; }
+
+  if (currentUID && currentUser && currentUser.isAdmin) {
+    db.collection('users').doc(currentUID).set(
+      { pending: {}, totalPending: 0 },
+      { merge: true }
+    );
+  }
 
   var forceRefresh = currentUser && currentUser.isAdmin;
   loadMembersList(forceRefresh);
 }
+
 
 function renderMembersListFromData(members) {
   var listEl = document.getElementById('members-list');
