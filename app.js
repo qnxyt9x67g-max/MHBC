@@ -452,7 +452,7 @@ function requestBadgePermission() {
 function refreshCareNavBadge() {
   var navBadge = document.getElementById('nav-badge-care');
   var total = 0;
-  var pendingSeenAt = (currentUser && currentUser.pendingAcknowledgedAt) || 0;
+  var pendingSeenAt = toMillis(currentUser && currentUser.pendingAcknowledgedAt);
 
   Object.keys(unreadCountsByGroup).forEach(function(groupId) {
     var unread = unreadCountsByGroup[groupId] || 0;
