@@ -139,6 +139,12 @@ function initFirebase() {
   db = firebase.firestore();
   auth = firebase.auth();
 }
+function toMillis(ts) {
+  if (!ts) return 0;
+  if (typeof ts === 'number') return ts;
+  if (ts && typeof ts.toMillis === 'function') return ts.toMillis();
+  return 0;
+}
 function listenForBadgeUpdates() {
   if (!currentUID) return;
 
