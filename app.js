@@ -1985,18 +1985,21 @@ function showMembersPanel() {
   if (membersBadge) { membersBadge.style.display = 'none'; membersBadge.textContent = ''; }
 
   if (currentUID && currentUser && currentUser.isAdmin) {
-  var ackedNow = Date.now();
-  db.collection('users').doc(currentUID).set(
-    { pending: {}, totalPending: 0, pendingAcknowledgedAt: ackedNow },
-    { merge: true }
-  );
-  currentUser.pendingAcknowledgedAt = ackedNow; // 👈 this is what was missing
-}
-
+    var ackedNow = Date.now();
+    db.collection('users').doc(currentUID).set(
+      { pending: {}, totalPending: 0, pendingAcknowledgedAt: ackedNow },
+      { merge: true }
+    );
+    currentUser.pendingAcknowledgedAt = ackedNow;
+    ['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(gId) {
+      pendingCountsByGroup[gId] = 0;
+    });
+  }
 
   var forceRefresh = currentUser && currentUser.isAdmin;
   loadMembersList(forceRefresh);
 }
+
 
 
 function renderMembersListFromData(members) {
