@@ -525,7 +525,6 @@ function setPendingCount(groupId, count) {
 }
 
 
-
 function clearUnreadCount(groupId) {
   delete unreadCountsByGroup[groupId];
 
