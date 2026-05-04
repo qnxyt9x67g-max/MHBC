@@ -449,9 +449,11 @@ function requestBadgePermission() {
 function refreshCareNavBadge() {
   var navBadge = document.getElementById('nav-badge-care');
   var total = 0;
+  var pendingSeenAt = (currentUser && currentUser.pendingAcknowledgedAt) || 0;
+
   Object.keys(unreadCountsByGroup).forEach(function(groupId) {
     var unread = unreadCountsByGroup[groupId] || 0;
-    var pending = pendingCountsByGroup[groupId] || 0;
+    var pending = pendingSeenAt > 0 ? 0 : (pendingCountsByGroup[groupId] || 0);
     total += unread + pending;
   });
   unreadCount = total;
@@ -464,6 +466,7 @@ function refreshCareNavBadge() {
   }
   updateAppBadge(total);
 }
+
 
 
 function setUnreadCount(groupId, count) {
@@ -486,8 +489,10 @@ function setUnreadCount(groupId, count) {
 
 function setPendingCount(groupId, count) {
   pendingCountsByGroup[groupId] = Math.max(0, count || 0);
+  var pendingSeenAt = (currentUser && currentUser.pendingAcknowledgedAt) || 0;
+  var effectivePending = pendingSeenAt > 0 ? 0 : pendingCountsByGroup[groupId];
   var unread = unreadCountsByGroup[groupId] || 0;
-  var total = unread + pendingCountsByGroup[groupId];
+  var total = unread + effectivePending;
   var roomBadge = document.getElementById('badge-' + groupId);
   if (roomBadge) {
     if (total > 0) {
@@ -499,9 +504,8 @@ function setPendingCount(groupId, count) {
   }
   var membersBadge = document.getElementById('members-badge');
   if (membersBadge && groupId === currentGroup) {
-    var pending = pendingCountsByGroup[groupId] || 0;
-    if (pending > 0) {
-      membersBadge.textContent = pending > 99 ? '99+' : String(pending);
+    if (effectivePending > 0) {
+      membersBadge.textContent = effectivePending > 99 ? '99+' : String(effectivePending);
       membersBadge.style.display = 'flex';
     } else {
       membersBadge.style.display = 'none';
@@ -509,6 +513,7 @@ function setPendingCount(groupId, count) {
   }
   refreshCareNavBadge();
 }
+
 
 
 function clearUnreadCount(groupId) {
