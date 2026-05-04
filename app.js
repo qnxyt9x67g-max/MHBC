@@ -139,12 +139,6 @@ function initFirebase() {
   db = firebase.firestore();
   auth = firebase.auth();
 }
-function toMillis(ts) {
-  if (!ts) return 0;
-  if (typeof ts === 'number') return ts;
-  if (ts && typeof ts.toMillis === 'function') return ts.toMillis();
-  return 0;
-}
 function listenForBadgeUpdates() {
   if (!currentUID) return;
 
@@ -181,59 +175,62 @@ function listenForBadgeUpdates() {
         }
       });
 
-      // === Safe timestamp comparisons (used by all sections below) ===
-      var pendingSeenAt = toMillis(currentUser && currentUser.pendingAcknowledgedAt);
-      var pendingLastUpdatedAt = toMillis(data.pendingLastUpdatedAt);
-      var pendingIsAcknowledged = pendingLastUpdatedAt <= pendingSeenAt;
-
       // update each room badge
-      ['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(groupId) {
-        var roomBadge = document.getElementById('badge-' + groupId);
-        var unread = unreadCountsByGroup[groupId] || 0;
-        var pending = pendingIsAcknowledged ? 0 : (pendingCountsByGroup[groupId] || 0);
-        var roomTotal = unread + pending;
+var pendingSeenAt2 = (currentUser && currentUser.pendingAcknowledgedAt) || 0;
+var pendingLastUpdatedAt2 = data.pendingLastUpdatedAt || 0;
+var pendingIsAcknowledged = pendingLastUpdatedAt2 <= pendingSeenAt2;
 
-        if (roomBadge) {
-          if (roomTotal > 0) {
-            roomBadge.textContent = roomTotal > 99 ? '99+' : String(roomTotal);
-            roomBadge.style.display = 'flex';
-          } else {
-            roomBadge.style.display = 'none';
-            roomBadge.textContent = '';
-          }
-        }
-      });
+['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(groupId) {
+  var roomBadge = document.getElementById('badge-' + groupId);
+  var unread = unreadCountsByGroup[groupId] || 0;
+  var pending = pendingIsAcknowledged ? 0 : (pendingCountsByGroup[groupId] || 0);
+  var roomTotal = unread + pending;
+
+  if (roomBadge) {
+    if (roomTotal > 0) {
+      roomBadge.textContent = roomTotal > 99 ? '99+' : String(roomTotal);
+      roomBadge.style.display = 'flex';
+    } else {
+      roomBadge.style.display = 'none';
+      roomBadge.textContent = '';
+    }
+  }
+});
+
 
       // update Members button badge for current room
       var membersBadge = document.getElementById('members-badge');
-      if (membersBadge && currentGroup) {
-        var currentPending = pendingCountsByGroup[currentGroup] || 0;
+if (membersBadge && currentGroup) {
+  var currentPending = pendingCountsByGroup[currentGroup] || 0;
+  var pendingSeenAt = (currentUser && currentUser.pendingAcknowledgedAt) || 0;
+  var pendingLastUpdatedAt = (data.pendingLastUpdatedAt) || 0;
 
-        if (currentPending > 0 && pendingLastUpdatedAt > pendingSeenAt) {
-          membersBadge.textContent = currentPending > 99 ? '99+' : String(currentPending);
-          membersBadge.style.display = 'flex';
-        } else {
-          membersBadge.style.display = 'none';
-          membersBadge.textContent = '';
-        }
-      }
+  if (currentPending > 0 && pendingLastUpdatedAt > pendingSeenAt) {
+    membersBadge.textContent = currentPending > 99 ? '99+' : String(currentPending);
+    membersBadge.style.display = 'flex';
+  } else {
+    membersBadge.style.display = 'none';
+    membersBadge.textContent = '';
+  }
+}
 
-      // update Care Groups nav badge
-      var effectiveTotal = pendingIsAcknowledged ? totalUnread : total;
-      unreadCount = effectiveTotal;
-      var navBadge = document.getElementById('nav-badge-care');
-      if (navBadge) {
-        if (effectiveTotal > 0) {
-          navBadge.textContent = effectiveTotal > 99 ? '99+' : String(effectiveTotal);
-          navBadge.style.display = 'flex';
-        } else {
-          navBadge.style.display = 'none';
-          navBadge.textContent = '';
-        }
-      }
 
-      // update app icon badge
-      updateAppBadge(effectiveTotal);
+     // update Care Groups nav badge
+var effectiveTotal = pendingIsAcknowledged ? totalUnread : total;
+unreadCount = effectiveTotal;
+var navBadge = document.getElementById('nav-badge-care');
+if (navBadge) {
+  if (effectiveTotal > 0) {
+    navBadge.textContent = effectiveTotal > 99 ? '99+' : String(effectiveTotal);
+    navBadge.style.display = 'flex';
+  } else {
+    navBadge.style.display = 'none';
+    navBadge.textContent = '';
+  }
+}
+
+// update app icon badge
+updateAppBadge(effectiveTotal);
     });
 }
 // ==========================
@@ -452,7 +449,7 @@ function requestBadgePermission() {
 function refreshCareNavBadge() {
   var navBadge = document.getElementById('nav-badge-care');
   var total = 0;
-  var pendingSeenAt = toMillis(currentUser && currentUser.pendingAcknowledgedAt);
+  var pendingSeenAt = (currentUser && currentUser.pendingAcknowledgedAt) || 0;
 
   Object.keys(unreadCountsByGroup).forEach(function(groupId) {
     var unread = unreadCountsByGroup[groupId] || 0;
@@ -474,14 +471,11 @@ function refreshCareNavBadge() {
 
 function setUnreadCount(groupId, count) {
   unreadCountsByGroup[groupId] = Math.max(0, count || 0);
-  
   var roomBadge = document.getElementById('badge-' + groupId);
   if (roomBadge) {
     var unread = unreadCountsByGroup[groupId] || 0;
-    var pendingSeenAt = toMillis(currentUser && currentUser.pendingAcknowledgedAt);
-    var pending = pendingSeenAt > 0 ? 0 : (pendingCountsByGroup[groupId] || 0);
+    var pending = pendingCountsByGroup[groupId] || 0;
     var total = unread + pending;
-
     if (total > 0) {
       roomBadge.textContent = total > 99 ? '99+' : String(total);
       roomBadge.style.display = 'flex';
@@ -495,13 +489,10 @@ function setUnreadCount(groupId, count) {
 
 function setPendingCount(groupId, count) {
   pendingCountsByGroup[groupId] = Math.max(0, count || 0);
-  
-  var pendingSeenAt = toMillis(currentUser && currentUser.pendingAcknowledgedAt);
-  var effectivePending = pendingSeenAt > 0 ? 0 : (pendingCountsByGroup[groupId] || 0);
-  
+  var pendingSeenAt = (currentUser && currentUser.pendingAcknowledgedAt) || 0;
+  var effectivePending = pendingSeenAt > 0 ? 0 : pendingCountsByGroup[groupId];
   var unread = unreadCountsByGroup[groupId] || 0;
   var total = unread + effectivePending;
-  
   var roomBadge = document.getElementById('badge-' + groupId);
   if (roomBadge) {
     if (total > 0) {
@@ -511,7 +502,6 @@ function setPendingCount(groupId, count) {
       roomBadge.style.display = 'none';
     }
   }
-  
   var membersBadge = document.getElementById('members-badge');
   if (membersBadge && groupId === currentGroup) {
     if (effectivePending > 0) {
@@ -523,6 +513,7 @@ function setPendingCount(groupId, count) {
   }
   refreshCareNavBadge();
 }
+
 
 
 function clearUnreadCount(groupId) {
@@ -1996,27 +1987,27 @@ function showMembersPanel() {
   window.scrollTo(0, 0);
 
   var membersBadge = document.getElementById('members-badge');
-  if (membersBadge) { 
-    membersBadge.style.display = 'none'; 
-    membersBadge.textContent = ''; 
-  }
+  if (membersBadge) { membersBadge.style.display = 'none'; membersBadge.textContent = ''; }
 
   if (currentUID && currentUser && currentUser.isAdmin) {
-    const ackedNow = firebase.firestore.FieldValue.serverTimestamp();
+  var ackedNow = Date.now();
+  var updateObj = { 
+    pendingAcknowledgedAt: ackedNow,
+    'pending.c101': 0,
+    'pending.narthex': 0,
+    'pending.fellowship1': 0,
+    'pending.fellowship2': 0,
+    'pending.trac': 0,
+    totalPending: 0,
+    badgeTotal: 0
+  };
+  db.collection('users').doc(currentUID).update(updateObj);
+  currentUser.pendingAcknowledgedAt = ackedNow;
+  ['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(gId) {
+    pendingCountsByGroup[gId] = 0;
+  });
+}
 
-    db.collection('users').doc(currentUID).update({
-      pendingAcknowledgedAt: ackedNow
-    }).then(() => {
-      if (currentUser) currentUser.pendingAcknowledgedAt = Date.now();
-    }).catch(err => {
-      console.warn("Failed to acknowledge pending counts:", err);
-    });
-
-    // Clear local UI state only
-    ['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(gId) {
-      pendingCountsByGroup[gId] = 0;
-    });
-  }
 
   var forceRefresh = currentUser && currentUser.isAdmin;
   loadMembersList(forceRefresh);
