@@ -495,10 +495,13 @@ function setUnreadCount(groupId, count) {
 
 function setPendingCount(groupId, count) {
   pendingCountsByGroup[groupId] = Math.max(0, count || 0);
-  var pendingSeenAt = (currentUser && currentUser.pendingAcknowledgedAt) || 0;
-  var effectivePending = pendingSeenAt > 0 ? 0 : pendingCountsByGroup[groupId];
+  
+  var pendingSeenAt = toMillis(currentUser && currentUser.pendingAcknowledgedAt);
+  var effectivePending = pendingSeenAt > 0 ? 0 : (pendingCountsByGroup[groupId] || 0);
+  
   var unread = unreadCountsByGroup[groupId] || 0;
   var total = unread + effectivePending;
+  
   var roomBadge = document.getElementById('badge-' + groupId);
   if (roomBadge) {
     if (total > 0) {
@@ -508,6 +511,7 @@ function setPendingCount(groupId, count) {
       roomBadge.style.display = 'none';
     }
   }
+  
   var membersBadge = document.getElementById('members-badge');
   if (membersBadge && groupId === currentGroup) {
     if (effectivePending > 0) {
