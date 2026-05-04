@@ -181,62 +181,59 @@ function listenForBadgeUpdates() {
         }
       });
 
+      // === Safe timestamp comparisons (used by all sections below) ===
+      var pendingSeenAt = toMillis(currentUser && currentUser.pendingAcknowledgedAt);
+      var pendingLastUpdatedAt = toMillis(data.pendingLastUpdatedAt);
+      var pendingIsAcknowledged = pendingLastUpdatedAt <= pendingSeenAt;
+
       // update each room badge
-var pendingSeenAt2 = (currentUser && currentUser.pendingAcknowledgedAt) || 0;
-var pendingLastUpdatedAt2 = data.pendingLastUpdatedAt || 0;
-var pendingIsAcknowledged = pendingLastUpdatedAt2 <= pendingSeenAt2;
+      ['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(groupId) {
+        var roomBadge = document.getElementById('badge-' + groupId);
+        var unread = unreadCountsByGroup[groupId] || 0;
+        var pending = pendingIsAcknowledged ? 0 : (pendingCountsByGroup[groupId] || 0);
+        var roomTotal = unread + pending;
 
-['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(groupId) {
-  var roomBadge = document.getElementById('badge-' + groupId);
-  var unread = unreadCountsByGroup[groupId] || 0;
-  var pending = pendingIsAcknowledged ? 0 : (pendingCountsByGroup[groupId] || 0);
-  var roomTotal = unread + pending;
-
-  if (roomBadge) {
-    if (roomTotal > 0) {
-      roomBadge.textContent = roomTotal > 99 ? '99+' : String(roomTotal);
-      roomBadge.style.display = 'flex';
-    } else {
-      roomBadge.style.display = 'none';
-      roomBadge.textContent = '';
-    }
-  }
-});
-
+        if (roomBadge) {
+          if (roomTotal > 0) {
+            roomBadge.textContent = roomTotal > 99 ? '99+' : String(roomTotal);
+            roomBadge.style.display = 'flex';
+          } else {
+            roomBadge.style.display = 'none';
+            roomBadge.textContent = '';
+          }
+        }
+      });
 
       // update Members button badge for current room
       var membersBadge = document.getElementById('members-badge');
-if (membersBadge && currentGroup) {
-  var currentPending = pendingCountsByGroup[currentGroup] || 0;
-  var pendingSeenAt = (currentUser && currentUser.pendingAcknowledgedAt) || 0;
-  var pendingLastUpdatedAt = (data.pendingLastUpdatedAt) || 0;
+      if (membersBadge && currentGroup) {
+        var currentPending = pendingCountsByGroup[currentGroup] || 0;
 
-  if (currentPending > 0 && pendingLastUpdatedAt > pendingSeenAt) {
-    membersBadge.textContent = currentPending > 99 ? '99+' : String(currentPending);
-    membersBadge.style.display = 'flex';
-  } else {
-    membersBadge.style.display = 'none';
-    membersBadge.textContent = '';
-  }
-}
+        if (currentPending > 0 && pendingLastUpdatedAt > pendingSeenAt) {
+          membersBadge.textContent = currentPending > 99 ? '99+' : String(currentPending);
+          membersBadge.style.display = 'flex';
+        } else {
+          membersBadge.style.display = 'none';
+          membersBadge.textContent = '';
+        }
+      }
 
+      // update Care Groups nav badge
+      var effectiveTotal = pendingIsAcknowledged ? totalUnread : total;
+      unreadCount = effectiveTotal;
+      var navBadge = document.getElementById('nav-badge-care');
+      if (navBadge) {
+        if (effectiveTotal > 0) {
+          navBadge.textContent = effectiveTotal > 99 ? '99+' : String(effectiveTotal);
+          navBadge.style.display = 'flex';
+        } else {
+          navBadge.style.display = 'none';
+          navBadge.textContent = '';
+        }
+      }
 
-     // update Care Groups nav badge
-var effectiveTotal = pendingIsAcknowledged ? totalUnread : total;
-unreadCount = effectiveTotal;
-var navBadge = document.getElementById('nav-badge-care');
-if (navBadge) {
-  if (effectiveTotal > 0) {
-    navBadge.textContent = effectiveTotal > 99 ? '99+' : String(effectiveTotal);
-    navBadge.style.display = 'flex';
-  } else {
-    navBadge.style.display = 'none';
-    navBadge.textContent = '';
-  }
-}
-
-// update app icon badge
-updateAppBadge(effectiveTotal);
+      // update app icon badge
+      updateAppBadge(effectiveTotal);
     });
 }
 // ==========================
