@@ -1989,21 +1989,19 @@ function showMembersPanel() {
   var membersBadge = document.getElementById('members-badge');
   if (membersBadge) { membersBadge.style.display = 'none'; membersBadge.textContent = ''; }
 
-  if (currentUID && currentUser && currentUser.isAdmin) {
+  if (currentUID && currentUser && currentUser.isAdmin && currentGroup) {
     var ackedNow = Date.now();
-    db.collection('users').doc(currentUID).set(
-      { pending: {}, totalPending: 0, pendingAcknowledgedAt: ackedNow },
-      { merge: true }
-    );
+    var updateObj = { pendingAcknowledgedAt: ackedNow };
+    updateObj['pending.' + currentGroup] = 0;
+    db.collection('users').doc(currentUID).update(updateObj);
     currentUser.pendingAcknowledgedAt = ackedNow;
-    ['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(gId) {
-      pendingCountsByGroup[gId] = 0;
-    });
+    pendingCountsByGroup[currentGroup] = 0;
   }
 
   var forceRefresh = currentUser && currentUser.isAdmin;
   loadMembersList(forceRefresh);
 }
+
 
 
 
