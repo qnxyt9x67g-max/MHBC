@@ -176,22 +176,27 @@ function listenForBadgeUpdates() {
       });
 
       // update each room badge
-      ['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(groupId) {
-        var roomBadge = document.getElementById('badge-' + groupId);
-        var unread = unreadCountsByGroup[groupId] || 0;
-        var pending = pendingCountsByGroup[groupId] || 0;
-        var roomTotal = unread + pending;
+var pendingSeenAt2 = (currentUser && currentUser.pendingAcknowledgedAt) || 0;
+var pendingLastUpdatedAt2 = data.pendingLastUpdatedAt || 0;
+var pendingIsAcknowledged = pendingLastUpdatedAt2 <= pendingSeenAt2;
 
-        if (roomBadge) {
-          if (roomTotal > 0) {
-            roomBadge.textContent = roomTotal > 99 ? '99+' : String(roomTotal);
-            roomBadge.style.display = 'flex';
-          } else {
-            roomBadge.style.display = 'none';
-            roomBadge.textContent = '';
-          }
-        }
-      });
+['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(groupId) {
+  var roomBadge = document.getElementById('badge-' + groupId);
+  var unread = unreadCountsByGroup[groupId] || 0;
+  var pending = pendingIsAcknowledged ? 0 : (pendingCountsByGroup[groupId] || 0);
+  var roomTotal = unread + pending;
+
+  if (roomBadge) {
+    if (roomTotal > 0) {
+      roomBadge.textContent = roomTotal > 99 ? '99+' : String(roomTotal);
+      roomBadge.style.display = 'flex';
+    } else {
+      roomBadge.style.display = 'none';
+      roomBadge.textContent = '';
+    }
+  }
+});
+
 
       // update Members button badge for current room
       var membersBadge = document.getElementById('members-badge');
@@ -210,21 +215,22 @@ if (membersBadge && currentGroup) {
 }
 
 
-      // update Care Groups nav badge
-      unreadCount = total;
-      var navBadge = document.getElementById('nav-badge-care');
-      if (navBadge) {
-        if (total > 0) {
-          navBadge.textContent = total > 99 ? '99+' : String(total);
-          navBadge.style.display = 'flex';
-        } else {
-          navBadge.style.display = 'none';
-          navBadge.textContent = '';
-        }
-      }
+     // update Care Groups nav badge
+var effectiveTotal = pendingIsAcknowledged ? totalUnread : total;
+unreadCount = effectiveTotal;
+var navBadge = document.getElementById('nav-badge-care');
+if (navBadge) {
+  if (effectiveTotal > 0) {
+    navBadge.textContent = effectiveTotal > 99 ? '99+' : String(effectiveTotal);
+    navBadge.style.display = 'flex';
+  } else {
+    navBadge.style.display = 'none';
+    navBadge.textContent = '';
+  }
+}
 
-      // update app icon badge
-      updateAppBadge(total);
+// update app icon badge
+updateAppBadge(effectiveTotal);
     });
 }
 // ==========================
