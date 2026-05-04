@@ -1985,11 +1985,14 @@ function showMembersPanel() {
   if (membersBadge) { membersBadge.style.display = 'none'; membersBadge.textContent = ''; }
 
   if (currentUID && currentUser && currentUser.isAdmin) {
+  var ackedNow = Date.now();
   db.collection('users').doc(currentUID).set(
-    { pendingSeenAt: Date.now() },
+    { pending: {}, totalPending: 0, pendingAcknowledgedAt: ackedNow },
     { merge: true }
   );
+  currentUser.pendingAcknowledgedAt = ackedNow; // 👈 this is what was missing
 }
+
 
   var forceRefresh = currentUser && currentUser.isAdmin;
   loadMembersList(forceRefresh);
