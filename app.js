@@ -1976,11 +1976,11 @@ function showMembersPanel() {
   if (membersBadge) { membersBadge.style.display = 'none'; membersBadge.textContent = ''; }
 
   if (currentUID && currentUser && currentUser.isAdmin) {
-    db.collection('users').doc(currentUID).set(
-      { pending: {}, totalPending: 0 },
-      { merge: true }
-    );
-  }
+  db.collection('users').doc(currentUID).set(
+    { pendingSeenAt: Date.now() },
+    { merge: true }
+  );
+}
 
   var forceRefresh = currentUser && currentUser.isAdmin;
   loadMembersList(forceRefresh);
