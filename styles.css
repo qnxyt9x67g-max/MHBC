@@ -1570,3 +1570,28 @@ body {
   border-radius: 8px;
   font-weight: 800;
 }
+.alert-item {
+  background: var(--navy-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin: 14px;
+}
+
+.alert-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+
+.alert-body {
+  line-height: 1.5;
+  font-size: 15px;
+  margin-bottom: 16px;
+}
+
+.alert-time {
+  font-size: 13px;
+  color: var(--text-dim);
+}
