@@ -2782,13 +2782,15 @@ if (mainInput) {
   btn.addEventListener('click', function() {
     unlockAudio();
 
-    // Special case for Church Alerts button (keeps your inline onclick working)
-    if (this.getAttribute('onclick') && this.getAttribute('onclick').includes('openChurchAlerts')) {
-      return;   // let the inline onclick handle it
-    }
-
     var action = this.getAttribute('data-action');
     var url = this.getAttribute('data-url');
+
+    // Handle Church Alerts
+    if (action === 'church-alerts') {
+      openChurchAlerts();
+      return;
+    }
+
     if (action) showPage(action); 
     else if (url) window.open(url, '_blank');
   });
