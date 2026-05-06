@@ -2671,7 +2671,40 @@ function checkLiveBadge() {
       : 'none';
   }
 }
+function openChurchAlerts() {
+  showPage('church-alerts');
 
+  db.collection('churchAlerts')
+    .orderBy('sentAt', 'desc')
+    .limit(1)
+    .get()
+    .then(snapshot => {
+      const container = document.getElementById('church-alert-content');
+      if (!container) return;
+
+      if (snapshot.empty) {
+        container.innerHTML = '<p style="text-align:center; padding:40px; color:#7a8fa8;">No church alerts yet.</p>';
+        return;
+      }
+
+      const data = snapshot.docs[0].data() || {};
+      const time = data.sentAt 
+        ? new Date(data.sentAt.toMillis()).toLocaleString() 
+        : 'Unknown time';
+
+      container.innerHTML = `
+        <div class="alert-item">
+          <div class="alert-title">${data.title || 'Church Alert'}</div>
+          <div class="alert-body">${data.body || ''}</div>
+          <div class="alert-time">${time}</div>
+        </div>
+      `;
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById('church-alert-content').innerHTML = '<p style="color:#ff6b6b; text-align:center;">Error loading alert.</p>';
+    });
+}
 // ---- INIT ----
 window.onload = function() {
   initFirebase();
