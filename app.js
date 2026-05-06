@@ -2672,13 +2672,11 @@ function checkLiveBadge() {
   }
 }
 function openChurchAlerts() {
-  console.log("✅ openChurchAlerts() was called");
-
   showPage('church-alerts');
 
   const container = document.getElementById('church-alert-content');
   if (container) {
-    container.innerHTML = '<p style="text-align:center; padding:40px; color:#c9a84c;">Loading latest alert...</p>';
+    container.innerHTML = '<p style="text-align:center; padding:60px 20px; color:#c9a84c;">Loading latest alert...</p>';
   }
 
   db.collection('churchAlerts')
@@ -2686,8 +2684,6 @@ function openChurchAlerts() {
     .limit(1)
     .get()
     .then(snapshot => {
-      console.log("✅ Firestore returned", snapshot.size, "alert(s)");
-
       const container = document.getElementById('church-alert-content');
       if (!container) return;
 
@@ -2710,9 +2706,11 @@ function openChurchAlerts() {
       `;
     })
     .catch(err => {
-      console.error("❌ Error loading alert:", err);
+      console.error("Error loading alert:", err);   // keep this one for troubleshooting
       const container = document.getElementById('church-alert-content');
-      if (container) container.innerHTML = '<p style="color:#ff6b6b; text-align:center;">Error loading alert.</p>';
+      if (container) {
+        container.innerHTML = '<p style="color:#ff6b6b; text-align:center;">Error loading alert.</p>';
+      }
     });
 }
 // ---- INIT ----
