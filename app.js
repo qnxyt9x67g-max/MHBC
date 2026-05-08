@@ -1987,32 +1987,28 @@ function showMembersPanel() {
   window.scrollTo(0, 0);
 
   var membersBadge = document.getElementById('members-badge');
-  if (membersBadge) { membersBadge.style.display = 'none'; membersBadge.textContent = ''; }
+  if (membersBadge) { 
+    membersBadge.style.display = 'none'; 
+    membersBadge.textContent = ''; 
+  }
 
-  if (currentUID && currentUser && currentUser.isAdmin) {
-  var ackedNow = Date.now();
-  var updateObj = {
-  pendingAcknowledgedAt: ackedNow
-};
+  if (currentUID && currentUser && currentUser.isAdmin && currentGroup) {
+    var ackedNow = Date.now();
+    
+    var updateObj = { 
+      pendingAcknowledgedAt: ackedNow,
+      ['pending.' + currentGroup]: 0
+    };
 
-if (currentGroup) {
-  updateObj['pending.' + currentGroup] = 0;
-}
-  db.collection('users').doc(currentUID).update(updateObj);
-  currentUser.pendingAcknowledgedAt = ackedNow;
-  if (currentGroup) {
-  pendingCountsByGroup[currentGroup] = 0;
-}
-}
-
+    db.collection('users').doc(currentUID).update(updateObj);
+    
+    currentUser.pendingAcknowledgedAt = ackedNow;
+    pendingCountsByGroup[currentGroup] = 0;
+  }
 
   var forceRefresh = currentUser && currentUser.isAdmin;
   loadMembersList(forceRefresh);
 }
-
-
-
-
 function renderMembersListFromData(members) {
   var listEl = document.getElementById('members-list');
   if (!listEl) return;
