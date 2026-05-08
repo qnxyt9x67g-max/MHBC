@@ -1582,29 +1582,38 @@ return;
     messagesEl.appendChild(olderWrap);
   }
 
-  var newMessageDividerInserted = false;
-var newMessageBoundaryTs = state.newMessageBoundaryTs || 0;
+    // === NEW MESSAGES DIVIDER LOGIC ===
+  var newMessageBoundaryTs = state.newMessageBoundaryTs || 0;
 
-renderItems.forEach(function(item, index) {
-  var showDivider = index < renderItems.length - 1;
-  var itemTime = getMessageTime(item.msg);
+  if (state.showNewMessageDivider && newMessageBoundaryTs > 0) {
+    var dividerInserted = false;
 
-  if (
-  state.showNewMessageDivider &&
-  newMessageBoundaryTs > 0 &&
-  !newMessageDividerInserted &&
-  itemTime > newMessageBoundaryTs
-) {
-    messagesEl.appendChild(createNewMessageDivider());
-    newMessageDividerInserted = true;
+    renderItems.forEach(function(item, index) {
+      var itemTime = getMessageTime(item.msg);
+
+      // Insert divider RIGHT BEFORE the first message that is newer than last visit
+      if (!dividerInserted && itemTime > newMessageBoundaryTs) {
+        messagesEl.appendChild(createNewMessageDivider());
+        dividerInserted = true;
+      }
+
+      if (item.type === 'thread') {
+        renderThread(item.msg, item.replies, messagesEl, index < renderItems.length - 1);
+      } else if (item.type === 'missingParentReply') {
+        renderMissingParentReply(item.msg, messagesEl, index < renderItems.length - 1);
+      }
+    });
+  } 
+  // No new messages divider needed - render normally
+  else {
+    renderItems.forEach(function(item, index) {
+      if (item.type === 'thread') {
+        renderThread(item.msg, item.replies, messagesEl, index < renderItems.length - 1);
+      } else if (item.type === 'missingParentReply') {
+        renderMissingParentReply(item.msg, messagesEl, index < renderItems.length - 1);
+      }
+    });
   }
-
-  if (item.type === 'thread') {
-    renderThread(item.msg, item.replies, messagesEl, showDivider);
-  } else if (item.type === 'missingParentReply') {
-    renderMissingParentReply(item.msg, messagesEl, showDivider);
-  }
-});
 
     requestAnimationFrame(function() {
   if (!allowAutoScroll) {
