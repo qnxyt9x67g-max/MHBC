@@ -1991,21 +1991,18 @@ function showMembersPanel() {
 
   if (currentUID && currentUser && currentUser.isAdmin) {
   var ackedNow = Date.now();
-  var updateObj = { 
-    pendingAcknowledgedAt: ackedNow,
-    'pending.c101': 0,
-    'pending.narthex': 0,
-    'pending.fellowship1': 0,
-    'pending.fellowship2': 0,
-    'pending.trac': 0,
-    totalPending: 0,
-    badgeTotal: 0
-  };
+  var updateObj = {
+  pendingAcknowledgedAt: ackedNow
+};
+
+if (currentGroup) {
+  updateObj['pending.' + currentGroup] = 0;
+}
   db.collection('users').doc(currentUID).update(updateObj);
   currentUser.pendingAcknowledgedAt = ackedNow;
-  ['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(gId) {
-    pendingCountsByGroup[gId] = 0;
-  });
+  if (currentGroup) {
+  pendingCountsByGroup[currentGroup] = 0;
+}
 }
 
 
