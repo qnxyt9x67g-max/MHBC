@@ -343,8 +343,8 @@ function checkChurchPrompt() {
 
     box.innerHTML =
       '<div style="font-size:28px;margin-bottom:10px;">🔔</div>' +
-      '<div style="font-size:18px;font-weight:700;margin-bottom:8px;">Enable Church Notifications?</div>' +
-      '<div style="font-size:14px;color:#dce6f5;line-height:1.4;margin-bottom:16px;">Get church updates and future service reminders.</div>';
+      '<div style="font-size:18px;font-weight:700;margin-bottom:8px;">Enable Notifications?</div>' +
+      '<div style="font-size:14px;color:#dce6f5;line-height:1.4;margin-bottom:16px;">Get church updates, service reminders, and messages in your C.A.R.E. Group.</div>';
 
     var yesBtn = document.createElement('button');
     yesBtn.textContent = 'Enable Notifications';
