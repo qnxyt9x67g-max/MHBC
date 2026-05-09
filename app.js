@@ -1969,14 +1969,18 @@ function showMembersPanel() {
     var ackedNow = Date.now();
     
     var updateObj = { 
-      pendingAcknowledgedAt: ackedNow,
-      ['pending.' + currentGroup]: 0
-    };
+  ['pendingAcknowledgedAt.' + currentGroup]: ackedNow,
+  ['pending.' + currentGroup]: 0
+};
 
-    db.collection('users').doc(currentUID).update(updateObj);
-    
-    currentUser.pendingAcknowledgedAt = ackedNow;
+db.collection('users').doc(currentUID).update(updateObj)
+  .then(function() {
+    currentUser.pendingAcknowledgedAt = currentUser.pendingAcknowledgedAt || {};
+    currentUser.pendingAcknowledgedAt[currentGroup] = ackedNow;
     pendingCountsByGroup[currentGroup] = 0;
+  })
+  .catch(function(err) { console.warn('Failed to acknowledge pending:', err); });
+
   }
 
   var forceRefresh = currentUser && currentUser.isAdmin;
