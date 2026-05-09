@@ -13,7 +13,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // MHBC Service Worker — caching + background notifications
-const CACHE = 'mhbc-v3';
+const CACHE = 'mhbc-v4';
 
 const ASSETS = [
   './',
@@ -77,8 +77,13 @@ function updateClosedAppBadge(badgeCount) {
   return Promise.resolve();
 }
 
+// Updated background message handler (safer, no duplicate notifications)
 messaging.onBackgroundMessage(function(payload) {
-  const badgeCount = (payload.data && payload.data.badge) || "0";
+  console.log('[sw.js] Background message received:', payload);
+
+  const badgeCount = payload.data && payload.data.badge
+    ? parseInt(payload.data.badge, 10)
+    : 0;
 
   // Update iPhone/Mac installed-app badge while app is closed/backgrounded.
   return updateClosedAppBadge(badgeCount);
