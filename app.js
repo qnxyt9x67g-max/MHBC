@@ -176,16 +176,19 @@ function listenForBadgeUpdates() {
       });
 
       // update each room badge
-var pendingSeenAt2 = (currentUser && currentUser.pendingAcknowledgedAt) || 0;
-var pendingLastUpdatedAt2 = data.pendingLastUpdatedAt || 0;
-var pendingIsAcknowledged = pendingLastUpdatedAt2 <= pendingSeenAt2;
+var pendingAckedMap = (currentUser && currentUser.pendingAcknowledgedAt) || {};
+var pendingLastUpdatedMap = data.pendingLastUpdatedAt || {};
 
 ['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(groupId) {
   var roomBadge = document.getElementById('badge-' + groupId);
   var unread = unreadCountsByGroup[groupId] || 0;
-  var pending = pendingIsAcknowledged ? 0 : (pendingCountsByGroup[groupId] || 0);
-  var roomTotal = unread + pending;
+  var pending = pendingCountsByGroup[groupId] || 0;
 
+  var lastAcked = (typeof pendingAckedMap === 'object' ? pendingAckedMap[groupId] : pendingAckedMap) || 0;
+  var lastUpdated = (typeof pendingLastUpdatedMap === 'object' ? pendingLastUpdatedMap[groupId] : pendingLastUpdatedMap) || 0;
+  var showPending = pending > 0 && lastUpdated > lastAcked;
+
+  var roomTotal = unread + (showPending ? pending : 0);
   if (roomBadge) {
     if (roomTotal > 0) {
       roomBadge.textContent = roomTotal > 99 ? '99+' : String(roomTotal);
@@ -198,14 +201,18 @@ var pendingIsAcknowledged = pendingLastUpdatedAt2 <= pendingSeenAt2;
 });
 
 
+
       // update Members button badge for current room
       var membersBadge = document.getElementById('members-badge');
 if (membersBadge && currentGroup) {
   var currentPending = pendingCountsByGroup[currentGroup] || 0;
-  var pendingSeenAt = (currentUser && currentUser.pendingAcknowledgedAt) || 0;
-  var pendingLastUpdatedAt = (data.pendingLastUpdatedAt) || 0;
+    var pendingAckedMap2 = (currentUser && currentUser.pendingAcknowledgedAt) || {};
+  var pendingLastUpdatedMap2 = data.pendingLastUpdatedAt || {};
+  var pendingSeenAt = (typeof pendingAckedMap2 === 'object' ? pendingAckedMap2[currentGroup] : pendingAckedMap2) || 0;
+  var pendingLastUpdatedAt = (typeof pendingLastUpdatedMap2 === 'object' ? pendingLastUpdatedMap2[currentGroup] : pendingLastUpdatedMap2) || 0;
 
   if (currentPending > 0 && pendingLastUpdatedAt > pendingSeenAt) {
+
     membersBadge.textContent = currentPending > 99 ? '99+' : String(currentPending);
     membersBadge.style.display = 'flex';
   } else {
@@ -216,7 +223,8 @@ if (membersBadge && currentGroup) {
 
 
      // update Care Groups nav badge
-var effectiveTotal = pendingIsAcknowledged ? totalUnread : total;
+var effectiveTotal = total;
+
 unreadCount = effectiveTotal;
 var navBadge = document.getElementById('nav-badge-care');
 if (navBadge) {
