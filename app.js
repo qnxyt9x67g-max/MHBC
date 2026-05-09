@@ -2689,13 +2689,6 @@ if (enableChurchRow) {
   });
 }
 
-var enableCareRow = document.getElementById('enableCareNotificationsRow');
-if (enableCareRow) {
-  enableCareRow.addEventListener('click', function (e) {
-    e.preventDefault();
-    requestPermission('care');
-  });
-}
 var mainInput = document.getElementById('cg-msg-input');
 if (mainInput) {
   function jumpToBottomForMainInput() {
