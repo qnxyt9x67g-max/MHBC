@@ -828,12 +828,11 @@ enterChat();
   clearSavedUser(currentGroup);
   showCGScreen('select');
 }
-  }).catch(function() {
-  stopUnreadWatcher(currentGroup);
-  clearUnreadCount(currentGroup);
-  clearSavedUser(currentGroup);
+  }).catch(function(err) {
+  console.error('checkApprovalAndEnter failed:', err);
   showCGScreen('select');
 });
+
 }
 function getLastOpenedKey(groupId) {
   return 'mhbc_last_opened_' + groupId;
