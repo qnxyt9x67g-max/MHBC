@@ -834,8 +834,6 @@ enterChat();
   clearSavedUser(currentGroup);
   showCGScreen('select');
 });
-
-
 }
 function getLastOpenedKey(groupId) {
   return 'mhbc_last_opened_' + groupId;
@@ -2584,7 +2582,7 @@ function openBible() {
 function tryGenerateQR() {
   var qrEl = document.getElementById('appQR'); if (!qrEl) return;
   if (typeof QRCode !== 'undefined') {
-    new QRCode(qrEl, { text: 'https://app.maxwellhillbaptistchurch.com/', width: 90, height: 90, colorDark: '#0a1628', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+    new QRCode(qrEl, { text: 'https://qnxyt9x67g-max.github.io/MHBC/', width: 90, height: 90, colorDark: '#0a1628', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
   } else { setTimeout(tryGenerateQR, 500); }
 }
 
@@ -2676,16 +2674,6 @@ function openChurchAlerts() {
 // ---- INIT ----
 window.onload = function() {
   initFirebase();
-
-auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-  .catch(function(err) { console.error('Persistence error:', err); });
-
-auth.onIdTokenChanged(function(user) {
-  if (user) {
-    user.getIdToken(true);
-  }
-});
-
   if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(function(err) {
     console.error('Service worker registration failed:', err);
