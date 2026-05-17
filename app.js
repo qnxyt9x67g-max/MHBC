@@ -2582,7 +2582,7 @@ function openBible() {
 function tryGenerateQR() {
   var qrEl = document.getElementById('appQR'); if (!qrEl) return;
   if (typeof QRCode !== 'undefined') {
-    new QRCode(qrEl, { text: 'https://qnxyt9x67g-max.github.io/MHBC/', width: 90, height: 90, colorDark: '#0a1628', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+    new QRCode(qrEl, { text: 'https://app.maxwellhillbaptistchurch.com/', width: 90, height: 90, colorDark: '#0a1628', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
   } else { setTimeout(tryGenerateQR, 500); }
 }
 
