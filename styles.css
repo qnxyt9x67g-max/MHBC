@@ -603,7 +603,7 @@ body {
   :root { --nav-height: 56px; }
 }
 
-@media (min-width: 500px) {
+@media (min-width: 400px) {
   .nav-badge {
     top: -4px;
   }
