@@ -331,6 +331,7 @@ function requestPermission(type) {
 // ==========================
 function checkChurchPrompt() {
   if (localStorage.getItem('church_notifs_prompted')) return;
+  if (/android/i.test(navigator.userAgent)) return;
 
   setTimeout(function() {
     var overlay = document.createElement('div');
