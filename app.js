@@ -2644,6 +2644,9 @@ function checkLiveBadge() {
 }
 function openChurchAlerts() {
   showPage('church-alerts');
+  if (currentUID) {
+    db.collection('users').doc(currentUID).update({ hasUnreadAlert: false });
+  }
 
   const container = document.getElementById('church-alert-content');
   if (container) {
