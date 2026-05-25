@@ -233,8 +233,16 @@ if (navBadge) {
   }
 }
 
+// update Church Alerts badge
+var hasUnreadAlert = data.hasUnreadAlert === true;
+var alertsBadge = document.getElementById('badge-church-alerts');
+if (alertsBadge) {
+  alertsBadge.style.display = hasUnreadAlert ? 'flex' : 'none';
+}
+
 // update app icon badge
-updateAppBadge(effectiveTotal);
+var appBadgeTotal = effectiveTotal + (hasUnreadAlert ? 1 : 0);
+updateAppBadge(appBadgeTotal);
     });
 }
 // ==========================
