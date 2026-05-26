@@ -2716,9 +2716,22 @@ if (mainInput) {
     }, 100);
   }
 
-  mainInput.addEventListener('focus', jumpToBottomForMainInput);
+    mainInput.addEventListener('focus', function() {
+    jumpToBottomForMainInput();
+    var nav = document.querySelector('.bottom-nav');
+    if (nav) nav.style.display = 'none';
+  });
   mainInput.addEventListener('click', jumpToBottomForMainInput);
+  mainInput.addEventListener('blur', function() {
+    var nav = document.querySelector('.bottom-nav');
+    if (nav) nav.style.display = '';
+  });
+  mainInput.addEventListener('input', function() {
+    mainInput.style.height = 'auto';
+    mainInput.style.height = Math.min(mainInput.scrollHeight, 200) + 'px';
+  });
 }
+
   var ls = localStorage.getItem('mhbc_lastseen');
   if (ls) { try { lastSeenTimestamps = JSON.parse(ls); } catch(e) {} }
 
