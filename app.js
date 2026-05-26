@@ -1056,8 +1056,10 @@ function sendInlineReply(parentId) {
   var text = input.value.trim();
   if (!text) return;
 
-  input.value = '';
+    input.value = '';
+  input.style.height = 'auto';
   playSendSound();
+
 
     var nowTs = firebase.firestore.FieldValue.serverTimestamp();
 
@@ -1867,8 +1869,10 @@ function sendMessage() {
   var input = document.getElementById('cg-msg-input');
   var text = input.value.trim();
   if (!text || !db || !currentUID) return;
-  input.value = '';
+    input.value = '';
+  input.style.height = 'auto';
   playSendSound();
+
 
   var nowTs = firebase.firestore.FieldValue.serverTimestamp();
 
