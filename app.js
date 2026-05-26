@@ -1032,7 +1032,9 @@ function setReply(messageId, authorName) {
   var bar = document.getElementById('cg-reply-bar');
   if (bar) bar.style.display = 'none';
 
+  hideInputBar();
   loadMessages();
+
 
   setTimeout(function() {
     var inlineInput = document.getElementById('inline-reply-input-' + messageId);
@@ -1047,8 +1049,10 @@ function clearReply() {
   replyingTo = null;
   var bar = document.getElementById('cg-reply-bar');
   if (bar) bar.style.display = 'none';
+  showInputBar();
   renderCurrentRoomMessages(false);
 }
+
 function sendInlineReply(parentId) {
   var input = document.getElementById('inline-reply-input-' + parentId);
   if (!input || !db || !currentUID) return;
