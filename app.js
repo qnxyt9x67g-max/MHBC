@@ -1817,15 +1817,25 @@ thread.id = 'thread-' + msg._id;
   var inlineReplyRow = document.createElement('div');
   inlineReplyRow.className = 'cg-inline-reply-row';
 
-  var inlineInput = document.createElement('input');
-  inlineInput.type = 'text';
+    var inlineInput = document.createElement('textarea');
   inlineInput.className = 'cg-inline-reply-input';
   inlineInput.id = 'inline-reply-input-' + msg._id;
   inlineInput.placeholder = 'Write a reply...';
+  inlineInput.rows = 1;
 
-  inlineInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') sendInlineReply(msg._id);
+  inlineInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 200) + 'px';
   });
+  inlineInput.addEventListener('focus', function() {
+    var nav = document.querySelector('.bottom-nav');
+    if (nav) nav.style.display = 'none';
+  });
+  inlineInput.addEventListener('blur', function() {
+    var nav = document.querySelector('.bottom-nav');
+    if (nav) nav.style.display = '';
+  });
+
 
   var inlineSend = document.createElement('button');
   inlineSend.className = 'cg-inline-reply-send';
