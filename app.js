@@ -2720,21 +2720,26 @@ if (mainInput) {
     }, 100);
   }
 
-    mainInput.addEventListener('focus', function() {
+      mainInput.addEventListener('focus', function() {
     jumpToBottomForMainInput();
     var nav = document.querySelector('.bottom-nav');
     if (nav) nav.style.display = 'none';
+    var inputBar = document.querySelector('.cg-input-bar');
+    if (inputBar) inputBar.style.bottom = '0';
   });
   mainInput.addEventListener('click', jumpToBottomForMainInput);
   mainInput.addEventListener('blur', function() {
     var nav = document.querySelector('.bottom-nav');
     if (nav) nav.style.display = '';
+    var inputBar = document.querySelector('.cg-input-bar');
+    if (inputBar) inputBar.style.bottom = '';
   });
   mainInput.addEventListener('input', function() {
-    mainInput.style.height = 'auto';
-    mainInput.style.height = Math.min(mainInput.scrollHeight, 200) + 'px';
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 200) + 'px';
   });
 }
+
 
   var ls = localStorage.getItem('mhbc_lastseen');
   if (ls) { try { lastSeenTimestamps = JSON.parse(ls); } catch(e) {} }
