@@ -742,89 +742,88 @@ function submitLogin() {
                   showReturningUserMessage();
                   showCGScreen('pending');
                 }
-              } else {
-                db.collection('groups').doc(currentGroup).collection('members')
-                  .where('normalizedName', '==', normalized)
-                  .where('approved', '==', true)
-                  .get().then(function(existingSnap) {
-                    if (!existingSnap.empty) {
-                      var oldMemberDoc = existingSnap.docs[0];
-                      var oldMemberData = oldMemberDoc.data();
-                      var oldUID = oldMemberDoc.id;
-                      var newMemberRef = db.collection('groups').doc(currentGroup).collection('members').doc(currentUID);
-                      newMemberRef.set({
-                        uid: currentUID,
+                            } else {
+                var migrateUid = firebase.functions().httpsCallable('migrateUidV2');
+                migrateUid({
+                  groupId: currentGroup,
+                  normalizedName: normalized,
+                  passwordHash: identity.passwordHash
+                }).then(function(result) {
+                  if (result.data.status === 'migrated') {
+                    currentMemberKey = normalized;
+                    currentUser = {
+                      group: currentGroup,
+                      groupName: currentGroupName,
+                      name: result.data.displayName,
+                      normalizedName: normalized,
+                      isAdmin: result.data.isAdmin === true
+                    };
+                    saveUser(currentUser);
+                    setLastGroup(currentGroup);
+                    startAllUnreadWatchers();
+                    startAllPendingWatchers();
+                    listenForBadgeUpdates();
+                    enterChat();
+                  } else {
+                    memberRef.set({
+                      uid: currentUID,
+                      normalizedName: normalized,
+                      displayName: identity.displayName,
+                      approved: false,
+                      isAdmin: false,
+                      createdAt: Date.now(),
+                      lastLoginAt: Date.now()
+                    }).then(function() {
+                      currentMemberKey = normalized;
+                      currentUser = {
+                        group: currentGroup,
+                        groupName: currentGroupName,
+                        name: identity.displayName,
                         normalizedName: normalized,
-                        displayName: oldMemberData.displayName,
-                        approved: true,
-                        isAdmin: oldMemberData.isAdmin === true,
-                        createdAt: oldMemberData.createdAt || Date.now(),
-                        lastLoginAt: Date.now()
-                      }).then(function() {
-                        var oldUserRef = db.collection('users').doc(oldUID);
-                        var newUserRef = db.collection('users').doc(currentUID);
-                        return oldUserRef.get().then(function(oldUserSnap) {
-                          var oldTokens = (oldUserSnap.exists && oldUserSnap.data().tokens) ? oldUserSnap.data().tokens : [];
-                          return newUserRef.set({
-                            uid: currentUID,
-                            tokens: oldTokens,
-                            hasTokens: oldTokens.length > 0
-                          }, { merge: true });
-                        });
-                      }).then(function() {
-                        var oldMemberRef = db.collection('groups').doc(currentGroup).collection('members').doc(oldUID);
-                        return Promise.all([
-                          oldMemberRef.delete(),
-                          db.collection('users').doc(oldUID).delete()
-                        ]);
-                      }).then(function() {
-                        currentMemberKey = normalized;
-                        currentUser = {
-                          group: currentGroup,
-                          groupName: currentGroupName,
-                          name: oldMemberData.displayName,
-                          normalizedName: normalized,
-                          isAdmin: oldMemberData.isAdmin === true
-                        };
-                        saveUser(currentUser);
-                        setLastGroup(currentGroup);
-                        startAllUnreadWatchers();
-                        startAllPendingWatchers();
-                        listenForBadgeUpdates();
-                        enterChat();
-                      }).catch(function(err) { errEl.textContent = 'Migration error: ' + err.message; });
-                    } else {
-                      memberRef.set({
-                        uid: currentUID,
-                        normalizedName: normalized,
-                        displayName: identity.displayName,
-                        approved: false,
-                        isAdmin: false,
-                        createdAt: Date.now(),
-                        lastLoginAt: Date.now()
-                      }).then(function() {
-                        currentMemberKey = normalized;
-                        currentUser = {
-                          group: currentGroup,
-                          groupName: currentGroupName,
-                          name: identity.displayName,
-                          normalizedName: normalized,
-                          isAdmin: false
-                        };
-                        saveUser(currentUser);
-                        setLastGroup(currentGroup);
-                        startAllUnreadWatchers();
-                        startAllPendingWatchers();
-                        listenForBadgeUpdates();
-                        document.getElementById('cg-pending-title').textContent = currentGroupName;
-                        showReturningUserMessage();
-                        showCGScreen('pending');
-                      }).catch(function(err) { errEl.textContent = 'Session error: ' + err.message; });
-                    }
-                  }).catch(function(err) { errEl.textContent = 'Member lookup error: ' + err.message; });
+                        isAdmin: false
+                      };
+                      saveUser(currentUser);
+                      setLastGroup(currentGroup);
+                      startAllUnreadWatchers();
+                      startAllPendingWatchers();
+                      listenForBadgeUpdates();
+                      document.getElementById('cg-pending-title').textContent = currentGroupName;
+                      showReturningUserMessage();
+                      showCGScreen('pending');
+                    }).catch(function(err) { errEl.textContent = 'Session error: ' + err.message; });
+                  }
+                }).catch(function(err) {
+                  memberRef.set({
+                    uid: currentUID,
+                    normalizedName: normalized,
+                    displayName: identity.displayName,
+                    approved: false,
+                    isAdmin: false,
+                    createdAt: Date.now(),
+                    lastLoginAt: Date.now()
+                  }).then(function() {
+                    currentMemberKey = normalized;
+                    currentUser = {
+                      group: currentGroup,
+                      groupName: currentGroupName,
+                      name: identity.displayName,
+                      normalizedName: normalized,
+                      isAdmin: false
+                    };
+                    saveUser(currentUser);
+                    setLastGroup(currentGroup);
+                    startAllUnreadWatchers();
+                    startAllPendingWatchers();
+                    listenForBadgeUpdates();
+                    document.getElementById('cg-pending-title').textContent = currentGroupName;
+                    showReturningUserMessage();
+                    showCGScreen('pending');
+                  }).catch(function(e) { errEl.textContent = 'Session error: ' + e.message; });
+                });
               }
             }).catch(function(err) { errEl.textContent = 'Member lookup error: ' + err.message; });
           });
+
 
         } else {
           // Brand new user
