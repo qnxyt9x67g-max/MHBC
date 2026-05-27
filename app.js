@@ -821,12 +821,14 @@ startAllPendingWatchers();
                       showCGScreen('pending');
                     }).catch(function(err) { errEl.textContent = 'Session error: ' + err.message; });
                   }
-                }).catch(function(err) { errEl.textContent = 'Member lookup error: ' + err.message; });
+                                }).catch(function(err) { errEl.textContent = 'Member lookup error: ' + err.message; });
               }
+            }).catch(function(err) { errEl.textContent = 'Member lookup error: ' + err.message; });
 
 
         } else {
           // Brand new user
+
           var passwordSalt = generateSalt();
           hashInput(userPassword, passwordSalt).then(function(passwordHash) {
             identityRef.set({
