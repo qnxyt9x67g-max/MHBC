@@ -805,9 +805,10 @@ function submitLogin() {
                       document.getElementById('cg-pending-title').textContent = currentGroupName;
                       showReturningUserMessage();
                       showCGScreen('pending');
-                    }).catch(function(err) { errEl.textContent = 'Session error: ' + err.message; });
+                    }).catch(function(err) { loginInProgress = false; errEl.textContent = 'Session error: ' + err.message; });
                   }
                 }).catch(function(err) {
+                  loginInProgress = false;
                   memberRef.set({
                     uid: currentUID,
                     normalizedName: normalized,
