@@ -2828,6 +2828,9 @@ if (mainInput) {
     if (inputBar) inputBar.style.bottom = '';
     var msgs = document.querySelector('.cg-messages');
     if (msgs) msgs.style.paddingBottom = '';
+    setTimeout(function() {
+      window.scrollTo(0, document.body.scrollHeight);
+    }, 300);
   });
   mainInput.addEventListener('input', function() {
     this.style.height = 'auto';
