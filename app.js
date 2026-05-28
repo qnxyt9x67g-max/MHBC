@@ -2849,8 +2849,7 @@ mainInput.addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 200) + 'px';
 });
-
-// ← No extra } here
+}
 
 var ls = localStorage.getItem('mhbc_lastseen');
 if (ls) { 
