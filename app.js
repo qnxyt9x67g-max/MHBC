@@ -749,6 +749,7 @@ function submitLogin() {
                 startAllPendingWatchers();
                 listenForBadgeUpdates();
                 if (memberData.approved) {
+                  loginInProgress = false;
                   enterChat();
                 } else {
                   document.getElementById('cg-pending-title').textContent = currentGroupName;
