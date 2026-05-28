@@ -2769,6 +2769,9 @@ function openChurchAlerts() {
 // ---- INIT ----
 window.onload = function() {
   initFirebase();
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persist();
+  }
   if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(function(err) {
     console.error('Service worker registration failed:', err);
