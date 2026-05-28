@@ -3045,6 +3045,11 @@ if (msgInput) {
   auth.onAuthStateChanged(function(user) {
     if (user) {
       authReady = true;
+      var loginBtn = document.getElementById('cg-login-submit');
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.style.opacity = '';
+      }
       currentUID = user.uid;
 
       db.collection('users').doc(currentUID).set({
