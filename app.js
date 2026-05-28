@@ -1555,7 +1555,7 @@ function renderMissingParentReply(msg, container, showDivider) {
 function createNewMessageDivider() {
   var divider = document.createElement('div');
   divider.className = 'cg-new-message-divider';
-  divider.textContent = 'Here’s where you last left off:';
+  divider.textContent = 'Here’s where you last left off. New replies to older messages may appear above.';
   return divider;
 }
 function renderCurrentRoomMessages(allowAutoScroll) {
