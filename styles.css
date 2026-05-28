@@ -601,8 +601,8 @@ body {
 
 .nav-badge {
   position: absolute;
-  top: 10px;
-  right: calc(50% - 20px);
+  top: 4px;
+  right: 4px;
   background: #d32f2f;
   color: white;
   font-size: 9px;
@@ -620,12 +620,6 @@ body {
 
 @media (min-width: 768px) {
   :root { --nav-height: 56px; }
-}
-
-@media (min-width: 400px) {
-  .nav-badge {
-    top: -4px;
-  }
 }
 
 /* ---- CARE GROUPS ---- */
