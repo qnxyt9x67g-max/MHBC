@@ -2808,7 +2808,8 @@ if (mainInput) {
     }, 100);
   }
 
-   mainInput.addEventListener('focus', function() {
+   // Input handling for chat
+mainInput.addEventListener('focus', function() {
     jumpToBottomForMainInput();
     
     var nav = document.querySelector('.bottom-nav');
@@ -2819,12 +2820,12 @@ if (mainInput) {
     if (inputBar) inputBar.style.bottom = '0';
     if (msgs) msgs.style.paddingBottom = '0';
     
-    setTimeout(() => {
+    setTimeout(function() {
       window.scrollTo(0, document.body.scrollHeight);
-    }, 100);
+    }, 120);
 });
 
-mainInput.addEventListener('click', jumpToBottomForMainInput);   // ← Leave this
+mainInput.addEventListener('click', jumpToBottomForMainInput);
 
 mainInput.addEventListener('blur', function() {
     var nav = document.querySelector('.bottom-nav');
@@ -2835,15 +2836,16 @@ mainInput.addEventListener('blur', function() {
     if (inputBar) inputBar.style.bottom = '';
     if (msgs) msgs.style.paddingBottom = '';
     
-    setTimeout(() => {
+    // Slightly longer delay + smooth scroll to reduce flicker
+    setTimeout(function() {
       window.scrollTo({
         top: document.body.scrollHeight,
         behavior: 'smooth'
       });
-    }, 180);
+    }, 200);
 });
 
-mainInput.addEventListener('input', function() {   // ← Leave this
+mainInput.addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 200) + 'px';
 });
