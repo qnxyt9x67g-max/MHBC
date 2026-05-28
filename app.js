@@ -2808,12 +2808,14 @@ if (mainInput) {
     }, 100);
   }
 
-      mainInput.addEventListener('focus', function() {
+    mainInput.addEventListener('focus', function() {
     jumpToBottomForMainInput();
     var nav = document.querySelector('.bottom-nav');
     if (nav) nav.style.display = 'none';
     var inputBar = document.querySelector('.cg-input-bar');
     if (inputBar) inputBar.style.bottom = '0';
+    var msgs = document.querySelector('.cg-messages');
+    if (msgs) msgs.style.paddingBottom = '0';
     setTimeout(function() {
       window.scrollTo(0, document.body.scrollHeight);
     }, 300);
@@ -2824,6 +2826,8 @@ if (mainInput) {
     if (nav) nav.style.display = '';
     var inputBar = document.querySelector('.cg-input-bar');
     if (inputBar) inputBar.style.bottom = '';
+    var msgs = document.querySelector('.cg-messages');
+    if (msgs) msgs.style.paddingBottom = '';
   });
   mainInput.addEventListener('input', function() {
     this.style.height = 'auto';
