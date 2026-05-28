@@ -2850,9 +2850,14 @@ mainInput.addEventListener('input', function() {
     this.style.height = Math.min(this.scrollHeight, 200) + 'px';
 });
 
+// ← No extra } here
 
-  var ls = localStorage.getItem('mhbc_lastseen');
-  if (ls) { try { lastSeenTimestamps = JSON.parse(ls); } catch(e) {} }
+var ls = localStorage.getItem('mhbc_lastseen');
+if (ls) { 
+  try { 
+    lastSeenTimestamps = JSON.parse(ls); 
+  } catch(e) {} 
+}
 
   populateChapters('JHN', 1);
   var bookSel = document.getElementById('bibleBook');
