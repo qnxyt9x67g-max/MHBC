@@ -3030,7 +3030,19 @@ if (msgInput) {
   setInterval(checkLiveBadge, 60000);
   tryGenerateQR();
 
-    auth.onAuthStateChanged(function(user) {
+    var loginBtn = document.getElementById('cg-login-submit');
+  if (loginBtn) {
+    loginBtn.disabled = true;
+    loginBtn.style.opacity = '0.6';
+    setTimeout(function() {
+      if (loginBtn.disabled) {
+        loginBtn.disabled = false;
+        loginBtn.style.opacity = '';
+      }
+    }, 4000);
+  }
+
+  auth.onAuthStateChanged(function(user) {
     if (user) {
       authReady = true;
       currentUID = user.uid;
