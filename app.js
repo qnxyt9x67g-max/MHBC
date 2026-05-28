@@ -2801,6 +2801,9 @@ if (mainInput) {
     if (nav) nav.style.display = 'none';
     var inputBar = document.querySelector('.cg-input-bar');
     if (inputBar) inputBar.style.bottom = '0';
+    setTimeout(function() {
+      window.scrollTo(0, document.body.scrollHeight);
+    }, 300);
   });
   mainInput.addEventListener('click', jumpToBottomForMainInput);
   mainInput.addEventListener('blur', function() {
