@@ -777,6 +777,7 @@ function submitLogin() {
                     startAllUnreadWatchers();
                     startAllPendingWatchers();
                     listenForBadgeUpdates();
+                    loginInProgress = false;
                     enterChat();
                   } else {
                     memberRef.set({
