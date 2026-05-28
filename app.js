@@ -664,7 +664,9 @@ function showReturningUserMessage() {
 }
 
 // ---- SUBMIT LOGIN ----
+var loginInProgress = false;
 function submitLogin() {
+  if (loginInProgress) return;
   var roomPass = document.getElementById('cg-room-password').value.trim();
   var userName = document.getElementById('cg-user-name').value.trim();
   var userPassword = document.getElementById('cg-user-pin').value.trim();
@@ -678,6 +680,7 @@ function submitLogin() {
     errEl.textContent = 'Connecting... please try again in a moment.';
     return;
   }
+  loginInProgress = true;
 
   currentUID = auth.currentUser.uid;
   var normalized = normalizeName(userName);
