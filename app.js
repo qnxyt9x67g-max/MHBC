@@ -267,8 +267,18 @@ function initMessaging() {
     });
   }).then(function(token) {
     if (token) {
-      saveToken(token);
-      console.log('FCM token saved');
+      // Attempt token migration first in case UID reset
+      var migrateToken = firebase.functions().httpsCallable('migrateTokenV2');
+      migrateToken({ fcmToken: token }).then(function(result) {
+        if (result.data.status === 'migrated') {
+          console.log('FCM token migrated to new UID');
+        }
+      }).catch(function() {
+        // Silent fail — migration not critical
+      }).finally(function() {
+        saveToken(token);
+        console.log('FCM token saved');
+      });
     } else {
       console.log('No FCM token returned');
     }
