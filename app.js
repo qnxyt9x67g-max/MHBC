@@ -834,10 +834,10 @@ function submitLogin() {
                     document.getElementById('cg-pending-title').textContent = currentGroupName;
                     showReturningUserMessage();
                     showCGScreen('pending');
-                  }).catch(function(e) { errEl.textContent = 'Session error: ' + e.message; });
+                  }).catch(function(e) { loginInProgress = false; errEl.textContent = 'Session error: ' + e.message; });
                 });
               }
-            }).catch(function(err) { errEl.textContent = 'Member lookup error: ' + err.message; });
+            }).catch(function(err) { loginInProgress = false; errEl.textContent = 'Member lookup error: ' + err.message; });
           });
 
 
