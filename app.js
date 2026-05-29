@@ -670,11 +670,11 @@ function submitLogin() {
   if (loginInProgress) return;
   loginInProgress = true;
 
-  // Immediate visual feedback when clicked
-  var loginBtn = document.getElementById('cg-login-btn');
+  // Immediate visual feedback when clicked — Fixed ID and text phrasing
+  var loginBtn = document.getElementById('cg-login-submit');
   if (loginBtn) {
     loginBtn.disabled = true;
-    loginBtn.textContent = 'Signing in...';
+    loginBtn.textContent = 'Logging in...';
     loginBtn.style.opacity = '0.7';
   }
 
@@ -689,7 +689,7 @@ function submitLogin() {
     // Reset button state
     if (loginBtn) {
       loginBtn.disabled = false;
-      loginBtn.textContent = 'Sign In';
+      loginBtn.textContent = 'Log In';
       loginBtn.style.opacity = '1';
     }
     loginInProgress = false; 
@@ -700,7 +700,7 @@ function submitLogin() {
     // Reset button state
     if (loginBtn) {
       loginBtn.disabled = false;
-      loginBtn.textContent = 'Sign In';
+      loginBtn.textContent = 'Log In';
       loginBtn.style.opacity = '1';
     }
     loginInProgress = false; 
@@ -712,7 +712,7 @@ function submitLogin() {
     // Reset button state
     if (loginBtn) {
       loginBtn.disabled = false;
-      loginBtn.textContent = 'Sign In';
+      loginBtn.textContent = 'Log In';
       loginBtn.style.opacity = '1';
     }
     loginInProgress = false;
@@ -726,7 +726,7 @@ function submitLogin() {
     // Reset button state
     if (loginBtn) {
       loginBtn.disabled = false;
-      loginBtn.textContent = 'Sign In';
+      loginBtn.textContent = 'Log In';
       loginBtn.style.opacity = '1';
     }
     loginInProgress = false; 
@@ -740,7 +740,7 @@ function submitLogin() {
     // Reset button state
     if (loginBtn) {
       loginBtn.disabled = false;
-      loginBtn.textContent = 'Sign In';
+      loginBtn.textContent = 'Log In';
       loginBtn.style.opacity = '1';
     }
     loginInProgress = false;
@@ -753,7 +753,7 @@ function submitLogin() {
       // Reset button state
       if (loginBtn) {
         loginBtn.disabled = false;
-        loginBtn.textContent = 'Sign In';
+        loginBtn.textContent = 'Log In';
         loginBtn.style.opacity = '1';
       }
       loginInProgress = false;
@@ -773,7 +773,7 @@ function submitLogin() {
         // Reset button state
         if (loginBtn) {
           loginBtn.disabled = false;
-          loginBtn.textContent = 'Sign In';
+          loginBtn.textContent = 'Log In';
           loginBtn.style.opacity = '1';
         }
         loginInProgress = false;
@@ -798,7 +798,7 @@ function submitLogin() {
               // Reset button state
               if (loginBtn) {
                 loginBtn.disabled = false;
-                loginBtn.textContent = 'Sign In';
+                loginBtn.textContent = 'Log In';
                 loginBtn.style.opacity = '1';
               }
               loginInProgress = false;
@@ -829,7 +829,7 @@ function submitLogin() {
                 // Reset button state
                 if (loginBtn) {
                   loginBtn.disabled = false;
-                  loginBtn.textContent = 'Sign In';
+                  loginBtn.textContent = 'Log In';
                   loginBtn.style.opacity = '1';
                 }
                 loginInProgress = false;
@@ -865,13 +865,13 @@ function submitLogin() {
                     // Reset button state
                     if (loginBtn) {
                       loginBtn.disabled = false;
-                      loginBtn.textContent = 'Sign In';
+                      loginBtn.textContent = 'Log In';
                       loginBtn.style.opacity = '1';
                     }
                     loginInProgress = false;
                     enterChat();
                   } else {
-                    // Fall back to pending
+                    // Fall back to pending (Claude's spotted nesting block fixed here)
                     memberRef.set({
                       uid: currentUID,
                       normalizedName: normalized,
@@ -900,15 +900,15 @@ function submitLogin() {
                       // Reset button state
                       if (loginBtn) {
                         loginBtn.disabled = false;
-                        loginBtn.textContent = 'Sign In';
+                        loginBtn.textContent = 'Log In';
                         loginBtn.style.opacity = '1';
-                    }
-                    loginInProgress = false;
+                      }
+                      loginInProgress = false;
                     }).catch(function(err) { 
                       // Reset button state
                       if (loginBtn) {
                         loginBtn.disabled = false;
-                        loginBtn.textContent = 'Sign In';
+                        loginBtn.textContent = 'Log In';
                         loginBtn.style.opacity = '1';
                       }
                       loginInProgress = false; 
@@ -919,7 +919,7 @@ function submitLogin() {
                   // Reset button state
                   if (loginBtn) {
                     loginBtn.disabled = false;
-                    loginBtn.textContent = 'Sign In';
+                    loginBtn.textContent = 'Log In';
                     loginBtn.style.opacity = '1';
                   }
                   loginInProgress = false;
@@ -930,7 +930,7 @@ function submitLogin() {
               // Reset button state
               if (loginBtn) {
                 loginBtn.disabled = false;
-                loginBtn.textContent = 'Sign In';
+                loginBtn.textContent = 'Log In';
                 loginBtn.style.opacity = '1';
               }
               loginInProgress = false; 
@@ -980,7 +980,7 @@ function submitLogin() {
               // Reset button state
               if (loginBtn) {
                 loginBtn.disabled = false;
-                loginBtn.textContent = 'Sign In';
+                loginBtn.textContent = 'Log In';
                 loginBtn.style.opacity = '1';
               }
               loginInProgress = false;
@@ -988,7 +988,7 @@ function submitLogin() {
               // Reset button state
               if (loginBtn) {
                 loginBtn.disabled = false;
-                loginBtn.textContent = 'Sign In';
+                loginBtn.textContent = 'Log In';
                 loginBtn.style.opacity = '1';
               }
               loginInProgress = false; 
@@ -1000,7 +1000,7 @@ function submitLogin() {
         // Reset button state
         if (loginBtn) {
           loginBtn.disabled = false;
-          loginBtn.textContent = 'Sign In';
+          loginBtn.textContent = 'Log In';
           loginBtn.style.opacity = '1';
         }
         loginInProgress = false; 
@@ -1011,13 +1011,14 @@ function submitLogin() {
     // Reset button state
     if (loginBtn) {
       loginBtn.disabled = false;
-      loginBtn.textContent = 'Sign In';
+      loginBtn.textContent = 'Log In';
       loginBtn.style.opacity = '1';
     }
     loginInProgress = false; 
     errEl.textContent = 'Config error: ' + err.message; 
   });
 }
+
 
 
 // ---- CHECK APPROVAL ----
