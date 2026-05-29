@@ -665,36 +665,100 @@ function showReturningUserMessage() {
 
 // ---- SUBMIT LOGIN ----
 var loginInProgress = false;
+
 function submitLogin() {
   if (loginInProgress) return;
+  loginInProgress = true;
+
+  // Immediate visual feedback when clicked
+  var loginBtn = document.getElementById('cg-login-btn');
+  if (loginBtn) {
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Signing in...';
+    loginBtn.style.opacity = '0.7';
+  }
+
   var roomPass = document.getElementById('cg-room-password').value.trim();
   var userName = document.getElementById('cg-user-name').value.trim();
   var userPassword = document.getElementById('cg-user-pin').value.trim();
   var errEl = document.getElementById('cg-login-error');
   errEl.textContent = '';
 
-  if (!roomPass || !userName || !userPassword) { errEl.textContent = 'Please fill in all fields.'; return; }
-  if (userPassword.length < 4) { errEl.textContent = 'Password must be at least 4 characters.'; return; }
+  if (!roomPass || !userName || !userPassword) { 
+    errEl.textContent = 'Please fill in all fields.'; 
+    // Reset button state
+    if (loginBtn) {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign In';
+      loginBtn.style.opacity = '1';
+    }
+    loginInProgress = false; 
+    return; 
+  }
+  if (userPassword.length < 4) { 
+    errEl.textContent = 'Password must be at least 4 characters.'; 
+    // Reset button state
+    if (loginBtn) {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign In';
+      loginBtn.style.opacity = '1';
+    }
+    loginInProgress = false; 
+    return; 
+  }
 
   if (!authReady || !auth.currentUser) {
     errEl.textContent = 'Connecting... please try again in a moment.';
+    // Reset button state
+    if (loginBtn) {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign In';
+      loginBtn.style.opacity = '1';
+    }
+    loginInProgress = false;
     return;
   }
-  loginInProgress = true;
 
   currentUID = auth.currentUser.uid;
   var normalized = normalizeName(userName);
-  if (!normalized) { errEl.textContent = 'Please enter a valid name.'; return; }
+  if (!normalized) { 
+    errEl.textContent = 'Please enter a valid name.'; 
+    // Reset button state
+    if (loginBtn) {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign In';
+      loginBtn.style.opacity = '1';
+    }
+    loginInProgress = false; 
+    return; 
+  }
 
-  // Brute-force guard — check before any Firebase calls
+  // Brute-force guard
   var remainingLockout = getRemainingLockoutMs(currentGroup, normalized);
   if (remainingLockout > 0) {
     errEl.textContent = 'Too many failed attempts. Please wait ' + formatRemainingLockout(remainingLockout) + ' before trying again.';
+    // Reset button state
+    if (loginBtn) {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign In';
+      loginBtn.style.opacity = '1';
+    }
+    loginInProgress = false;
     return;
   }
 
   db.collection('config').doc('rooms').get().then(function(snap) {
-    if (!snap.exists) { errEl.textContent = 'Configuration error. Contact your admin.'; return; }
+    if (!snap.exists) { 
+      errEl.textContent = 'Configuration error. Contact your admin.'; 
+      // Reset button state
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Sign In';
+        loginBtn.style.opacity = '1';
+      }
+      loginInProgress = false;
+      return; 
+    }
     var config = snap.data();
 
     hashInput(roomPass, config[currentGroup + '_salt']).then(function(enteredRoomHash) {
@@ -706,6 +770,13 @@ function submitLogin() {
         } else {
           errEl.textContent = 'Incorrect room password. Check with your group leader.';
         }
+        // Reset button state
+        if (loginBtn) {
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Sign In';
+          loginBtn.style.opacity = '1';
+        }
+        loginInProgress = false;
         return;
       }
 
@@ -724,10 +795,17 @@ function submitLogin() {
               } else {
                 errEl.textContent = 'Incorrect password. Try again.';
               }
+              // Reset button state
+              if (loginBtn) {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign In';
+                loginBtn.style.opacity = '1';
+              }
+              loginInProgress = false;
               return;
             }
 
-                        // Password correct — clear any accumulated failed attempts
+            // Password correct — clear any accumulated failed attempts
             clearLoginGuard(currentGroup, normalized);
 
             var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(currentUID);
@@ -748,15 +826,22 @@ function submitLogin() {
                 startAllUnreadWatchers();
                 startAllPendingWatchers();
                 listenForBadgeUpdates();
+                // Reset button state
+                if (loginBtn) {
+                  loginBtn.disabled = false;
+                  loginBtn.textContent = 'Sign In';
+                  loginBtn.style.opacity = '1';
+                }
+                loginInProgress = false;
                 if (memberData.approved) {
-                  loginInProgress = false;
                   enterChat();
                 } else {
                   document.getElementById('cg-pending-title').textContent = currentGroupName;
                   showReturningUserMessage();
                   showCGScreen('pending');
                 }
-                            } else {
+              } else {
+                // Migration path
                 var migrateUid = firebase.functions().httpsCallable('migrateUidV2');
                 migrateUid({
                   groupId: currentGroup,
@@ -777,9 +862,16 @@ function submitLogin() {
                     startAllUnreadWatchers();
                     startAllPendingWatchers();
                     listenForBadgeUpdates();
+                    // Reset button state
+                    if (loginBtn) {
+                      loginBtn.disabled = false;
+                      loginBtn.textContent = 'Sign In';
+                      loginBtn.style.opacity = '1';
+                    }
                     loginInProgress = false;
                     enterChat();
                   } else {
+                    // Fall back to pending
                     memberRef.set({
                       uid: currentUID,
                       normalizedName: normalized,
@@ -805,80 +897,128 @@ function submitLogin() {
                       document.getElementById('cg-pending-title').textContent = currentGroupName;
                       showReturningUserMessage();
                       showCGScreen('pending');
-                    }).catch(function(err) { loginInProgress = false; errEl.textContent = 'Session error: ' + err.message; });
+                      // Reset button state
+                      if (loginBtn) {
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = 'Sign In';
+                        loginBtn.style.opacity = '1';
+                    }
+                    loginInProgress = false;
+                    }).catch(function(err) { 
+                      // Reset button state
+                      if (loginBtn) {
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = 'Sign In';
+                        loginBtn.style.opacity = '1';
+                      }
+                      loginInProgress = false; 
+                      errEl.textContent = 'Session error: ' + err.message; 
+                    });
                   }
                 }).catch(function(err) {
+                  // Reset button state
+                  if (loginBtn) {
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Sign In';
+                    loginBtn.style.opacity = '1';
+                  }
                   loginInProgress = false;
-                  memberRef.set({
-                    uid: currentUID,
-                    normalizedName: normalized,
-                    displayName: identity.displayName,
-                    approved: false,
-                    isAdmin: false,
-                    createdAt: Date.now(),
-                    lastLoginAt: Date.now()
-                  }).then(function() {
-                    currentMemberKey = normalized;
-                    currentUser = {
-                      group: currentGroup,
-                      groupName: currentGroupName,
-                      name: identity.displayName,
-                      normalizedName: normalized,
-                      isAdmin: false
-                    };
-                    saveUser(currentUser);
-                    setLastGroup(currentGroup);
-                    startAllUnreadWatchers();
-                    startAllPendingWatchers();
-                    listenForBadgeUpdates();
-                    document.getElementById('cg-pending-title').textContent = currentGroupName;
-                    showReturningUserMessage();
-                    showCGScreen('pending');
-                  }).catch(function(e) { loginInProgress = false; errEl.textContent = 'Session error: ' + e.message; });
+                  errEl.textContent = 'Migration error: ' + err.message;
                 });
               }
-            }).catch(function(err) { loginInProgress = false; errEl.textContent = 'Member lookup error: ' + err.message; });
+            }).catch(function(err) { 
+              // Reset button state
+              if (loginBtn) {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign In';
+                loginBtn.style.opacity = '1';
+              }
+              loginInProgress = false; 
+              errEl.textContent = 'Member lookup error: ' + err.message; 
+            });
           });
-
-
         } else {
           // Brand new user
-
-
           var passwordSalt = generateSalt();
           hashInput(userPassword, passwordSalt).then(function(passwordHash) {
             identityRef.set({
-              displayName: userName, normalizedName: normalized,
-              passwordHash: passwordHash, passwordSalt: passwordSalt,
-              approved: false, isAdmin: false, createdAt: Date.now()
+              displayName: userName, 
+              normalizedName: normalized,
+              passwordHash: passwordHash, 
+              passwordSalt: passwordSalt,
+              approved: false, 
+              isAdmin: false, 
+              createdAt: Date.now()
             }).then(function() {
               return db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).set({
-                uid: currentUID, normalizedName: normalized, displayName: userName,
-                approved: false, isAdmin: false,
-                createdAt: Date.now(), lastLoginAt: Date.now()
+                uid: currentUID, 
+                normalizedName: normalized, 
+                displayName: userName,
+                approved: false, 
+                isAdmin: false,
+                createdAt: Date.now(), 
+                lastLoginAt: Date.now()
               });
             }).then(function() {
-              // Both docs created successfully — clear guard
               clearLoginGuard(currentGroup, normalized);
               currentMemberKey = normalized;
               currentUser = {
-                group: currentGroup, groupName: currentGroupName,
-                name: userName, normalizedName: normalized, isAdmin: false
+                group: currentGroup, 
+                groupName: currentGroupName,
+                name: userName, 
+                normalizedName: normalized, 
+                isAdmin: false
               };
               saveUser(currentUser);
               setLastGroup(currentGroup);
               startAllUnreadWatchers();
-startAllPendingWatchers();
+              startAllPendingWatchers();
               listenForBadgeUpdates();
               document.getElementById('cg-pending-title').textContent = currentGroupName;
-              showFirstTimeMessage(); showCGScreen('pending');
-            }).catch(function(err) { errEl.textContent = 'Registration error: ' + err.message; });
+              showFirstTimeMessage(); 
+              showCGScreen('pending');
+              // Reset button state
+              if (loginBtn) {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign In';
+                loginBtn.style.opacity = '1';
+              }
+              loginInProgress = false;
+            }).catch(function(err) { 
+              // Reset button state
+              if (loginBtn) {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign In';
+                loginBtn.style.opacity = '1';
+              }
+              loginInProgress = false; 
+              errEl.textContent = 'Registration error: ' + err.message; 
+            });
           });
         }
-      }).catch(function(err) { errEl.textContent = 'Identity lookup error: ' + err.message; });
+      }).catch(function(err) { 
+        // Reset button state
+        if (loginBtn) {
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Sign In';
+          loginBtn.style.opacity = '1';
+        }
+        loginInProgress = false; 
+        errEl.textContent = 'Identity lookup error: ' + err.message; 
+      });
     });
-  }).catch(function(err) { errEl.textContent = 'Config error: ' + err.message; });
+  }).catch(function(err) { 
+    // Reset button state
+    if (loginBtn) {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign In';
+      loginBtn.style.opacity = '1';
+    }
+    loginInProgress = false; 
+    errEl.textContent = 'Config error: ' + err.message; 
+  });
 }
+
 
 // ---- CHECK APPROVAL ----
 function checkApproval() {
