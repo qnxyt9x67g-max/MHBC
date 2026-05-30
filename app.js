@@ -927,17 +927,62 @@ function submitLogin() {
                       errEl.textContent = 'Session error: ' + err.message; 
                     });
                   }
-                }).catch(function(err) {
-                  // Reset button state
-                  if (loginBtn) {
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = 'Log In';
-                    loginBtn.style.opacity = '1';
+                                }).catch(function(err) {
+                  // If migration failed because no approved member exists,
+                  // treat as deleted user and route to pending
+                  if (err.code === 'not-found') {
+                    memberRef.set({
+                      uid: currentUID,
+                      normalizedName: normalized,
+                      displayName: identity.displayName,
+                      approved: false,
+                      isAdmin: false,
+                      createdAt: Date.now(),
+                      lastLoginAt: Date.now()
+                    }).then(function() {
+                      currentMemberKey = normalized;
+                      currentUser = {
+                        group: currentGroup,
+                        groupName: currentGroupName,
+                        name: identity.displayName,
+                        normalizedName: normalized,
+                        isAdmin: false
+                      };
+                      saveUser(currentUser);
+                      setLastGroup(currentGroup);
+                      startAllUnreadWatchers();
+                      startAllPendingWatchers();
+                      listenForBadgeUpdates();
+                      document.getElementById('cg-pending-title').textContent = currentGroupName;
+                      showReturningUserMessage();
+                      showCGScreen('pending');
+                      if (loginBtn) {
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = 'Log In';
+                        loginBtn.style.opacity = '1';
+                      }
+                      loginInProgress = false;
+                    }).catch(function(err2) {
+                      if (loginBtn) {
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = 'Log In';
+                        loginBtn.style.opacity = '1';
+                      }
+                      loginInProgress = false;
+                      errEl.textContent = 'Session error: ' + err2.message;
+                    });
+                  } else {
+                    // Genuine migration error
+                    if (loginBtn) {
+                      loginBtn.disabled = false;
+                      loginBtn.textContent = 'Log In';
+                      loginBtn.style.opacity = '1';
+                    }
+                    loginInProgress = false;
+                    errEl.textContent = 'Migration error: ' + err.message;
                   }
-                  loginInProgress = false;
-                  errEl.textContent = 'Migration error: ' + err.message;
                 });
-              }
+
             }).catch(function(err) { 
               // Reset button state
               if (loginBtn) {
