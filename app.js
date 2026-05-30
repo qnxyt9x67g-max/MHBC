@@ -614,7 +614,14 @@ function showCGScreen(screen) {
   });
   var show = document.getElementById('cg-' + screen + '-screen');
   if (show) show.style.display = 'block';
-  if (screen === 'chat') showInputBar(); else hideInputBar();
+  if (screen === 'chat') {
+    showInputBar();
+    if (currentGroup) {
+      setPendingCount(currentGroup, pendingCountsByGroup[currentGroup] || 0);
+    }
+  } else {
+    hideInputBar();
+  }
 }
 
 function toggleVisible(inputId, btn) {
@@ -1944,9 +1951,6 @@ function loadMessages(scrollOnOpen) {
       messagesEl.innerHTML = '<div class="cg-no-msgs">Unable to load messages right now.<br>' + err.message + '</div>';
       messagesEl.style.visibility = 'visible';
     });
-if (currentGroup) {
-    setPendingCount(currentGroup, pendingCountsByGroup[currentGroup] || 0);
-  }
 }
 
 function buildMessageRow(msg, isPrimary) {
