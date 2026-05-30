@@ -182,12 +182,12 @@ function listenForBadgeUpdates() {
       // update each room badge
 var pendingSeenAt2 = (currentUser && currentUser.pendingAcknowledgedAt) || 0;
 var pendingLastUpdatedAt2 = data.pendingLastUpdatedAt || 0;
-var pendingIsAcknowledged = pendingLastUpdatedAt2 <= pendingSeenAt2;
 
 ['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(groupId) {
   var roomBadge = document.getElementById('badge-' + groupId);
   var unread = unreadCountsByGroup[groupId] || 0;
-  var pending = pendingIsAcknowledged ? 0 : (pendingCountsByGroup[groupId] || 0);
+  var isCurrentGroupAcked = (groupId === currentGroup) && (pendingLastUpdatedAt2 <= pendingSeenAt2);
+  var pending = isCurrentGroupAcked ? 0 : (pendingCountsByGroup[groupId] || 0);
   var roomTotal = unread + pending;
 
   if (roomBadge) {
@@ -220,7 +220,12 @@ if (membersBadge && currentGroup) {
 
 
      // update Care Groups nav badge
-var effectiveTotal = pendingIsAcknowledged ? totalUnread : total;
+var truePendingTotal = 0;
+['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(groupId) {
+  var isCurrentGroupAcked = (groupId === currentGroup) && (pendingLastUpdatedAt2 <= pendingSeenAt2);
+  truePendingTotal += isCurrentGroupAcked ? 0 : (pendingCountsByGroup[groupId] || 0);
+});
+var effectiveTotal = totalUnread + truePendingTotal;
 unreadCount = effectiveTotal;
 var navBadge = document.getElementById('nav-badge-care');
 if (navBadge) {
@@ -472,11 +477,11 @@ function requestBadgePermission() {
 function refreshCareNavBadge() {
   var navBadge = document.getElementById('nav-badge-care');
   var total = 0;
-  var pendingSeenAt = (currentUser && currentUser.pendingAcknowledgedAt) || 0;
 
   Object.keys(unreadCountsByGroup).forEach(function(groupId) {
     var unread = unreadCountsByGroup[groupId] || 0;
-    var pending = pendingSeenAt > 0 ? 0 : (pendingCountsByGroup[groupId] || 0);
+    var isCurrentGroupAcked = (groupId === currentGroup);
+    var pending = isCurrentGroupAcked ? 0 : (pendingCountsByGroup[groupId] || 0);
     total += unread + pending;
   });
   unreadCount = total;
@@ -512,8 +517,8 @@ function setUnreadCount(groupId, count) {
 
 function setPendingCount(groupId, count) {
   pendingCountsByGroup[groupId] = Math.max(0, count || 0);
-  var pendingSeenAt = (currentUser && currentUser.pendingAcknowledgedAt) || 0;
-  var effectivePending = pendingSeenAt > 0 ? 0 : pendingCountsByGroup[groupId];
+  var isCurrentGroupAcked = (groupId === currentGroup);
+  var effectivePending = isCurrentGroupAcked ? 0 : pendingCountsByGroup[groupId];
   var unread = unreadCountsByGroup[groupId] || 0;
   var total = unread + effectivePending;
   var roomBadge = document.getElementById('badge-' + groupId);
@@ -527,8 +532,9 @@ function setPendingCount(groupId, count) {
   }
   var membersBadge = document.getElementById('members-badge');
   if (membersBadge && groupId === currentGroup) {
-    if (effectivePending > 0) {
-      membersBadge.textContent = effectivePending > 99 ? '99+' : String(effectivePending);
+    var rawPending = pendingCountsByGroup[groupId] || 0;
+    if (rawPending > 0) {
+      membersBadge.textContent = rawPending > 99 ? '99+' : String(rawPending);
       membersBadge.style.display = 'flex';
     } else {
       membersBadge.style.display = 'none';
@@ -2233,7 +2239,6 @@ function showMembersPanel() {
 
     db.collection('users').doc(currentUID).update(updateObj);
     
-    currentUser.pendingAcknowledgedAt = ackedNow;
     pendingCountsByGroup[currentGroup] = 0;
   }
 
