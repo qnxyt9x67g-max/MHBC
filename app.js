@@ -681,7 +681,6 @@ function submitLogin() {
   if (loginInProgress) return;
   loginInProgress = true;
 
-  // Immediate visual feedback when clicked — Fixed ID and text phrasing
   var loginBtn = document.getElementById('cg-login-submit');
   if (loginBtn) {
     loginBtn.disabled = true;
@@ -697,7 +696,6 @@ function submitLogin() {
 
   if (!roomPass || !userName || !userPassword) { 
     errEl.textContent = 'Please fill in all fields.'; 
-    // Reset button state
     if (loginBtn) {
       loginBtn.disabled = false;
       loginBtn.textContent = 'Log In';
@@ -708,7 +706,6 @@ function submitLogin() {
   }
   if (userPassword.length < 4) { 
     errEl.textContent = 'Password must be at least 4 characters.'; 
-    // Reset button state
     if (loginBtn) {
       loginBtn.disabled = false;
       loginBtn.textContent = 'Log In';
@@ -718,9 +715,9 @@ function submitLogin() {
     return; 
   }
 
+  // Internet/auth state safety check
   if (!authReady || !auth.currentUser) {
     errEl.textContent = 'Connecting... please try again in a moment.';
-    // Reset button state
     if (loginBtn) {
       loginBtn.disabled = false;
       loginBtn.textContent = 'Log In';
@@ -734,7 +731,6 @@ function submitLogin() {
   var normalized = normalizeName(userName);
   if (!normalized) { 
     errEl.textContent = 'Please enter a valid name.'; 
-    // Reset button state
     if (loginBtn) {
       loginBtn.disabled = false;
       loginBtn.textContent = 'Log In';
@@ -744,11 +740,9 @@ function submitLogin() {
     return; 
   }
 
-  // Brute-force guard
   var remainingLockout = getRemainingLockoutMs(currentGroup, normalized);
   if (remainingLockout > 0) {
     errEl.textContent = 'Too many failed attempts. Please wait ' + formatRemainingLockout(remainingLockout) + ' before trying again.';
-    // Reset button state
     if (loginBtn) {
       loginBtn.disabled = false;
       loginBtn.textContent = 'Log In';
@@ -761,7 +755,6 @@ function submitLogin() {
   db.collection('config').doc('rooms').get().then(function(snap) {
     if (!snap.exists) { 
       errEl.textContent = 'Configuration error. Contact your admin.'; 
-      // Reset button state
       if (loginBtn) {
         loginBtn.disabled = false;
         loginBtn.textContent = 'Log In';
@@ -781,7 +774,6 @@ function submitLogin() {
         } else {
           errEl.textContent = 'Incorrect room password. Check with your group leader.';
         }
-        // Reset button state
         if (loginBtn) {
           loginBtn.disabled = false;
           loginBtn.textContent = 'Log In';
@@ -795,7 +787,6 @@ function submitLogin() {
 
       identityRef.get().then(function(identitySnap) {
         if (identitySnap.exists) {
-          // Known identity — verify personal password
           var identity = identitySnap.data();
           hashInput(userPassword, identity.passwordSalt).then(function(enteredHash) {
             if (enteredHash !== identity.passwordHash) {
@@ -806,7 +797,6 @@ function submitLogin() {
               } else {
                 errEl.textContent = 'Incorrect password. Try again.';
               }
-              // Reset button state
               if (loginBtn) {
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Log In';
@@ -816,13 +806,17 @@ function submitLogin() {
               return;
             }
 
-            // Password correct — clear any accumulated failed attempts
             clearLoginGuard(currentGroup, normalized);
 
             var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(currentUID);
             memberRef.get().then(function(memberSnap) {
               if (memberSnap.exists) {
-                memberRef.update({ lastLoginAt: Date.now(), removalRequested: false, removalRequestedAt: firebase.firestore.FieldValue.delete() });
+                // Clear removal flag if user successfully signs back in
+                memberRef.update({ 
+                  lastLoginAt: Date.now(), 
+                  removalRequested: false, 
+                  removalRequestedAt: firebase.firestore.FieldValue.delete() 
+                });
 
                 var memberData = memberSnap.data();
                 currentMemberKey = normalized;
@@ -838,7 +832,6 @@ function submitLogin() {
                 startAllUnreadWatchers();
                 startAllPendingWatchers();
                 listenForBadgeUpdates();
-                // Reset button state
                 if (loginBtn) {
                   loginBtn.disabled = false;
                   loginBtn.textContent = 'Log In';
@@ -853,7 +846,6 @@ function submitLogin() {
                   showCGScreen('pending');
                 }
               } else {
-                // Migration path
                 var migrateUid = firebase.functions().httpsCallable('migrateUidV2');
                 migrateUid({
                   groupId: currentGroup,
@@ -874,7 +866,6 @@ function submitLogin() {
                     startAllUnreadWatchers();
                     startAllPendingWatchers();
                     listenForBadgeUpdates();
-                    // Reset button state
                     if (loginBtn) {
                       loginBtn.disabled = false;
                       loginBtn.textContent = 'Log In';
@@ -883,7 +874,6 @@ function submitLogin() {
                     loginInProgress = false;
                     enterChat();
                   } else {
-                    // Fall back to pending (Claude's spotted nesting block fixed here)
                     memberRef.set({
                       uid: currentUID,
                       normalizedName: normalized,
@@ -909,7 +899,6 @@ function submitLogin() {
                       document.getElementById('cg-pending-title').textContent = currentGroupName;
                       showReturningUserMessage();
                       showCGScreen('pending');
-                      // Reset button state
                       if (loginBtn) {
                         loginBtn.disabled = false;
                         loginBtn.textContent = 'Log In';
@@ -917,7 +906,6 @@ function submitLogin() {
                       }
                       loginInProgress = false;
                     }).catch(function(err) { 
-                      // Reset button state
                       if (loginBtn) {
                         loginBtn.disabled = false;
                         loginBtn.textContent = 'Log In';
@@ -928,10 +916,7 @@ function submitLogin() {
                     });
                   }
                 }).catch(function(err) {
-
-
-                  // If migration failed because no approved member exists,
-                  // treat as deleted user and route to pending
+                  // Catch deleted users here: if migration error is 'not-found', route to pending screen
                   if (err.code === 'not-found') {
                     memberRef.set({
                       uid: currentUID,
@@ -974,7 +959,6 @@ function submitLogin() {
                       errEl.textContent = 'Session error: ' + err2.message;
                     });
                   } else {
-                    // Genuine migration error
                     if (loginBtn) {
                       loginBtn.disabled = false;
                       loginBtn.textContent = 'Log In';
@@ -984,9 +968,8 @@ function submitLogin() {
                     errEl.textContent = 'Migration error: ' + err.message;
                   }
                 });
-
+              }
             }).catch(function(err) { 
-              // Reset button state
               if (loginBtn) {
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Log In';
@@ -997,7 +980,7 @@ function submitLogin() {
             });
           });
         } else {
-          // Brand new user
+          // Brand new profile registration path
           var passwordSalt = generateSalt();
           hashInput(userPassword, passwordSalt).then(function(passwordHash) {
             identityRef.set({
@@ -1036,7 +1019,6 @@ function submitLogin() {
               document.getElementById('cg-pending-title').textContent = currentGroupName;
               showFirstTimeMessage(); 
               showCGScreen('pending');
-              // Reset button state
               if (loginBtn) {
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Log In';
@@ -1044,7 +1026,6 @@ function submitLogin() {
               }
               loginInProgress = false;
             }).catch(function(err) { 
-              // Reset button state
               if (loginBtn) {
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Log In';
@@ -1056,7 +1037,6 @@ function submitLogin() {
           });
         }
       }).catch(function(err) { 
-        // Reset button state
         if (loginBtn) {
           loginBtn.disabled = false;
           loginBtn.textContent = 'Log In';
@@ -1067,7 +1047,6 @@ function submitLogin() {
       });
     });
   }).catch(function(err) { 
-    // Reset button state
     if (loginBtn) {
       loginBtn.disabled = false;
       loginBtn.textContent = 'Log In';
@@ -1077,8 +1056,6 @@ function submitLogin() {
     errEl.textContent = 'Config error: ' + err.message; 
   });
 }
-
-
 
 // ---- CHECK APPROVAL ----
 function checkApproval() {
