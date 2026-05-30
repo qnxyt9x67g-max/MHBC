@@ -1944,6 +1944,9 @@ function loadMessages(scrollOnOpen) {
       messagesEl.innerHTML = '<div class="cg-no-msgs">Unable to load messages right now.<br>' + err.message + '</div>';
       messagesEl.style.visibility = 'visible';
     });
+if (currentGroup) {
+    setPendingCount(currentGroup, pendingCountsByGroup[currentGroup] || 0);
+  }
 }
 
 function buildMessageRow(msg, isPrimary) {
