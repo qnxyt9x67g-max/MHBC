@@ -852,7 +852,7 @@ function submitLogin() {
                   normalizedName: normalized,
                   passwordHash: identity.passwordHash
                 }).then(function(result) {
-                  if (result.data.status === 'migrated') {
+                                    if (result.data.status === 'migrated') {
                     currentMemberKey = normalized;
                     currentUser = {
                       group: currentGroup,
@@ -863,6 +863,28 @@ function submitLogin() {
                     };
                     saveUser(currentUser);
                     setLastGroup(currentGroup);
+                    // Migrate all other saved rooms to new UID in the same session
+                    var allSaved = getSavedUsers();
+                    if (allSaved && Object.keys(allSaved).length > 0) {
+                      var groupsToMigrate = [];
+                      Object.keys(allSaved).forEach(function(groupId) {
+                        var s = allSaved[groupId];
+                        if (s && s.normalizedName) {
+                          groupsToMigrate.push({
+                            groupId: groupId,
+                            normalizedName: s.normalizedName
+                          });
+                        }
+                      });
+                      if (groupsToMigrate.length > 0) {
+                        var migrateAll = firebase.functions().httpsCallable('migrateAllGroupsV2');
+                        migrateAll({ groups: groupsToMigrate }).then(function(res) {
+                          console.log('In-session multi-group migration successful:', res.data);
+                        }).catch(function(err) {
+                          console.log('In-session multi-group migration skipped:', err.message);
+                        });
+                      }
+                    }
                     startAllUnreadWatchers();
                     startAllPendingWatchers();
                     listenForBadgeUpdates();
@@ -873,6 +895,7 @@ function submitLogin() {
                     }
                     loginInProgress = false;
                     enterChat();
+
                   } else {
                     memberRef.set({
                       uid: currentUID,
@@ -3251,7 +3274,7 @@ if (msgInput) {
         initMessaging();
       }
 
-      var lastGroup = getLastGroup();
+            var lastGroup = getLastGroup();
       var savedUser = lastGroup ? getSavedUser(lastGroup) : null;
 
       if (savedUser && savedUser.group && savedUser.name && savedUser.normalizedName) {
@@ -3261,8 +3284,32 @@ if (msgInput) {
         currentMemberKey = savedUser.normalizedName;
       }
 
+      // Silently migrate all saved groups to new UID if needed
+      var allSaved = getSavedUsers();
+      if (allSaved && Object.keys(allSaved).length > 0) {
+        var groupsToMigrate = [];
+        Object.keys(allSaved).forEach(function(groupId) {
+          var s = allSaved[groupId];
+          if (s && s.normalizedName) {
+            groupsToMigrate.push({
+              groupId: groupId,
+              normalizedName: s.normalizedName
+            });
+          }
+        });
+        if (groupsToMigrate.length > 0) {
+          var migrateAll = firebase.functions().httpsCallable('migrateAllGroupsV2');
+          migrateAll({ groups: groupsToMigrate }).then(function(result) {
+            console.log('Multi-group migration result:', result.data);
+          }).catch(function(err) {
+            console.log('Multi-group migration skipped or failed:', err.message);
+          });
+        }
+      }
+
       startAllUnreadWatchers();
       startAllPendingWatchers();
+
 
     } else {
       authReady = false;
