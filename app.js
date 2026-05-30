@@ -822,7 +822,8 @@ function submitLogin() {
             var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(currentUID);
             memberRef.get().then(function(memberSnap) {
               if (memberSnap.exists) {
-                memberRef.update({ lastLoginAt: Date.now() });
+                memberRef.update({ lastLoginAt: Date.now(), removalRequested: false, removalRequestedAt: firebase.firestore.FieldValue.delete() });
+
                 var memberData = memberSnap.data();
                 currentMemberKey = normalized;
                 currentUser = {
@@ -2351,7 +2352,8 @@ if (m.isAdmin) {
   nameSpan.textContent += ' ⭐';
 }
 
-if (m.removalRequested) {
+if (m.removalRequested && currentUser && currentUser.isAdmin === true) {
+
   var tag = document.createElement('span');
   tag.className = 'cg-removal-tag';
   tag.textContent = 'Requested Removal';
