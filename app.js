@@ -927,7 +927,9 @@ function submitLogin() {
                       errEl.textContent = 'Session error: ' + err.message; 
                     });
                   }
-                                }).catch(function(err) {
+                }).catch(function(err) {
+
+
                   // If migration failed because no approved member exists,
                   // treat as deleted user and route to pending
                   if (err.code === 'not-found') {
