@@ -203,21 +203,18 @@ var pendingLastUpdatedAt2 = data.pendingLastUpdatedAt || 0;
 });
 
 
-      // update Members button badge for current room
+    // update Members button badge for current room
       var membersBadge = document.getElementById('members-badge');
-if (membersBadge && currentGroup) {
-  var currentPending = pendingCountsByGroup[currentGroup] || 0;
-  var pendingSeenAt = (currentUser && currentUser.pendingAcknowledgedAt) || 0;
-  var pendingLastUpdatedAt = (data.pendingLastUpdatedAt) || 0;
-
-  if (currentPending > 0 && pendingLastUpdatedAt > pendingSeenAt) {
-    membersBadge.textContent = currentPending > 99 ? '99+' : String(currentPending);
-    membersBadge.style.display = 'flex';
-  } else {
-    membersBadge.style.display = 'none';
-    membersBadge.textContent = '';
-  }
-}
+      if (membersBadge && currentGroup) {
+        var currentPending = pendingCountsByGroup[currentGroup] || 0;
+        if (currentPending > 0) {
+          membersBadge.textContent = currentPending > 99 ? '99+' : String(currentPending);
+          membersBadge.style.display = 'flex';
+        } else {
+          membersBadge.style.display = 'none';
+          membersBadge.textContent = '';
+        }
+      }
 
 
      // update Care Groups nav badge
