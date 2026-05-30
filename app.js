@@ -1065,10 +1065,17 @@ enterChat();
   clearSavedUser(currentGroup);
   showCGScreen('select');
 }
-  }).catch(function() {
-  stopUnreadWatcher(currentGroup);
-  clearUnreadCount(currentGroup);
-  clearSavedUser(currentGroup);
+  }).catch(function(err) {
+  var isNetworkError = err && (
+    err.code === 'unavailable' ||
+    err.code === 'deadline-exceeded' ||
+    (err.message && err.message.toLowerCase().indexOf('network') !== -1)
+  );
+  if (!isNetworkError) {
+    stopUnreadWatcher(currentGroup);
+    clearUnreadCount(currentGroup);
+    clearSavedUser(currentGroup);
+  }
   showCGScreen('select');
 });
 }
