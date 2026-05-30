@@ -15,6 +15,7 @@ var messageListener = null;
 var unreadListeners = {};
 var unreadCountsByGroup = {};
 var unreadCount = 0;
+var membersPanelIsOpen = false;
 var pendingListeners = {};
 var lastSeenTimestamps = {};
 var replyingTo = null;
@@ -186,7 +187,7 @@ var pendingLastUpdatedAt2 = data.pendingLastUpdatedAt || 0;
 ['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(groupId) {
   var roomBadge = document.getElementById('badge-' + groupId);
   var unread = unreadCountsByGroup[groupId] || 0;
-  var isCurrentGroupAcked = (groupId === currentGroup) && (pendingLastUpdatedAt2 <= pendingSeenAt2);
+  var isCurrentGroupAcked = (groupId === currentGroup) && membersPanelIsOpen && (pendingLastUpdatedAt2 <= pendingSeenAt2);
   var pending = isCurrentGroupAcked ? 0 : (pendingCountsByGroup[groupId] || 0);
   var roomTotal = unread + pending;
 
@@ -222,7 +223,7 @@ if (membersBadge && currentGroup) {
      // update Care Groups nav badge
 var truePendingTotal = 0;
 ['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'].forEach(function(groupId) {
-  var isCurrentGroupAcked = (groupId === currentGroup) && (pendingLastUpdatedAt2 <= pendingSeenAt2);
+  var isCurrentGroupAcked = (groupId === currentGroup) && membersPanelIsOpen && (pendingLastUpdatedAt2 <= pendingSeenAt2);
   truePendingTotal += isCurrentGroupAcked ? 0 : (pendingCountsByGroup[groupId] || 0);
 });
 var effectiveTotal = totalUnread + truePendingTotal;
@@ -480,7 +481,7 @@ function refreshCareNavBadge() {
 
   Object.keys(unreadCountsByGroup).forEach(function(groupId) {
     var unread = unreadCountsByGroup[groupId] || 0;
-    var isCurrentGroupAcked = (groupId === currentGroup);
+    var isCurrentGroupAcked = (groupId === currentGroup) && membersPanelIsOpen;
     var pending = isCurrentGroupAcked ? 0 : (pendingCountsByGroup[groupId] || 0);
     total += unread + pending;
   });
@@ -517,7 +518,7 @@ function setUnreadCount(groupId, count) {
 
 function setPendingCount(groupId, count) {
   pendingCountsByGroup[groupId] = Math.max(0, count || 0);
-  var isCurrentGroupAcked = (groupId === currentGroup);
+  var isCurrentGroupAcked = (groupId === currentGroup) && membersPanelIsOpen;
   var effectivePending = isCurrentGroupAcked ? 0 : pendingCountsByGroup[groupId];
   var unread = unreadCountsByGroup[groupId] || 0;
   var total = unread + effectivePending;
@@ -2226,6 +2227,7 @@ function showChurchAlertButtonIfAdmin() {
 }
 // ---- MEMBERS PANEL ----
 function showMembersPanel() {
+  membersPanelIsOpen = true;   // ← add this line
   showCGScreen('members');
   showChurchAlertButtonIfAdmin();
   window.scrollTo(0, 0);
@@ -3102,6 +3104,7 @@ if (ls) {
   var backToChatFromMembers = document.getElementById('cg-back-to-chat-members');
   if (backToChatFromMembers) {
   backToChatFromMembers.addEventListener('click', function() {
+    membersPanelIsOpen = false;   // ← add this line
     showCGScreen('chat');
 
     requestAnimationFrame(function() {
