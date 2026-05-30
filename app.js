@@ -1116,7 +1116,10 @@ function refreshCurrentMembersBadge() {
   }
 }
 function enterChat() {
-  
+  if (messageListener) {
+    messageListener();
+    messageListener = null;
+  }
   roomMessageStateByGroup[currentGroup] = getRoomMessageCache(currentGroup);
 
 var previousOpenedTs = getLastOpenedTimestamp(currentGroup);
