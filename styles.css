@@ -1614,3 +1614,15 @@ body {
   font-size: 13px;
   color: var(--text-dim);
 }
+
+/* ============================================================
+   SELECTION OVERRIDE: Enable message copying for iOS & Android 
+   ============================================================ */
+.cg-msg-bubble, 
+.cg-primary-text, 
+.cg-reply-text {
+  -webkit-user-select: text !important; /* Force UIKit WebKit engine (Apple WebView) */
+  -moz-user-select: text !important;    /* Firefox layout engine support */
+  -ms-user-select: text !important;     /* Edge/IE platform legacy handling */
+  user-select: text !important;         /* Standard Chromium (Android Webview) */
+}
