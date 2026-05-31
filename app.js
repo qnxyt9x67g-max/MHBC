@@ -645,6 +645,9 @@ function selectGroup(groupId, groupName) {
   currentGroup = groupId;
   currentGroupName = groupName;
 
+  clearInterval(migrationPollInterval);
+  migrationPollInterval = null;
+
   var saved = getSavedUser(groupId);
   if (saved) {
     currentUser = saved;
@@ -654,6 +657,54 @@ function selectGroup(groupId, groupName) {
     return;
   }
 
+  if (currentUID) {
+    db.collection('groups').doc(groupId).collection('members').doc(currentUID).get()
+      .then(function(snap) {
+        if (snap.exists && snap.data().approved) {
+          var data = snap.data();
+          currentUser = {
+            group: groupId,
+            groupName: groupName,
+            name: data.displayName,
+            normalizedName: data.normalizedName,
+            isAdmin: data.isAdmin === true
+          };
+          currentMemberKey = data.normalizedName;
+          saveUser(currentUser);
+          setLastGroup(groupId);
+          checkApprovalAndEnter();
+        } else if (migrationInProgress) {
+          var attempts = 0;
+          migrationPollInterval = setInterval(function() {
+            attempts++;
+            var recheck = getSavedUser(groupId);
+            if (recheck) {
+              clearInterval(migrationPollInterval);
+              migrationPollInterval = null;
+              currentUser = recheck;
+              currentMemberKey = recheck.normalizedName;
+              setLastGroup(groupId);
+              checkApprovalAndEnter();
+            } else if (!migrationInProgress || attempts >= 10) {
+              clearInterval(migrationPollInterval);
+              migrationPollInterval = null;
+              showLoginScreen(groupId, groupName);
+            }
+          }, 500);
+        } else {
+          showLoginScreen(groupId, groupName);
+        }
+      })
+      .catch(function() {
+        showLoginScreen(groupId, groupName);
+      });
+    return;
+  }
+
+  showLoginScreen(groupId, groupName);
+}
+
+function showLoginScreen(groupId, groupName) {
   document.getElementById('cg-login-title').textContent = groupName;
   ['cg-room-password','cg-user-name','cg-user-pin'].forEach(function(id) {
     var el = document.getElementById(id);
@@ -662,6 +713,7 @@ function selectGroup(groupId, groupName) {
   document.getElementById('cg-login-error').textContent = '';
   showCGScreen('login');
 }
+
 
 // ---- PENDING SCREEN MESSAGES ----
 function showFirstTimeMessage() {
@@ -676,6 +728,9 @@ function showReturningUserMessage() {
 
 // ---- SUBMIT LOGIN ----
 var loginInProgress = false;
+var migrationInProgress = false;
+var migrationPollInterval = null;
+
 
 function submitLogin() {
   if (loginInProgress) return;
@@ -879,14 +934,38 @@ enterChat();
                         }
                       });
                     }
-                    if (groupsToMigrate.length > 0 || discoveredOldUID) {
+                                        if (groupsToMigrate.length > 0 || discoveredOldUID) {
                       var migrateAll = firebase.functions().httpsCallable('migrateAllGroupsV2');
+                      migrationInProgress = true;
                       migrateAll({ groups: groupsToMigrate, oldUID: discoveredOldUID }).then(function(res) {
                         console.log('In-session multi-group migration successful:', res.data);
+                        var groupNames = {
+                          c101: 'C101', narthex: 'Narthex',
+                          fellowship1: 'Fellowship Hall 1st Floor',
+                          fellowship2: 'Fellowship Hall 2nd Floor',
+                          trac: 'T.R.A.C.'
+                        };
+                        if (res.data && Array.isArray(res.data.results)) {
+                          res.data.results.forEach(function(r) {
+                            if ((r.status === 'migrated' || r.status === 'migrated-by-uid') && r.displayName && r.normalizedName) {
+                              saveUser({
+                                group: r.groupId,
+                                groupName: groupNames[r.groupId] || r.groupId,
+                                name: r.displayName,
+                                normalizedName: r.normalizedName,
+                                isAdmin: r.isAdmin === true
+                              });
+                            }
+                          });
+                        }
+                        migrationInProgress = false;
                       }).catch(function(err) {
                         console.log('In-session multi-group migration skipped:', err.message);
+                      }).finally(function() {
+                        migrationInProgress = false;
                       });
                     }
+
                     startAllUnreadWatchers();
                     startAllPendingWatchers();
                     listenForBadgeUpdates();
