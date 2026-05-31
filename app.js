@@ -749,418 +749,350 @@ function submitLogin() {
   var errEl = document.getElementById('cg-login-error');
   errEl.textContent = '';
 
-  if (!roomPass || !userName || !userPassword) { 
-    errEl.textContent = 'Please fill in all fields.'; 
-    if (loginBtn) {
-      loginBtn.disabled = false;
-      loginBtn.textContent = 'Log In';
-      loginBtn.style.opacity = '1';
-    }
-    loginInProgress = false; 
-    return; 
+  if (!roomPass || !userName || !userPassword) {
+    errEl.textContent = 'Please fill in all fields.';
+    if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+    loginInProgress = false;
+    return;
   }
-  if (userPassword.length < 4) { 
-    errEl.textContent = 'Password must be at least 4 characters.'; 
-    if (loginBtn) {
-      loginBtn.disabled = false;
-      loginBtn.textContent = 'Log In';
-      loginBtn.style.opacity = '1';
-    }
-    loginInProgress = false; 
-    return; 
+  if (userPassword.length < 4) {
+    errEl.textContent = 'Password must be at least 4 characters.';
+    if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+    loginInProgress = false;
+    return;
   }
 
-  // Internet/auth state safety check
   if (!authReady || !auth.currentUser) {
     errEl.textContent = 'Connecting... please try again in a moment.';
-    if (loginBtn) {
-      loginBtn.disabled = false;
-      loginBtn.textContent = 'Log In';
-      loginBtn.style.opacity = '1';
-    }
+    if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
     loginInProgress = false;
     return;
   }
 
   currentUID = auth.currentUser.uid;
   var normalized = normalizeName(userName);
-  if (!normalized) { 
-    errEl.textContent = 'Please enter a valid name.'; 
-    if (loginBtn) {
-      loginBtn.disabled = false;
-      loginBtn.textContent = 'Log In';
-      loginBtn.style.opacity = '1';
-    }
-    loginInProgress = false; 
-    return; 
+  if (!normalized) {
+    errEl.textContent = 'Please enter a valid name.';
+    if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+    loginInProgress = false;
+    return;
   }
 
   var remainingLockout = getRemainingLockoutMs(currentGroup, normalized);
   if (remainingLockout > 0) {
     errEl.textContent = 'Too many failed attempts. Please wait ' + formatRemainingLockout(remainingLockout) + ' before trying again.';
-    if (loginBtn) {
-      loginBtn.disabled = false;
-      loginBtn.textContent = 'Log In';
-      loginBtn.style.opacity = '1';
-    }
+    if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
     loginInProgress = false;
     return;
   }
 
-  db.collection('config').doc('rooms').get().then(function(snap) {
-    if (!snap.exists) { 
-      errEl.textContent = 'Configuration error. Contact your admin.'; 
-      if (loginBtn) {
-        loginBtn.disabled = false;
-        loginBtn.textContent = 'Log In';
-        loginBtn.style.opacity = '1';
-      }
-      loginInProgress = false;
-      return; 
-    }
-    var config = snap.data();
-
-    hashInput(roomPass, config[currentGroup + '_salt']).then(function(enteredRoomHash) {
-      if (enteredRoomHash !== config[currentGroup + '_hash']) {
-        recordFailedLogin(currentGroup, normalized);
-        var remainingAfterRoomFailure = getRemainingLockoutMs(currentGroup, normalized);
-        if (remainingAfterRoomFailure > 0) {
-          errEl.textContent = 'Too many failed attempts. Please wait ' + formatRemainingLockout(remainingAfterRoomFailure) + ' before trying again.';
-        } else {
-          errEl.textContent = 'Incorrect room password. Check with your group leader.';
-        }
-        if (loginBtn) {
-          loginBtn.disabled = false;
-          loginBtn.textContent = 'Log In';
-          loginBtn.style.opacity = '1';
-        }
+  // Device guard: block a different user from logging in on a device already tied to someone else
+  db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).get()
+    .then(function(deviceSnap) {
+      if (deviceSnap.exists && deviceSnap.data().normalizedName !== normalized) {
+        errEl.textContent = "This device is tied to another user's profile. Please try again on a different device.";
+        if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
         loginInProgress = false;
         return;
       }
+      runLoginPipeline();
+    })
+    .catch(function() {
+      runLoginPipeline();
+    });
 
-      var identityRef = db.collection('groups').doc(currentGroup).collection('identities').doc(normalized);
+  function runLoginPipeline() {
+    db.collection('config').doc('rooms').get().then(function(snap) {
+      if (!snap.exists) {
+        errEl.textContent = 'Configuration error. Contact your admin.';
+        if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+        loginInProgress = false;
+        return;
+      }
+      var config = snap.data();
 
-      identityRef.get().then(function(identitySnap) {
-        if (identitySnap.exists) {
-          var identity = identitySnap.data();
-          hashInput(userPassword, identity.passwordSalt).then(function(enteredHash) {
-            if (enteredHash !== identity.passwordHash) {
-              recordFailedLogin(currentGroup, normalized);
-              var remainingAfterFailure = getRemainingLockoutMs(currentGroup, normalized);
-              if (remainingAfterFailure > 0) {
-                errEl.textContent = 'Too many failed attempts. Please wait ' + formatRemainingLockout(remainingAfterFailure) + ' before trying again.';
-              } else {
-                errEl.textContent = 'Incorrect password. Try again.';
+      hashInput(roomPass, config[currentGroup + '_salt']).then(function(enteredRoomHash) {
+        if (enteredRoomHash !== config[currentGroup + '_hash']) {
+          recordFailedLogin(currentGroup, normalized);
+          var remainingAfterRoomFailure = getRemainingLockoutMs(currentGroup, normalized);
+          if (remainingAfterRoomFailure > 0) {
+            errEl.textContent = 'Too many failed attempts. Please wait ' + formatRemainingLockout(remainingAfterRoomFailure) + ' before trying again.';
+          } else {
+            errEl.textContent = 'Incorrect room password. Check with your group leader.';
+          }
+          if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+          loginInProgress = false;
+          return;
+        }
+
+        var identityRef = db.collection('groups').doc(currentGroup).collection('identities').doc(normalized);
+
+        identityRef.get().then(function(identitySnap) {
+          if (identitySnap.exists) {
+            var identity = identitySnap.data();
+            hashInput(userPassword, identity.passwordSalt).then(function(enteredHash) {
+              if (enteredHash !== identity.passwordHash) {
+                recordFailedLogin(currentGroup, normalized);
+                var remainingAfterFailure = getRemainingLockoutMs(currentGroup, normalized);
+                if (remainingAfterFailure > 0) {
+                  errEl.textContent = 'Too many failed attempts. Please wait ' + formatRemainingLockout(remainingAfterFailure) + ' before trying again.';
+                } else {
+                  errEl.textContent = 'Incorrect password. Try again.';
+                }
+                if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+                loginInProgress = false;
+                return;
               }
-              if (loginBtn) {
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Log In';
-                loginBtn.style.opacity = '1';
-              }
-              loginInProgress = false;
-              return;
-            }
 
-            clearLoginGuard(currentGroup, normalized);
+              clearLoginGuard(currentGroup, normalized);
 
-            var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(currentUID);
-            memberRef.get().then(function(memberSnap) {
-              if (memberSnap.exists) {
-                // Clear removal flag if user successfully signs back in
-                memberRef.update({ 
-                  lastLoginAt: Date.now(), 
-                  removalRequested: false, 
-                  removalRequestedAt: firebase.firestore.FieldValue.delete() 
+              var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(currentUID);
+              memberRef.get().then(function(memberSnap) {
+                if (memberSnap.exists) {
+                  memberRef.update({
+                    lastLoginAt: Date.now(),
+                    removalRequested: false,
+                    removalRequestedAt: firebase.firestore.FieldValue.delete()
+                  });
+
+                  var memberData = memberSnap.data();
+                  currentMemberKey = normalized;
+                  currentUser = {
+                    group: currentGroup,
+                    groupName: currentGroupName,
+                    name: identity.displayName,
+                    normalizedName: normalized,
+                    isAdmin: memberData.isAdmin === true
+                  };
+                  saveUser(currentUser);
+                  setLastGroup(currentGroup);
+                  startAllUnreadWatchers();
+                  startAllPendingWatchers();
+                  listenForBadgeUpdates();
+                  if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+                  loginInProgress = false;
+                  if (memberData.approved) {
+                    silentlyRestoreRoomsFromUID();
+                    enterChat();
+                  } else {
+                    document.getElementById('cg-pending-title').textContent = currentGroupName;
+                    showReturningUserMessage();
+                    showCGScreen('pending');
+                  }
+                } else {
+                  var migrateUid = firebase.functions().httpsCallable('migrateUidV2');
+                  migrateUid({
+                    groupId: currentGroup,
+                    normalizedName: normalized,
+                    passwordHash: identity.passwordHash
+                  }).then(function(result) {
+                    if (result.data.status === 'migrated') {
+                      currentMemberKey = normalized;
+                      currentUser = {
+                        group: currentGroup,
+                        groupName: currentGroupName,
+                        name: result.data.displayName,
+                        normalizedName: normalized,
+                        isAdmin: result.data.isAdmin === true
+                      };
+                      saveUser(currentUser);
+                      setLastGroup(currentGroup);
+                      var discoveredOldUID = result.data.oldUID || null;
+                      var allSaved = getSavedUsers();
+                      var groupsToMigrate = [];
+                      if (allSaved && Object.keys(allSaved).length > 0) {
+                        Object.keys(allSaved).forEach(function(groupId) {
+                          var s = allSaved[groupId];
+                          if (s && s.normalizedName) {
+                            groupsToMigrate.push({
+                              groupId: groupId,
+                              normalizedName: s.normalizedName
+                            });
+                          }
+                        });
+                      }
+                      if (groupsToMigrate.length > 0 || discoveredOldUID) {
+                        var migrateAll = firebase.functions().httpsCallable('migrateAllGroupsV2');
+                        migrationInProgress = true;
+                        migrateAll({ groups: groupsToMigrate, oldUID: discoveredOldUID }).then(function(res) {
+                          console.log('In-session multi-group migration successful:', res.data);
+                          var groupNames = {
+                            c101: 'C101', narthex: 'Narthex',
+                            fellowship1: 'Fellowship Hall 1st Floor',
+                            fellowship2: 'Fellowship Hall 2nd Floor',
+                            trac: 'T.R.A.C.'
+                          };
+                          if (res.data && Array.isArray(res.data.results)) {
+                            res.data.results.forEach(function(r) {
+                              if ((r.status === 'migrated' || r.status === 'migrated-by-uid') && r.displayName && r.normalizedName) {
+                                saveUser({
+                                  group: r.groupId,
+                                  groupName: groupNames[r.groupId] || r.groupId,
+                                  name: r.displayName,
+                                  normalizedName: r.normalizedName,
+                                  isAdmin: r.isAdmin === true
+                                });
+                              }
+                            });
+                          }
+                          migrationInProgress = false;
+                        }).catch(function(err) {
+                          console.log('In-session multi-group migration skipped:', err.message);
+                        }).finally(function() {
+                          migrationInProgress = false;
+                        });
+                      }
+                      startAllUnreadWatchers();
+                      startAllPendingWatchers();
+                      listenForBadgeUpdates();
+                      if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+                      loginInProgress = false;
+                      silentlyRestoreRoomsFromUID();
+                      enterChat();
+                    } else {
+                      memberRef.set({
+                        uid: currentUID,
+                        normalizedName: normalized,
+                        displayName: identity.displayName,
+                        approved: false,
+                        isAdmin: false,
+                        createdAt: Date.now(),
+                        lastLoginAt: Date.now()
+                      }).then(function() {
+                        currentMemberKey = normalized;
+                        currentUser = {
+                          group: currentGroup,
+                          groupName: currentGroupName,
+                          name: identity.displayName,
+                          normalizedName: normalized,
+                          isAdmin: false
+                        };
+                        saveUser(currentUser);
+                        setLastGroup(currentGroup);
+                        startAllUnreadWatchers();
+                        startAllPendingWatchers();
+                        listenForBadgeUpdates();
+                        document.getElementById('cg-pending-title').textContent = currentGroupName;
+                        showReturningUserMessage();
+                        showCGScreen('pending');
+                        if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+                        loginInProgress = false;
+                      }).catch(function(err) {
+                        if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+                        loginInProgress = false;
+                        errEl.textContent = 'Session error: ' + err.message;
+                      });
+                    }
+                  }).catch(function(err) {
+                    if (err.code === 'not-found') {
+                      memberRef.set({
+                        uid: currentUID,
+                        normalizedName: normalized,
+                        displayName: identity.displayName,
+                        approved: false,
+                        isAdmin: false,
+                        createdAt: Date.now(),
+                        lastLoginAt: Date.now()
+                      }).then(function() {
+                        currentMemberKey = normalized;
+                        currentUser = {
+                          group: currentGroup,
+                          groupName: currentGroupName,
+                          name: identity.displayName,
+                          normalizedName: normalized,
+                          isAdmin: false
+                        };
+                        saveUser(currentUser);
+                        setLastGroup(currentGroup);
+                        startAllUnreadWatchers();
+                        startAllPendingWatchers();
+                        listenForBadgeUpdates();
+                        document.getElementById('cg-pending-title').textContent = currentGroupName;
+                        showReturningUserMessage();
+                        showCGScreen('pending');
+                        if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+                        loginInProgress = false;
+                      }).catch(function(err2) {
+                        if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+                        loginInProgress = false;
+                        errEl.textContent = 'Session error: ' + err2.message;
+                      });
+                    } else {
+                      if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+                      loginInProgress = false;
+                      errEl.textContent = 'Migration error: ' + err.message;
+                    }
+                  });
+                }
+              }).catch(function(err) {
+                if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+                loginInProgress = false;
+                errEl.textContent = 'Member lookup error: ' + err.message;
+              });
+            });
+          } else {
+            // Brand new profile registration path
+            var passwordSalt = generateSalt();
+            hashInput(userPassword, passwordSalt).then(function(passwordHash) {
+              identityRef.set({
+                displayName: userName,
+                normalizedName: normalized,
+                passwordHash: passwordHash,
+                passwordSalt: passwordSalt,
+                approved: false,
+                isAdmin: false,
+                createdAt: Date.now()
+              }).then(function() {
+                return db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).set({
+                  uid: currentUID,
+                  normalizedName: normalized,
+                  displayName: userName,
+                  approved: false,
+                  isAdmin: false,
+                  createdAt: Date.now(),
+                  lastLoginAt: Date.now()
                 });
-
-                var memberData = memberSnap.data();
+              }).then(function() {
+                clearLoginGuard(currentGroup, normalized);
                 currentMemberKey = normalized;
                 currentUser = {
                   group: currentGroup,
                   groupName: currentGroupName,
-                  name: identity.displayName,
+                  name: userName,
                   normalizedName: normalized,
-                  isAdmin: memberData.isAdmin === true
+                  isAdmin: false
                 };
                 saveUser(currentUser);
                 setLastGroup(currentGroup);
                 startAllUnreadWatchers();
                 startAllPendingWatchers();
                 listenForBadgeUpdates();
-                if (loginBtn) {
-                  loginBtn.disabled = false;
-                  loginBtn.textContent = 'Log In';
-                  loginBtn.style.opacity = '1';
-                }
+                document.getElementById('cg-pending-title').textContent = currentGroupName;
+                showFirstTimeMessage();
+                showCGScreen('pending');
+                if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
                 loginInProgress = false;
-                if (memberData.approved) {
-                  silentlyRestoreRoomsFromUID();
-enterChat();
-                } else {
-                  document.getElementById('cg-pending-title').textContent = currentGroupName;
-                  showReturningUserMessage();
-                  showCGScreen('pending');
-                }
-              } else {
-                var migrateUid = firebase.functions().httpsCallable('migrateUidV2');
-                migrateUid({
-                  groupId: currentGroup,
-                  normalizedName: normalized,
-                  passwordHash: identity.passwordHash
-                }).then(function(result) {
-                                    if (result.data.status === 'migrated') {
-                    currentMemberKey = normalized;
-                    currentUser = {
-                      group: currentGroup,
-                      groupName: currentGroupName,
-                      name: result.data.displayName,
-                      normalizedName: normalized,
-                      isAdmin: result.data.isAdmin === true
-                    };
-                    saveUser(currentUser);
-                    setLastGroup(currentGroup);
-                    // Migrate all other saved rooms to new UID in the same session
-                    var discoveredOldUID = result.data.oldUID || null;
-                    var allSaved = getSavedUsers();
-                    var groupsToMigrate = [];
-                    if (allSaved && Object.keys(allSaved).length > 0) {
-                      Object.keys(allSaved).forEach(function(groupId) {
-                        var s = allSaved[groupId];
-                        if (s && s.normalizedName) {
-                          groupsToMigrate.push({
-                            groupId: groupId,
-                            normalizedName: s.normalizedName
-                          });
-                        }
-                      });
-                    }
-                                        if (groupsToMigrate.length > 0 || discoveredOldUID) {
-                      var migrateAll = firebase.functions().httpsCallable('migrateAllGroupsV2');
-                      migrationInProgress = true;
-                      migrateAll({ groups: groupsToMigrate, oldUID: discoveredOldUID }).then(function(res) {
-                        console.log('In-session multi-group migration successful:', res.data);
-                        var groupNames = {
-                          c101: 'C101', narthex: 'Narthex',
-                          fellowship1: 'Fellowship Hall 1st Floor',
-                          fellowship2: 'Fellowship Hall 2nd Floor',
-                          trac: 'T.R.A.C.'
-                        };
-                        if (res.data && Array.isArray(res.data.results)) {
-                          res.data.results.forEach(function(r) {
-                            if ((r.status === 'migrated' || r.status === 'migrated-by-uid') && r.displayName && r.normalizedName) {
-                              saveUser({
-                                group: r.groupId,
-                                groupName: groupNames[r.groupId] || r.groupId,
-                                name: r.displayName,
-                                normalizedName: r.normalizedName,
-                                isAdmin: r.isAdmin === true
-                              });
-                            }
-                          });
-                        }
-                        migrationInProgress = false;
-                      }).catch(function(err) {
-                        console.log('In-session multi-group migration skipped:', err.message);
-                      }).finally(function() {
-                        migrationInProgress = false;
-                      });
-                    }
-
-                    startAllUnreadWatchers();
-                    startAllPendingWatchers();
-                    listenForBadgeUpdates();
-                    if (loginBtn) {
-                      loginBtn.disabled = false;
-                      loginBtn.textContent = 'Log In';
-                      loginBtn.style.opacity = '1';
-                    }
-                    loginInProgress = false;
-                    silentlyRestoreRoomsFromUID();
-enterChat();
-
-                  } else {
-                    memberRef.set({
-                      uid: currentUID,
-                      normalizedName: normalized,
-                      displayName: identity.displayName,
-                      approved: false,
-                      isAdmin: false,
-                      createdAt: Date.now(),
-                      lastLoginAt: Date.now()
-                    }).then(function() {
-                      currentMemberKey = normalized;
-                      currentUser = {
-                        group: currentGroup,
-                        groupName: currentGroupName,
-                        name: identity.displayName,
-                        normalizedName: normalized,
-                        isAdmin: false
-                      };
-                      saveUser(currentUser);
-                      setLastGroup(currentGroup);
-                      startAllUnreadWatchers();
-                      startAllPendingWatchers();
-                      listenForBadgeUpdates();
-                      document.getElementById('cg-pending-title').textContent = currentGroupName;
-                      showReturningUserMessage();
-                      showCGScreen('pending');
-                      if (loginBtn) {
-                        loginBtn.disabled = false;
-                        loginBtn.textContent = 'Log In';
-                        loginBtn.style.opacity = '1';
-                      }
-                      loginInProgress = false;
-                    }).catch(function(err) { 
-                      if (loginBtn) {
-                        loginBtn.disabled = false;
-                        loginBtn.textContent = 'Log In';
-                        loginBtn.style.opacity = '1';
-                      }
-                      loginInProgress = false; 
-                      errEl.textContent = 'Session error: ' + err.message; 
-                    });
-                  }
-                }).catch(function(err) {
-                  // Catch deleted users here: if migration error is 'not-found', route to pending screen
-                  if (err.code === 'not-found') {
-                    memberRef.set({
-                      uid: currentUID,
-                      normalizedName: normalized,
-                      displayName: identity.displayName,
-                      approved: false,
-                      isAdmin: false,
-                      createdAt: Date.now(),
-                      lastLoginAt: Date.now()
-                    }).then(function() {
-                      currentMemberKey = normalized;
-                      currentUser = {
-                        group: currentGroup,
-                        groupName: currentGroupName,
-                        name: identity.displayName,
-                        normalizedName: normalized,
-                        isAdmin: false
-                      };
-                      saveUser(currentUser);
-                      setLastGroup(currentGroup);
-                      startAllUnreadWatchers();
-                      startAllPendingWatchers();
-                      listenForBadgeUpdates();
-                      document.getElementById('cg-pending-title').textContent = currentGroupName;
-                      showReturningUserMessage();
-                      showCGScreen('pending');
-                      if (loginBtn) {
-                        loginBtn.disabled = false;
-                        loginBtn.textContent = 'Log In';
-                        loginBtn.style.opacity = '1';
-                      }
-                      loginInProgress = false;
-                    }).catch(function(err2) {
-                      if (loginBtn) {
-                        loginBtn.disabled = false;
-                        loginBtn.textContent = 'Log In';
-                        loginBtn.style.opacity = '1';
-                      }
-                      loginInProgress = false;
-                      errEl.textContent = 'Session error: ' + err2.message;
-                    });
-                  } else {
-                    if (loginBtn) {
-                      loginBtn.disabled = false;
-                      loginBtn.textContent = 'Log In';
-                      loginBtn.style.opacity = '1';
-                    }
-                    loginInProgress = false;
-                    errEl.textContent = 'Migration error: ' + err.message;
-                  }
-                });
-              }
-            }).catch(function(err) { 
-              if (loginBtn) {
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Log In';
-                loginBtn.style.opacity = '1';
-              }
-              loginInProgress = false; 
-              errEl.textContent = 'Member lookup error: ' + err.message; 
-            });
-          });
-        } else {
-          // Brand new profile registration path
-          var passwordSalt = generateSalt();
-          hashInput(userPassword, passwordSalt).then(function(passwordHash) {
-            identityRef.set({
-              displayName: userName, 
-              normalizedName: normalized,
-              passwordHash: passwordHash, 
-              passwordSalt: passwordSalt,
-              approved: false, 
-              isAdmin: false, 
-              createdAt: Date.now()
-            }).then(function() {
-              return db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).set({
-                uid: currentUID, 
-                normalizedName: normalized, 
-                displayName: userName,
-                approved: false, 
-                isAdmin: false,
-                createdAt: Date.now(), 
-                lastLoginAt: Date.now()
+              }).catch(function(err) {
+                if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+                loginInProgress = false;
+                errEl.textContent = 'Registration error: ' + err.message;
               });
-            }).then(function() {
-              clearLoginGuard(currentGroup, normalized);
-              currentMemberKey = normalized;
-              currentUser = {
-                group: currentGroup, 
-                groupName: currentGroupName,
-                name: userName, 
-                normalizedName: normalized, 
-                isAdmin: false
-              };
-              saveUser(currentUser);
-              setLastGroup(currentGroup);
-              startAllUnreadWatchers();
-              startAllPendingWatchers();
-              listenForBadgeUpdates();
-              document.getElementById('cg-pending-title').textContent = currentGroupName;
-              showFirstTimeMessage(); 
-              showCGScreen('pending');
-              if (loginBtn) {
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Log In';
-                loginBtn.style.opacity = '1';
-              }
-              loginInProgress = false;
-            }).catch(function(err) { 
-              if (loginBtn) {
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Log In';
-                loginBtn.style.opacity = '1';
-              }
-              loginInProgress = false; 
-              errEl.textContent = 'Registration error: ' + err.message; 
             });
-          });
-        }
-      }).catch(function(err) { 
-        if (loginBtn) {
-          loginBtn.disabled = false;
-          loginBtn.textContent = 'Log In';
-          loginBtn.style.opacity = '1';
-        }
-        loginInProgress = false; 
-        errEl.textContent = 'Identity lookup error: ' + err.message; 
+          }
+        }).catch(function(err) {
+          if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+          loginInProgress = false;
+          errEl.textContent = 'Identity lookup error: ' + err.message;
+        });
       });
+    }).catch(function(err) {
+      if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+      loginInProgress = false;
+      errEl.textContent = 'Config error: ' + err.message;
     });
-  }).catch(function(err) { 
-    if (loginBtn) {
-      loginBtn.disabled = false;
-      loginBtn.textContent = 'Log In';
-      loginBtn.style.opacity = '1';
-    }
-    loginInProgress = false; 
-    errEl.textContent = 'Config error: ' + err.message; 
-  });
+  }
 }
+
 
 // ---- CHECK APPROVAL ----
 function checkApproval() {
