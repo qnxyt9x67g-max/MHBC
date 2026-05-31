@@ -1311,10 +1311,11 @@ body {
   }
 }
 .msg-wrapper {
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
 }
+
 
 .cg-primary-header {
   display: flex;
