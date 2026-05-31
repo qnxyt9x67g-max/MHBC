@@ -839,7 +839,8 @@ function submitLogin() {
                 }
                 loginInProgress = false;
                 if (memberData.approved) {
-                  enterChat();
+                  silentlyRestoreRoomsFromUID();
+enterChat();
                 } else {
                   document.getElementById('cg-pending-title').textContent = currentGroupName;
                   showReturningUserMessage();
@@ -895,7 +896,8 @@ function submitLogin() {
                       loginBtn.style.opacity = '1';
                     }
                     loginInProgress = false;
-                    enterChat();
+                    silentlyRestoreRoomsFromUID();
+enterChat();
 
                   } else {
                     memberRef.set({
@@ -1092,6 +1094,7 @@ setLastGroup(currentGroup);
 startAllUnreadWatchers();
 startAllPendingWatchers();
       listenForBadgeUpdates();
+silentlyRestoreRoomsFromUID();
 enterChat();
     } else {
       alert('Not approved yet. Please wait for your group leader to approve you.');
@@ -1109,6 +1112,7 @@ setLastGroup(currentGroup);
 startAllUnreadWatchers();
 startAllPendingWatchers();
       listenForBadgeUpdates();
+silentlyRestoreRoomsFromUID();
 enterChat();
     } else if (snap.exists) {
       document.getElementById('cg-pending-title').textContent = currentGroupName;
@@ -1132,6 +1136,49 @@ enterChat();
   }
   showCGScreen('select');
 });
+}
+function silentlyRestoreRoomsFromUID() {
+  if (!currentUID) return;
+  var alreadyRestored = localStorage.getItem('mhbc_uid_restored_' + currentUID);
+  if (alreadyRestored) return;
+  var allGroups = ['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'];
+  var groupNames = {
+    c101: 'C101',
+    narthex: 'Narthex',
+    fellowship1: 'Fellowship Hall 1st Floor',
+    fellowship2: 'Fellowship Hall 2nd Floor',
+    trac: 'T.R.A.C.'
+  };
+  var checks = allGroups.filter(function(groupId) {
+    return groupId !== currentGroup && !getSavedUser(groupId);
+  });
+  if (checks.length === 0) {
+    localStorage.setItem('mhbc_uid_restored_' + currentUID, '1');
+    return;
+  }
+  var completed = 0;
+  checks.forEach(function(groupId) {
+    db.collection('groups').doc(groupId).collection('members').doc(currentUID).get()
+      .then(function(snap) {
+        if (snap.exists && snap.data().approved) {
+          var data = snap.data();
+          saveUser({
+            group: groupId,
+            groupName: groupNames[groupId] || groupId,
+            name: data.displayName,
+            normalizedName: data.normalizedName,
+            isAdmin: data.isAdmin === true
+          });
+          console.log('Silently restored room from UID:', groupId);
+        }
+      }).catch(function() {})
+      .finally(function() {
+        completed++;
+        if (completed === checks.length) {
+          localStorage.setItem('mhbc_uid_restored_' + currentUID, '1');
+        }
+      });
+  });
 }
 function getLastOpenedKey(groupId) {
   return 'mhbc_last_opened_' + groupId;
