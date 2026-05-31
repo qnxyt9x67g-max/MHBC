@@ -864,9 +864,10 @@ function submitLogin() {
                     saveUser(currentUser);
                     setLastGroup(currentGroup);
                     // Migrate all other saved rooms to new UID in the same session
+                    var discoveredOldUID = result.data.oldUID || null;
                     var allSaved = getSavedUsers();
+                    var groupsToMigrate = [];
                     if (allSaved && Object.keys(allSaved).length > 0) {
-                      var groupsToMigrate = [];
                       Object.keys(allSaved).forEach(function(groupId) {
                         var s = allSaved[groupId];
                         if (s && s.normalizedName) {
@@ -876,14 +877,14 @@ function submitLogin() {
                           });
                         }
                       });
-                      if (groupsToMigrate.length > 0) {
-                        var migrateAll = firebase.functions().httpsCallable('migrateAllGroupsV2');
-                        migrateAll({ groups: groupsToMigrate }).then(function(res) {
-                          console.log('In-session multi-group migration successful:', res.data);
-                        }).catch(function(err) {
-                          console.log('In-session multi-group migration skipped:', err.message);
-                        });
-                      }
+                    }
+                    if (groupsToMigrate.length > 0 || discoveredOldUID) {
+                      var migrateAll = firebase.functions().httpsCallable('migrateAllGroupsV2');
+                      migrateAll({ groups: groupsToMigrate, oldUID: discoveredOldUID }).then(function(res) {
+                        console.log('In-session multi-group migration successful:', res.data);
+                      }).catch(function(err) {
+                        console.log('In-session multi-group migration skipped:', err.message);
+                      });
                     }
                     startAllUnreadWatchers();
                     startAllPendingWatchers();
