@@ -786,20 +786,26 @@ function submitLogin() {
     return;
   }
 
-  // Device guard: block a different user from logging in on a device already tied to someone else
-  db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).get()
-    .then(function(deviceSnap) {
-      if (deviceSnap.exists && deviceSnap.data().normalizedName !== normalized) {
-        errEl.textContent = "This device is tied to another user's profile. Please try again on a different device.";
-        if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
-        loginInProgress = false;
-        return;
-      }
-      runLoginPipeline();
-    })
-    .catch(function() {
-      runLoginPipeline();
+ // Device guard: block a different user from logging in on a device already tied to someone else
+  // Sweeps all rooms in case the member doc in the current room was deleted by admin
+  var allGroups = ['c101', 'narthex', 'fellowship1', 'fellowship2', 'trac'];
+  var roomChecks = allGroups.map(function(groupId) {
+    return db.collection('groups').doc(groupId).collection('members').doc(currentUID).get();
+  });
+  Promise.all(roomChecks).then(function(snaps) {
+    var conflict = snaps.some(function(snap) {
+      return snap.exists && snap.data().normalizedName !== normalized;
     });
+    if (conflict) {
+      errEl.textContent = "This device is tied to another user's profile. Please try again on a different device.";
+      if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Log In'; loginBtn.style.opacity = '1'; }
+      loginInProgress = false;
+      return;
+    }
+    runLoginPipeline();
+  }).catch(function() {
+    runLoginPipeline();
+  });
 
   function runLoginPipeline() {
     db.collection('config').doc('rooms').get().then(function(snap) {
@@ -1118,6 +1124,12 @@ function checkApprovalAndEnter() {
   db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).get().then(function(snap) {
     if (snap.exists && snap.data().approved) {
       currentUser.isAdmin = snap.data().isAdmin === true;
+      if (snap.data().removalRequested) {
+        db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).update({
+          removalRequested: false,
+          removalRequestedAt: firebase.firestore.FieldValue.delete()
+        }).catch(function() {});
+      }
 saveUser(currentUser);
 setLastGroup(currentGroup);
 startAllUnreadWatchers();
