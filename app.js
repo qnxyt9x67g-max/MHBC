@@ -3229,8 +3229,14 @@ if (ls) {
   var startOverBtn = document.getElementById('cg-start-over-btn');
   if (startOverBtn) startOverBtn.addEventListener('click', startOver);
 
-  var backToSelect = document.getElementById('cg-back-to-select');
-  if (backToSelect) backToSelect.addEventListener('click', function() { showCGScreen('select'); });
+    var backToSelect = document.getElementById('cg-back-to-select');
+  if (backToSelect) backToSelect.addEventListener('click', function() {
+    if (messageListener) { messageListener(); messageListener = null; }
+    currentGroup = null;
+    currentGroupName = null;
+    showCGScreen('select');
+  });
+
 
   var backToSelectFromPending = document.getElementById('cg-back-to-select-pending');
   if (backToSelectFromPending) backToSelectFromPending.addEventListener('click', function() { showCGScreen('select'); });
