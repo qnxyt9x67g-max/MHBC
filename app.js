@@ -1103,6 +1103,8 @@ function submitLogin() {
 // ---- CHECK APPROVAL ----
 function checkApproval() {
   if (!currentUID || !currentGroup) return;
+  var btn = document.getElementById('cg-check-btn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
   db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).get().then(function(snap) {
     if (snap.exists && snap.data().approved) {
       currentUser.isAdmin = snap.data().isAdmin === true;
@@ -1116,8 +1118,13 @@ enterChat();
     } else {
       alert('Not approved yet. Please wait for your group leader to approve you.');
     }
+  }).catch(function(err) {
+    console.error('checkApproval error:', err);
+  }).finally(function() {
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
   });
 }
+
 
 function checkApprovalAndEnter() {
   if (!currentUID || !currentGroup) { showCGScreen('select'); return; }
