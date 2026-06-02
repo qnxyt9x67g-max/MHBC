@@ -2035,22 +2035,23 @@ function loadMessages(scrollOnOpen) {
     refreshHasOlderMessages();
     attachRecentMessagesListener();
     // Silently fetch fresh in background to catch anything missed
-    var countBefore = state.orderedIds.length;
-    db.collection('groups').doc(currentGroup)
-      .collection('messages')
-      .orderBy('timestamp', 'desc')
-      .limit(MESSAGE_PAGE_SIZE)
-      .get()
-      .then(function(snapshot) {
-        var newest = snapshot.docs.map(function(doc) {
-          return normalizeFirestoreMessage(doc);
-        }).reverse();
-        mergeMessagesIntoRoomState(state, newest);
-        if (state.orderedIds.length !== countBefore) {
-          saveRoomMessageCache(currentGroup, state);
-          renderCurrentRoomMessages(false);
-        }
-      }).catch(function() {});
+    // DISABLED: costs 50 reads every room switch; onSnapshot handles this
+    // var countBefore = state.orderedIds.length;
+    // db.collection('groups').doc(currentGroup)
+    //   .collection('messages')
+    //   .orderBy('timestamp', 'desc')
+    //   .limit(MESSAGE_PAGE_SIZE)
+    //   .get()
+    //   .then(function(snapshot) {
+    //     var newest = snapshot.docs.map(function(doc) {
+    //       return normalizeFirestoreMessage(doc);
+    //     }).reverse();
+    //     mergeMessagesIntoRoomState(state, newest);
+    //     if (state.orderedIds.length !== countBefore) {
+    //       saveRoomMessageCache(currentGroup, state);
+    //       renderCurrentRoomMessages(false);
+    //     }
+    //   }).catch(function() {});
     return;
   }
 
