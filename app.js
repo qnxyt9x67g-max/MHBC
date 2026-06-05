@@ -399,6 +399,18 @@ function checkChurchPrompt() {
     document.body.appendChild(overlay);
   }, 1000);
 }
+// ---- MAINTENANCE TOAST ----
+function showMaintenanceToast() {
+  var existing = document.getElementById('maintenance-toast');
+  if (existing) return;
+  var toast = document.createElement('div');
+  toast.id = 'maintenance-toast';
+  toast.textContent = 'Temporarily unavailable';
+  toast.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:20px;font-size:14px;z-index:9999;pointer-events:none;';
+  document.body.appendChild(toast);
+  setTimeout(function() { toast.remove(); }, 2500);
+}
+
 // ---- AUDIO ----
 function unlockAudio() {
   if (audioUnlocked) return;
@@ -564,6 +576,9 @@ function showInputBar() { var b = document.getElementById('cg-input-bar'); if (b
 
 // ---- PAGE NAVIGATION ----
 function showPage(id) {
+  // EMERGENCY SHUTDOWN: block Care Groups and Church Alerts including auto-login bypasses
+  if (id === 'care' || id === 'church-alerts') { showMaintenanceToast(); return; }
+
   document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
   document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
   var target = document.getElementById('page-' + id);
@@ -3190,6 +3205,10 @@ if (ls) {
   document.querySelectorAll('.nav-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       unlockAudio();
+      if (this.getAttribute('data-maintenance') === 'true') {
+        showMaintenanceToast();
+        return;
+      }
       var page = this.getAttribute('data-page'); if (page) showPage(page);
     });
   });
@@ -3203,7 +3222,7 @@ if (ls) {
 
     // Handle Church Alerts
     if (action === 'church-alerts') {
-      openChurchAlerts();
+      showMaintenanceToast();
       return;
     }
 
