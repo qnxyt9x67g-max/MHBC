@@ -403,13 +403,11 @@ body {
 
 .yt-launch-icon {
   width: 52px; height: 52px;
-  background: #d32f2f;
+  background: transparent;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  color: white;
   flex-shrink: 0;
 }
 
