@@ -1615,3 +1615,6 @@ body {
   transform: translateY(2px);
 }
 
+.quick-btn[data-action="watch"] .quick-label {
+  transform: translateY(1px);
+}
