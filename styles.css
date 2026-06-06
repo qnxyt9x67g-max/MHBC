@@ -1612,6 +1612,6 @@ body {
   color: var(--text-dim);
 }
 .quick-btn[data-action="watch"] .quick-icon {
-  transform: translateY(5px);
+  transform: translateY(4px);
 }
 
