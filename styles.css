@@ -383,7 +383,7 @@ body {
 }
 
 .link-icon.yt-red { background: rgba(211,47,47,0.15); color: #ef5350; }
-.link-icon.fb-blue { background: rgba(66,103,178,0.2); color: #7090d0; font-size: 15px; font-family: serif; font-weight: 700; }
+
 
 .link-label { flex: 1; font-size: 14px; }
 .link-arrow { font-size: 22px; color: var(--text-dim); }
