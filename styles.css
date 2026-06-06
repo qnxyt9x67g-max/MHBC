@@ -1617,6 +1617,6 @@ body {
 
 .quick-btn[data-action="watch"] > span:not(.quick-icon) {
   display: inline-block;
-  transform: translateY(0px);
+  transform: translateY(1px);
 }
 
