@@ -2240,9 +2240,13 @@ thread.id = 'thread-' + msg._id;
     clearReply();
   });
 
-  inlineReplyRow.appendChild(inlineInput);
-  inlineReplyRow.appendChild(inlineSend);
-  inlineReplyRow.appendChild(inlineCancel);
+  var inlineBtnGroup = document.createElement('div');
+inlineBtnGroup.className = 'cg-inline-reply-btn-group';
+inlineBtnGroup.appendChild(inlineSend);
+inlineBtnGroup.appendChild(inlineCancel);
+inlineReplyRow.appendChild(inlineInput);
+inlineReplyRow.appendChild(inlineBtnGroup);
+
 
   inlineReplyBox.appendChild(inlineReplyHeader);
   inlineReplyBox.appendChild(inlineReplyRow);
