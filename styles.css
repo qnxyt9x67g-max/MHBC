@@ -1350,7 +1350,7 @@ font-size: 13px;
 }
 
 .cg-inline-reply-box {
-  margin: 8px 0 10px 52px;
+  margin: 8px 0 10px 0;
   padding: 10px;
   background: rgba(255,255,255,0.04);
   border: 1px solid var(--border);
@@ -1366,8 +1366,27 @@ font-size: 13px;
 .cg-inline-reply-row {
   display: flex;
   gap: 8px;
-  align-items: center;
+  align-items: stretch;
 }
+
+.cg-inline-reply-btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.cg-inline-reply-btn-group button {
+  height: 28px;
+  line-height: 28px;
+  padding: 0 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
 
 .cg-inline-reply-input {
   flex: 1;
