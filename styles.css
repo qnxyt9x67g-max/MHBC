@@ -1381,6 +1381,9 @@ font-size: 13px;
   padding: 10px 12px;
   -webkit-appearance: none;
   outline: none;
+  resize: none;
+  overflow-y: hidden;
+  line-height: 1.4;
 }
 
 .cg-inline-reply-send,
