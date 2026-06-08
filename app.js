@@ -2978,8 +2978,9 @@ var chaptersMap = {
   '1TI':6,'2TI':4,TIT:3,PHM:1,HEB:13,JAS:5,'1PE':5,
   '2PE':3,'1JN':5,'2JN':1,'3JN':1,JUD:1,REV:22
 };
-var currentTrans = '111';
-var currentCode = 'NIV';
+var currentTrans = '59';
+var currentCode = 'ESV';
+
 
 function populateChapters(book, selected) {
   var sel = document.getElementById('bibleChapter'); if (!sel) return;
