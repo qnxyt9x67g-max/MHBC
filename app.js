@@ -132,6 +132,18 @@ function formatRemainingLockout(ms) {
   return minutes > 0 ? minutes + 'm ' + seconds + 's' : seconds + 's';
 }
 
+function showToast(msg) {
+  var toast = document.getElementById('app-toast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(function() { toast.classList.remove('show'); }, 2500);
+}
+
+function showComingSoon() {
+  showToast('Coming soon! 🎵');
+}
+
 function initFirebase() {
   firebase.initializeApp({
     apiKey: "AIzaSyBYt5RR0YGB9u9n7QgvAGXnvmrb7-xTg-Y",
@@ -3322,8 +3334,9 @@ if (msgInput) {
 
   var ytLaunch = document.getElementById('yt-launch');
   if (ytLaunch) ytLaunch.addEventListener('click', function() {
-    window.open('https://www.youtube.com/@maxwellhillbaptistchurch9695', '_blank');
+    window.open('https://www.youtube.com/@maxwellhillbaptistchurch9695/streams', '_blank');
   });
+
 
   var liveBadge = document.getElementById('liveBadge');
   if (liveBadge) liveBadge.addEventListener('click', function() { showPage('watch'); });
