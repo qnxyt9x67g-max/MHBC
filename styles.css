@@ -97,7 +97,7 @@ body {
   width: 7px; height: 7px;
   background: white;
   border-radius: 50%;
-  animation: blink 1.2s infinite;
+    animation: blink 3s ease-in-out infinite;
 }
 
 @keyframes blink {
@@ -107,7 +107,7 @@ body {
 
 @keyframes live-pulse {
     0%, 100% { filter: brightness(0.75); }
-  50%       { filter: brightness(2); }
+  50%       { filter: brightness(2.25); }
 
 }
 
