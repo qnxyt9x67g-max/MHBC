@@ -112,9 +112,9 @@ body {
 
 .quick-btn.is-live,
 .yt-launch-card.is-live {
-  animation: live-pulse 1.2s infinite;
-  border-color: var(--gold) !important;
+  animation: live-pulse 4s ease-in-out infinite;
 }
+
 
 
 /* ---- PAGE WRAPPER ---- */
