@@ -3049,18 +3049,25 @@ function checkLiveBadge() {
     Sat: 6
   };
 
-  var day = dayMap[dayName];
+    var day = dayMap[dayName];
   var totalMins = hour * 60 + minute;
 
+  var isServiceLive =
+    (day === 0 && totalMins >= 565 && totalMins <= 660) ||   // Sun 9:25–11:00
+    (day === 3 && totalMins >= 1135 && totalMins <= 1200);   // Wed 6:55–8:00
+
   var badge = document.getElementById('liveBadge');
-  if (badge) {
-    badge.style.display =
-      ((day === 0 && totalMins >= 565 && totalMins <= 660) ||   // Sun 9:25–11:00
-       (day === 3 && totalMins >= 1135 && totalMins <= 1200))   // Wed 6:55–8:00
-      ? 'flex'
-      : 'none';
-  }
+  if (badge) badge.style.display = isServiceLive ? 'flex' : 'none';
+
+  var watchBtn    = document.querySelector('.quick-btn[data-action="watch"]');
+  var ytLaunchBtn = document.getElementById('yt-launch');
+  var fbLaunchBtn = document.getElementById('fb-launch');
+
+  [watchBtn, ytLaunchBtn, fbLaunchBtn].forEach(function(el) {
+    if (el) el.classList.toggle('is-live', isServiceLive);
+  });
 }
+
 function openChurchAlerts() {
   showPage('church-alerts');
   if (currentUID) {
