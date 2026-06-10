@@ -77,13 +77,20 @@
 <div class="quick-grid">
   <button class="quick-btn" data-action="watch">
             <span class="quick-icon">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="23" height="23">
-    <rect width="24" height="24" rx="6" fill="#4B6984"/>
-    <path d="M9.5 6.5v11L17 12z" fill="#FFFFFF"/>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="23" height="23">
+    <defs>
+      <linearGradient id="watchBtnGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%"   stop-color="#F0F2F5" />
+        <stop offset="50%"  stop-color="#7A8A99" />
+        <stop offset="100%" stop-color="#3A444D" />
+      </linearGradient>
+    </defs>
+    <rect x="10" y="10" width="80" height="80" rx="15" ry="15" fill="url(#watchBtnGradient)" />
+    <polygon points="38,32 38,68 72,50" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round" />
   </svg>
 </span>
 
-    <span>Watch</span>
+        <span>Watch &amp; Listen</span>
   </button>
 
   <button class="quick-btn" data-url="https://calendar.google.com/calendar/embed?src=4cbd842d4c467f3aad7b48abdc472456159a3269feea9ddefea0cb6453409ed7%40group.calendar.google.com&ctz=America%2FNew_York">
@@ -109,7 +116,7 @@
   <!-- CHURCH ALERTS -->
 <button class="quick-btn" data-action="church-alerts" id="church-alerts-quick-btn">
   <span class="quick-icon">📣</span>
-  <span>Church Alerts</span>
+  <span>Alerts</span>
   <span class="quick-btn-badge" id="badge-church-alerts" style="display:none">1</span>
 </button>
 </div>
