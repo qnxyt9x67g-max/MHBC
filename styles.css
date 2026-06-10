@@ -106,8 +106,8 @@ body {
 }
 
 @keyframes live-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0.5); }
-  50%       { box-shadow: 0 0 0 8px rgba(201, 168, 76, 0); }
+  0%, 100% { filter: brightness(1); }
+  50%       { filter: brightness(1.5); }
 }
 
 .quick-btn.is-live,
