@@ -106,13 +106,14 @@ body {
 }
 
 @keyframes live-pulse {
-  0%, 100% { filter: brightness(1); }
-  50%       { filter: brightness(1.5); }
+    0%, 100% { filter: brightness(0.75); }
+  50%       { filter: brightness(2); }
+
 }
 
 .quick-btn.is-live,
 .yt-launch-card.is-live {
-  animation: live-pulse 4s ease-in-out infinite;
+  animation: live-pulse 3s ease-in-out infinite;
 }
 
 
