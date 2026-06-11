@@ -97,7 +97,7 @@ body {
   width: 7px; height: 7px;
   background: white;
   border-radius: 50%;
-    animation: blink 3s ease-in-out infinite;
+    animation: blink 1.5s ease-in-out infinite;
 }
 
 @keyframes blink {
