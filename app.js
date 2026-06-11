@@ -42,20 +42,23 @@ var PRAYER_LINKS = {
   trac: 'https://docs.google.com/spreadsheets/d/1UlIxBJS2ZZlX5QnsjGIckcULLsZ6r7U6mNtaDVe3udQ/edit?usp=drivesdk'
 };
 var BUBBLE_COLORS = [
-  // Your 24 original curated colors
-  '#1a5276', '#1a3a6e', '#145a32', '#784212', '#1b4f72', 
-  '#0e6655', '#7b241c', '#1f618d', '#7d6608', '#1a6b4a', 
-  '#922b21', '#1f4e79', '#6e2f0e', '#0b5345', '#4a4a8a', 
-  '#7b3f00', '#1c6b5a', '#5d4037', '#1b5e20', '#01579b', 
-  '#4e342e', '#006064', '#37474f', '#2e7d32',
+  // --- REDS ---
+  '#EC7063', '#E74C3C', '#F1948A', 
   
-  // Your 6 new earth-tone additions
-  '#556b2f', // olive
-  '#607d8b', // slate blue
-  '#455a64', // charcoal
-  '#8d6e1f', // antique gold
-  '#355e3b', // forest green
-  '#6d1f2f'  // burgundy
+  // --- ORANGES ---
+  '#E67E22', '#F39C12', '#F5B041', 
+  
+  // --- YELLOWS / GOLDS ---
+  '#F4D03F', '#F1C40F', '#F7DC6F', 
+  
+  // --- GREENS ---
+  '#2ECC71', '#27AE60', '#58D68D', '#52BE80',
+  
+  // --- BLUES ---
+  '#3498DB', '#2980B9', '#5DADE2', '#5499C7',
+
+  // --- CHARCOALS ---
+  '#5D6D7E', '#455A64', '#607D8B', '#7F8C8D'
 ];
 
 function getBubbleColor(name) {
@@ -65,6 +68,7 @@ function getBubbleColor(name) {
   }
   return BUBBLE_COLORS[Math.abs(hash) % BUBBLE_COLORS.length];
 }
+
 
 function normalizeName(name) {
   return name.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
