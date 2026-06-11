@@ -42,23 +42,23 @@ var PRAYER_LINKS = {
   trac: 'https://docs.google.com/spreadsheets/d/1UlIxBJS2ZZlX5QnsjGIckcULLsZ6r7U6mNtaDVe3udQ/edit?usp=drivesdk'
 };
 var BUBBLE_COLORS = [
-  // --- REDS ---
-  '#EC7063', '#E74C3C', '#F1948A', 
+  // --- RICH REDS (Deep Crimson & Brick) ---
+  '#A93226', '#922B21', '#7B241C', 
   
-  // --- ORANGES ---
-  '#E67E22', '#F39C12', '#F5B041', 
+  // --- BURNT ORANGES (Rust & Clay) ---
+  '#D35400', '#BA4A00', '#A04000', 
   
-  // --- YELLOWS / GOLDS ---
-  '#F4D03F', '#F1C40F', '#F7DC6F', 
+  // --- DEEP GOLDS (Antique Gold & Dark Mustard) ---
+  '#B7950B', '#9A7D0A', '#8D6E1F', 
   
-  // --- GREENS ---
-  '#2ECC71', '#27AE60', '#58D68D', '#52BE80',
+  // --- FOREST GREENS (Pine & Emerald) ---
+  '#1E8449', '#196F3D', '#145A32', '#0E6655',
   
-  // --- BLUES ---
-  '#3498DB', '#2980B9', '#5DADE2', '#5499C7',
+  // --- SAPPHIRE BLUES (Ocean & Deep Navy) ---
+  '#21618C', '#1A5276', '#1B4F72', '#154360',
 
-  // --- CHARCOALS ---
-  '#5D6D7E', '#455A64', '#607D8B', '#7F8C8D'
+  // --- DEEP CHARCOALS (Gunmetal & Slate) ---
+  '#455A64', '#37474F', '#2C3E50', '#263238'
 ];
 
 function getBubbleColor(name) {
@@ -68,7 +68,6 @@ function getBubbleColor(name) {
   }
   return BUBBLE_COLORS[Math.abs(hash) % BUBBLE_COLORS.length];
 }
-
 
 function normalizeName(name) {
   return name.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
