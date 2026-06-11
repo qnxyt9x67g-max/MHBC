@@ -3052,9 +3052,8 @@ function checkLiveBadge() {
     var day = dayMap[dayName];
   var totalMins = hour * 60 + minute;
 
-  var isServiceLive =
-    (day === 0 && totalMins >= 565 && totalMins <= 660) ||   // Sun 9:25–11:00
-    (day === 3 && totalMins >= 1135 && totalMins <= 1200);   // Wed 6:55–8:00
+    var isServiceLive = true; // TEMP: force live for testing
+
 
   var badge = document.getElementById('liveBadge');
   if (badge) badge.style.display = isServiceLive ? 'flex' : 'none';
