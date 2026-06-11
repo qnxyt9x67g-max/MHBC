@@ -42,19 +42,35 @@ var PRAYER_LINKS = {
   trac: 'https://docs.google.com/spreadsheets/d/1UlIxBJS2ZZlX5QnsjGIckcULLsZ6r7U6mNtaDVe3udQ/edit?usp=drivesdk'
 };
 var BUBBLE_COLORS = [
-  '#1a5276','#1a3a6e','#6c3483','#145a32','#784212',
-  '#1b4f72','#4a235a','#0e6655','#7b241c','#1f618d',
-  '#7d6608','#5b2c6f','#1a6b4a','#922b21','#1f4e79',
-  '#6e2f0e','#0b5345','#4a4a8a','#7b3f00','#1c6b5a',
-  '#5d4037','#4a148c','#1b5e20','#880e4f','#01579b',
-  '#4e342e','#006064','#37474f','#6a1b9a','#2e7d32'
+  // --- REDS (Warm, crisp, and completely clear of pink) ---
+  '#FF5252', '#FF6B6B', '#EF5350', '#E53935', '#E74C3C', 
+  '#EC7063', '#CD6155', '#D32F2F', '#CB4335', '#FF8A80',
+
+  // --- ORANGES (Rust, clay, and bright orange) ---
+  '#FF9800', '#FB8C00', '#F57C00', '#FFA726', '#FFB74D', 
+  '#E67E22', '#F39C12', '#CA6F1E', '#D35400', '#FF7043',
+
+  // --- YELLOWS & GOLDS (Ties perfectly into your church branding) ---
+  '#FFC107', '#FFCA28', '#FFD54F', '#FFE082', '#F1C40F', 
+  '#F4D03F', '#F7DC6F', '#FBC02D', '#FDD835', '#D4AC0D',
+
+  // --- GREENS & TEALS (Earthy sage, classic green, and mint) ---
+  '#4CAF50', '#66BB6A', '#81C784', '#2ECC71', '#27AE60', 
+  '#58D68D', '#52BE80', '#26A69A', '#4DB6AC', '#1ABC9C',
+
+  // --- BLUES (Sky blue, system blue, and rich cerulean) ---
+  '#2196F3', '#42A5F5', '#64B5F6', '#3498DB', '#5DADE2', 
+  '#2980B9', '#1E88E5', '#03A9F4', '#29B6F6', '#4FC3F7'
 ];
 
 function getBubbleColor(name) {
   var hash = 0;
-  for (var i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  for (var i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
   return BUBBLE_COLORS[Math.abs(hash) % BUBBLE_COLORS.length];
 }
+
 
 function normalizeName(name) {
   return name.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
