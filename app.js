@@ -2526,7 +2526,7 @@ if (m.removalRequested && currentUser && currentUser.isAdmin === true) {
       if (canRemoveThisMember) {
         var removeBtn = document.createElement('button');
         removeBtn.className = 'cg-deny-btn';
-        removeBtn.textContent = isSelf ? 'Leave Chat?' : 'Remove';
+        removeBtn.textContent = isSelf ? 'Leave Group?' : 'Remove';
         removeBtn.addEventListener('click', (function(id, isSelfFlag) {
           return function() { removeMember(id, isSelfFlag); };
         })(m._id, isSelf));
