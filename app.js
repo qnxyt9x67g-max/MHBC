@@ -1980,7 +1980,7 @@ return;
     });
   }
 
-    requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
   if (!allowAutoScroll) {
     messagesEl.style.visibility = 'visible';
     return;
@@ -1991,6 +1991,13 @@ return;
       window.scrollTo(0, document.body.scrollHeight);
     }
     messagesEl.style.visibility = 'visible';
+    // Safety net: iOS sometimes hasn't finished layout by the second rAF,
+    // so fire a correction scroll once the dust has settled.
+    setTimeout(function() {
+      if (!replyingTo && Date.now() > suppressAutoScrollUntil) {
+        window.scrollTo(0, document.body.scrollHeight);
+      }
+    }, 150);
   });
 });
 
