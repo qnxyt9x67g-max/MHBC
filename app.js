@@ -166,13 +166,14 @@ function initFirebase() {
     messagingSenderId: "482094427911",
     appId: "1:482094427911:web:7ed5ec06b716ae66a4dfa2"
   });
-  db = firebase.firestore();
+    db = firebase.firestore();
   
-  // Force Long Polling to prevent mobile network idle timeouts
-  db.settings({ experimentalForceLongPolling: true });
+  // Auto-detect: Try WebSockets first, fall back to Long Polling if needed
+  db.settings({ experimentalAutoDetectLongPolling: true });
   
   auth = firebase.auth();
 }
+
 function listenForBadgeUpdates() {
   if (!currentUID) return;
 
