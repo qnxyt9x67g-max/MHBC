@@ -167,6 +167,10 @@ function initFirebase() {
     appId: "1:482094427911:web:7ed5ec06b716ae66a4dfa2"
   });
   db = firebase.firestore();
+  
+  // Force Long Polling to prevent mobile network idle timeouts
+  db.settings({ experimentalForceLongPolling: true });
+  
   auth = firebase.auth();
 }
 function listenForBadgeUpdates() {
