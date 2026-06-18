@@ -593,6 +593,29 @@ function isInChat() {
 function hideInputBar() { var b = document.getElementById('cg-input-bar'); if (b) b.style.display = 'none'; }
 function showInputBar() { var b = document.getElementById('cg-input-bar'); if (b) b.style.display = 'flex'; }
 
+function updateSelectConnectionStatus() {
+  var el = document.getElementById('cg-connection-status');
+  if (!el) {
+    var selectScreen = document.getElementById('cg-select-screen');
+    if (!selectScreen) return;
+    el = document.createElement('div');
+    el.id = 'cg-connection-status';
+    el.style.cssText = 'text-align:center;font-size:13px;padding:4px 16px 8px;font-family:Lato,sans-serif;';
+    selectScreen.insertBefore(el, selectScreen.firstChild);
+  }
+  if (!navigator.onLine) {
+    el.textContent = 'Offline: Check your internet connection.';
+    el.style.color = '#e05c5c';
+    el.style.display = 'block';
+  } else if (!authReady) {
+    el.textContent = 'Establishing connection...';
+    el.style.color = '#7a8fa8';
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
 // ---- PAGE NAVIGATION ----
 function showPage(id) {
   document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
@@ -622,6 +645,18 @@ function showPage(id) {
       if (el) el.style.display = 'none';
     });
 
+    var chatScreen = document.getElementById('cg-chat-screen');
+    var mask = document.getElementById('cg-loading-mask');
+    if (!mask && chatScreen) {
+      mask = document.createElement('div');
+      mask.id = 'cg-loading-mask';
+      mask.style.cssText = 'position:fixed;top:60px;left:0;right:0;bottom:60px;background:#0a1628;z-index:99;display:flex;align-items:center;justify-content:center;color:#7a8fa8;font-size:15px;';
+      mask.innerHTML = 'Loading messages...';
+      chatScreen.appendChild(mask);
+    }
+    if (mask) mask.style.display = 'flex';
+    if (chatScreen) chatScreen.style.display = 'block';
+
     checkApprovalAndEnter();
   } else {
     showCGScreen('select');
@@ -635,6 +670,7 @@ function showCGScreen(screen) {
   if (mainTitle) {
     mainTitle.textContent = 'C.A.R.E. Groups';
   }
+  updateSelectConnectionStatus();
 }
   ['select','login','pending','chat','members','changepassword'].forEach(function(s) {
     var el = document.getElementById('cg-' + s + '-screen');
@@ -1597,6 +1633,7 @@ function editMessage(msgId) {
     label.style.cssText = 'color:#c9a84c;font-family:Lato,sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;';
 
     var textarea = document.createElement('textarea');
+    textarea.className = 'cg-edit-input';
     textarea.value = currentText;
     textarea.style.cssText = 'width:100%;box-sizing:border-box;background:#0a1628;color:#fff;border:1px solid #c9a84c;border-radius:8px;padding:10px;font-family:Lato,sans-serif;font-size:16px;min-height:80px;resize:none;';
 
@@ -1608,6 +1645,7 @@ function editMessage(msgId) {
     cancelBtn.style.cssText = 'background:transparent;border:1px solid #c9a84c;color:#c9a84c;padding:8px 18px;border-radius:6px;font-family:Lato,sans-serif;font-size:13px;font-weight:700;cursor:pointer;';
 
     var saveBtn = document.createElement('button');
+    saveBtn.className = 'cg-edit-save-btn';
     saveBtn.textContent = 'Save';
     saveBtn.style.cssText = 'background:#c9a84c;border:none;color:#0a1628;padding:8px 18px;border-radius:6px;font-family:Lato,sans-serif;font-size:13px;font-weight:700;cursor:pointer;';
 
@@ -3428,6 +3466,7 @@ if (msgInput) {
   auth.onAuthStateChanged(function(user) {
     if (user) {
             authReady = true;
+      updateSelectConnectionStatus();
       if (navigator.onLine) {
         document.querySelectorAll('.cg-group-btn').forEach(function(btn) {
           btn.style.opacity = '';
@@ -3550,16 +3589,15 @@ document.addEventListener('visibilitychange', function() {
       btn.style.opacity = '0.4';
       btn.style.pointerEvents = 'none';
     });
-    var chatInput = document.getElementById('cg-msg-input');
-    var sendBtn = document.getElementById('cg-send-btn');
-    if (chatInput) {
-      chatInput.disabled = true;
-      chatInput.placeholder = 'Waiting for network...';
-    }
-    if (sendBtn) {
-      sendBtn.disabled = true;
-      sendBtn.style.opacity = '0.5';
-    }
+    updateSelectConnectionStatus();
+    document.querySelectorAll('#cg-msg-input, .cg-inline-reply-input, .cg-edit-input').forEach(function(input) {
+      input.disabled = true;
+      input.placeholder = 'No connection...';
+    });
+    document.querySelectorAll('#cg-send-btn, .cg-inline-reply-send, .cg-edit-save-btn, .msg-menu-delete').forEach(function(btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+    });
   });
 
   window.addEventListener('online', function() {
@@ -3569,16 +3607,16 @@ document.addEventListener('visibilitychange', function() {
         btn.style.pointerEvents = '';
       });
     }
-    var chatInput = document.getElementById('cg-msg-input');
-    var sendBtn = document.getElementById('cg-send-btn');
-    if (chatInput) {
-      chatInput.disabled = false;
-      chatInput.placeholder = 'Type a message...';
-    }
-    if (sendBtn) {
-      sendBtn.disabled = false;
-      sendBtn.style.opacity = '1';
-    }
+    updateSelectConnectionStatus();
+    document.querySelectorAll('#cg-msg-input, .cg-inline-reply-input, .cg-edit-input').forEach(function(input) {
+      input.disabled = false;
+      if (input.id === 'cg-msg-input') input.placeholder = 'Type a message...';
+      if (input.classList.contains('cg-inline-reply-input')) input.placeholder = 'Write a reply...';
+    });
+    document.querySelectorAll('#cg-send-btn, .cg-inline-reply-send, .cg-edit-save-btn, .msg-menu-delete').forEach(function(btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    });
   });
 };
 
