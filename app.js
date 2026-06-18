@@ -3427,11 +3427,14 @@ if (msgInput) {
 
   auth.onAuthStateChanged(function(user) {
     if (user) {
-      authReady = true;
-      document.querySelectorAll('.cg-group-btn').forEach(function(btn) {
-        btn.style.opacity = '';
-        btn.style.pointerEvents = '';
-      });
+            authReady = true;
+      if (navigator.onLine) {
+        document.querySelectorAll('.cg-group-btn').forEach(function(btn) {
+          btn.style.opacity = '';
+          btn.style.pointerEvents = '';
+        });
+      }
+
       var loginBtn = document.getElementById('cg-login-submit');
       if (loginBtn) {
         loginBtn.disabled = false;
@@ -3541,4 +3544,41 @@ document.addEventListener('visibilitychange', function() {
       loadMessages();
     }
   });
+
+  window.addEventListener('offline', function() {
+    document.querySelectorAll('.cg-group-btn').forEach(function(btn) {
+      btn.style.opacity = '0.4';
+      btn.style.pointerEvents = 'none';
+    });
+    var chatInput = document.getElementById('cg-msg-input');
+    var sendBtn = document.getElementById('cg-send-btn');
+    if (chatInput) {
+      chatInput.disabled = true;
+      chatInput.placeholder = 'Waiting for network...';
+    }
+    if (sendBtn) {
+      sendBtn.disabled = true;
+      sendBtn.style.opacity = '0.5';
+    }
+  });
+
+  window.addEventListener('online', function() {
+    if (authReady) {
+      document.querySelectorAll('.cg-group-btn').forEach(function(btn) {
+        btn.style.opacity = '';
+        btn.style.pointerEvents = '';
+      });
+    }
+    var chatInput = document.getElementById('cg-msg-input');
+    var sendBtn = document.getElementById('cg-send-btn');
+    if (chatInput) {
+      chatInput.disabled = false;
+      chatInput.placeholder = 'Type a message...';
+    }
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      sendBtn.style.opacity = '1';
+    }
+  });
 };
+
