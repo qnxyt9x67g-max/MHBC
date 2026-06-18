@@ -657,8 +657,18 @@ function showPage(id) {
     if (mask) mask.style.display = 'flex';
     if (chatScreen) chatScreen.style.display = 'block';
 
-    checkApprovalAndEnter();
+    var kickToken = navToken;
+    db.disableNetwork().then(function() {
+      return db.enableNetwork();
+    }).then(function() {
+      if (navToken !== kickToken) return;
+      checkApprovalAndEnter();
+    }).catch(function() {
+      if (navToken !== kickToken) return;
+      checkApprovalAndEnter();
+    });
   } else {
+    db.disableNetwork().then(function() { db.enableNetwork(); }).catch(function() {});
     showCGScreen('select');
   }
 }
@@ -721,7 +731,16 @@ function selectGroup(groupId, groupName) {
     currentUser = saved;
     currentMemberKey = saved.normalizedName;
     setLastGroup(groupId);
-    checkApprovalAndEnter();
+    var kickToken = navToken;
+    db.disableNetwork().then(function() {
+      return db.enableNetwork();
+    }).then(function() {
+      if (navToken !== kickToken) return;
+      checkApprovalAndEnter();
+    }).catch(function() {
+      if (navToken !== kickToken) return;
+      checkApprovalAndEnter();
+    });
     return;
   }
 
