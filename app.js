@@ -1476,6 +1476,7 @@ function startAllPendingWatchers() {
   return;
 }
 function setReply(messageId, authorName) {
+  if (!navigator.onLine) { showToast('No connection.'); return; }
   replyingTo = { id: messageId, author: authorName };
 
   var bar = document.getElementById('cg-reply-bar');
@@ -1568,6 +1569,7 @@ function showMessageMenu(msgId, isMe) {
     deleteBtn.className = 'msg-menu-btn msg-menu-delete'; deleteBtn.textContent = '🗑️ Delete';
         deleteBtn.addEventListener('click', function() {
       menu.remove();
+      if (!navigator.onLine) { showToast('No connection.'); return; }
       if (confirm('Delete this message?')) {
         suppressAutoScrollUntil = Date.now() + 2000;
 
@@ -1609,6 +1611,7 @@ function showMessageMenu(msgId, isMe) {
 }
 
 function editMessage(msgId) {
+  if (!navigator.onLine) { showToast('No connection.'); return; }
   var msgRef = db.collection('groups').doc(currentGroup).collection('messages').doc(msgId);
 
   msgRef.get().then(function(snap) {
