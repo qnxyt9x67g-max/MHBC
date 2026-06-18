@@ -12,6 +12,7 @@ var currentGroupName = null;
 var currentUser = null;
 var currentMemberKey = null;
 var messageListener = null;
+var navToken = 0;
 var unreadListeners = {};
 var unreadCountsByGroup = {};
 var unreadCount = 0;
@@ -688,8 +689,10 @@ function selectGroup(groupId, groupName) {
   }
 
   if (currentUID) {
+    var token = navToken;
     db.collection('groups').doc(groupId).collection('members').doc(currentUID).get()
       .then(function(snap) {
+        if (token !== navToken) return;
         if (snap.exists && snap.data().approved) {
           var data = snap.data();
           currentUser = {
@@ -1158,7 +1161,9 @@ enterChat();
 
 function checkApprovalAndEnter() {
   if (!currentUID || !currentGroup) { showCGScreen('select'); return; }
+  var token = navToken;
   db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).get().then(function(snap) {
+    if (token !== navToken) return;
     if (snap.exists && snap.data().approved) {
       currentUser.isAdmin = snap.data().isAdmin === true;
       if (snap.data().removalRequested) {
@@ -1311,7 +1316,19 @@ if (mb) {
   
 
 showCGScreen('chat');
-loadMessages(true);
+
+  var chatScreen = document.getElementById('cg-chat-screen');
+  var mask = document.getElementById('cg-loading-mask');
+  if (!mask && chatScreen) {
+    mask = document.createElement('div');
+    mask.id = 'cg-loading-mask';
+    mask.style.cssText = 'position:fixed;top:60px;left:0;right:0;bottom:60px;background:#0a1628;z-index:99;display:flex;align-items:center;justify-content:center;color:#7a8fa8;font-size:15px;';
+    mask.innerHTML = 'Loading messages...';
+    chatScreen.appendChild(mask);
+  }
+  if (mask) mask.style.display = 'flex';
+
+  loadMessages(true);
 markAsRead();
 
 setTimeout(function() {
@@ -1890,8 +1907,10 @@ function renderCurrentRoomMessages(allowAutoScroll) {
 
   if (!state.orderedIds.length) {
     messagesEl.innerHTML = '<div class="cg-no-msgs">No messages yet. Say hello! 👋</div>';
-messagesEl.style.visibility = 'visible';
-return;
+    messagesEl.style.visibility = 'visible';
+    var mask = document.getElementById('cg-loading-mask');
+    if (mask) mask.style.display = 'none';
+    return;
   }
 
   var allMessages = state.orderedIds.map(function(id) {
@@ -1988,6 +2007,8 @@ return;
         requestAnimationFrame(function() {
   if (!allowAutoScroll) {
     messagesEl.style.visibility = 'visible';
+    var mask = document.getElementById('cg-loading-mask');
+    if (mask) mask.style.display = 'none';
     return;
   }
 
@@ -2002,6 +2023,9 @@ return;
       if (!replyingTo && Date.now() > suppressAutoScrollUntil) {
         window.scrollTo(0, document.body.scrollHeight);
       }
+      // --- HIDE LOADING MASK AFTER SCROLL IS FINISHED ---
+      var mask = document.getElementById('cg-loading-mask');
+      if (mask) mask.style.display = 'none';
     }, 150);
   });
 });
@@ -2114,6 +2138,8 @@ function loadMessages(scrollOnOpen) {
       console.error('LOAD MESSAGES FAILED:', err);
       messagesEl.innerHTML = '<div class="cg-no-msgs">Unable to load messages right now.<br>' + err.message + '</div>';
       messagesEl.style.visibility = 'visible';
+      var mask = document.getElementById('cg-loading-mask');
+      if (mask) mask.style.display = 'none';
     });
 }
 
@@ -3269,6 +3295,8 @@ if (ls) {
       var groupName = this.getAttribute('data-name');
       if (groupId && groupName) selectGroup(groupId, groupName);
     });
+    btn.style.opacity = '0.4';
+    btn.style.pointerEvents = 'none';
   });
 
   var loginBtn = document.getElementById('cg-login-submit');
@@ -3282,6 +3310,7 @@ if (ls) {
 
     var backToSelect = document.getElementById('cg-back-to-select');
   if (backToSelect) backToSelect.addEventListener('click', function() {
+    navToken++;
     if (messageListener) { messageListener(); messageListener = null; }
     currentGroup = null;
     currentGroupName = null;
@@ -3290,12 +3319,13 @@ if (ls) {
 
 
   var backToSelectFromPending = document.getElementById('cg-back-to-select-pending');
-  if (backToSelectFromPending) backToSelectFromPending.addEventListener('click', function() { showCGScreen('select'); });
+  if (backToSelectFromPending) backToSelectFromPending.addEventListener('click', function() { navToken++; showCGScreen('select'); });
 
   var backToChatFromMembers = document.getElementById('cg-back-to-chat-members');
   if (backToChatFromMembers) {
   backToChatFromMembers.addEventListener('click', function() {
-    membersPanelIsOpen = false;   // ← add this line
+    membersPanelIsOpen = false;
+    setPendingCount(currentGroup, pendingCountsByGroup[currentGroup] || 0);
     showCGScreen('chat');
 
     requestAnimationFrame(function() {
@@ -3393,6 +3423,10 @@ if (msgInput) {
   auth.onAuthStateChanged(function(user) {
     if (user) {
       authReady = true;
+      document.querySelectorAll('.cg-group-btn').forEach(function(btn) {
+        btn.style.opacity = '';
+        btn.style.pointerEvents = '';
+      });
       var loginBtn = document.getElementById('cg-login-submit');
       if (loginBtn) {
         loginBtn.disabled = false;
