@@ -673,6 +673,7 @@ function startOver() {
 }
 
 function selectGroup(groupId, groupName) {
+  navToken++;
   currentGroup = groupId;
   currentGroupName = groupName;
 
@@ -3139,8 +3140,12 @@ function openChurchAlerts() {
       const container = document.getElementById('church-alert-content');
       if (!container) return;
 
-      if (snapshot.empty) {
-        container.innerHTML = '<p style="text-align:center; padding:40px; color:#7a8fa8;">No church alerts yet.</p>';
+            if (snapshot.empty) {
+        if (snapshot.metadata.fromCache) {
+          container.innerHTML = '<p style="text-align:center; padding:40px; color:#7a8fa8;">Unable to connect. Check your connection and try again.</p>';
+        } else {
+          container.innerHTML = '<p style="text-align:center; padding:40px; color:#7a8fa8;">No church alerts yet.</p>';
+        }
         return;
       }
 
