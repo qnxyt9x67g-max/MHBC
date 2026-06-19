@@ -2655,7 +2655,7 @@ function loadMembersList(forceRefresh) {
     renderMembersListFromData(cache.members);
   }
 
-  db.collection('groups').doc(currentGroup).collection('members').get().then(function(snap) {
+    db.collection('groups').doc(currentGroup).collection('members').get().then(function(snap) {
     var members = [];
     snap.forEach(function(d) {
       var m = d.data();
@@ -2663,15 +2663,20 @@ function loadMembersList(forceRefresh) {
       members.push(m);
     });
 
-    saveMembersCache(currentGroup, members);
-    renderMembersListFromData(members);
+    if (members.length > 0) {
+      saveMembersCache(currentGroup, members);
+      renderMembersListFromData(members);
+    } else if (!cache) {
+      listEl.innerHTML = '<div class="cg-empty-note">Members couldn\'t be loaded. Check back shortly.</div>';
+    }
+    // If empty result but cache exists, keep showing cached data already on screen
   }).catch(function(err) {
     if (!cache) {
-      listEl.innerHTML = '<div class="cg-empty-note">Unable to load members.</div>';
+      listEl.innerHTML = '<div class="cg-empty-note">Members couldn\'t be loaded. Check back shortly.</div>';
     }
     console.error('Members load error:', err);
   });
-}
+
 
 // Approve: update member doc + sync identity doc
 function approveMember(memberUid) {
