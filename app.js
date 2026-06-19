@@ -2674,8 +2674,10 @@ function loadMembersList(forceRefresh) {
     if (!cache) {
       listEl.innerHTML = '<div class="cg-empty-note">Members couldn\'t be loaded. Check back shortly.</div>';
     }
-    console.error('Members load error:', err);
+        console.error('Members load error:', err);
   });
+}
+
 
 
 // Approve: update member doc + sync identity doc
