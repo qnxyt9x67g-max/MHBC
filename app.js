@@ -2622,7 +2622,17 @@ if (m.removalRequested && currentUser && currentUser.isAdmin === true) {
       var canRemoveThisMember =
         currentUser.isAdmin || isSelf;
 
-      if (canRemoveThisMember) {
+            if (canRemoveThisMember) {
+        if (m.removalRequested && currentUser && currentUser.isAdmin === true && !isSelf) {
+          var stayBtn = document.createElement('button');
+          stayBtn.className = 'cg-stay-btn';
+          stayBtn.textContent = 'Staying';
+          stayBtn.style.cssText = 'background:#2e7d32;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:13px;font-family:Lato,sans-serif;cursor:pointer;margin-right:8px;';
+          stayBtn.addEventListener('click', (function(id) {
+            return function() { clearRemovalFlag(id); };
+          })(m._id));
+          div.appendChild(stayBtn);
+        }
         var removeBtn = document.createElement('button');
         removeBtn.className = 'cg-deny-btn';
         removeBtn.textContent = isSelf ? 'Leave Group?' : 'Remove';
@@ -2736,7 +2746,7 @@ function denyMember(memberUid) {
 
 // Remove: delete ALL UID sessions for this person + mark identity not approved
 function removeMember(memberUid, isSelf) {
-  var confirmMsg = isSelf ? 'Leave this chat?' : 'Remove this member from the chat?';
+  var confirmMsg = isSelf ? 'Leave this group?' : 'Remove this member from the group?';
   if (!confirm(confirmMsg)) return;
 
   var leavingGroup = currentGroup;
@@ -2788,6 +2798,20 @@ function removeMember(memberUid, isSelf) {
     if (!isSelf) {
       alert('Unable to remove this member right now.');
     }
+    });
+}
+
+function clearRemovalFlag(memberUid) {
+  var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(memberUid);
+  memberRef.update({
+    removalRequested: false,
+    removalRequestedAt: firebase.firestore.FieldValue.delete()
+  }).then(function() {
+    clearMembersCache(currentGroup);
+    loadMembersList(true);
+  }).catch(function(err) {
+    console.error('Failed to clear removal flag:', err);
+    alert('Unable to update this member right now.');
   });
 }
 
