@@ -2079,7 +2079,7 @@ function renderCurrentRoomMessages(allowAutoScroll) {
       window.scrollTo(0, document.body.scrollHeight);
     }
     messagesEl.style.visibility = 'visible';
-    // Safety net: iOS sometimes hasn't finished layout by the second rAF,
+        // Safety net: iOS sometimes hasn't finished layout by the second rAF,
     // so fire a correction scroll once the dust has settled.
     setTimeout(function() {
       if (!replyingTo && Date.now() > suppressAutoScrollUntil) {
@@ -2089,9 +2089,23 @@ function renderCurrentRoomMessages(allowAutoScroll) {
       var mask = document.getElementById('cg-loading-mask');
       if (mask) mask.style.display = 'none';
     }, 150);
+
+    // Self-healing scroll: catches late font/flexbox layout settling
+    // that fires after our fixed timeouts. Disconnects after 1000ms
+    // so it never fights user-initiated scrolling.
+    if (typeof ResizeObserver !== 'undefined') {
+      var scrollObserver = new ResizeObserver(function() {
+        if (!replyingTo && Date.now() > suppressAutoScrollUntil) {
+          window.scrollTo(0, document.body.scrollHeight);
+        }
+      });
+      scrollObserver.observe(messagesEl);
+      setTimeout(function() { scrollObserver.disconnect(); }, 1000);
+    }
   });
 
 });
+
 
   if (isInChat()) {
     markAsRead();
