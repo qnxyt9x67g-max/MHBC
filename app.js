@@ -1960,18 +1960,8 @@ function createNewMessageDivider() {
   divider.textContent = 'Here’s where you last left off. New replies to older messages may still appear above.';
   return divider;
 }
-function scrollToLastMessage() {
-  var messagesEl = document.getElementById('cg-messages');
-  if (!messagesEl) { window.scrollTo(0, document.body.scrollHeight); return; }
-  var last = messagesEl.lastElementChild;
-  if (last) {
-    last.scrollIntoView({ block: 'end', behavior: 'instant' });
-  } else {
-    window.scrollTo(0, document.body.scrollHeight);
-  }
-}
-
 function renderCurrentRoomMessages(allowAutoScroll) {
+
   var messagesEl = document.getElementById('cg-messages');
   var state = getCurrentRoomState();
 
@@ -2084,22 +2074,23 @@ function renderCurrentRoomMessages(allowAutoScroll) {
     return;
   }
 
-    requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
     if (!replyingTo && Date.now() > suppressAutoScrollUntil) {
-      scrollToLastMessage();
+      window.scrollTo(0, document.body.scrollHeight);
     }
     messagesEl.style.visibility = 'visible';
     // Safety net: iOS sometimes hasn't finished layout by the second rAF,
     // so fire a correction scroll once the dust has settled.
     setTimeout(function() {
       if (!replyingTo && Date.now() > suppressAutoScrollUntil) {
-        scrollToLastMessage();
+        window.scrollTo(0, document.body.scrollHeight);
       }
       // --- HIDE LOADING MASK AFTER SCROLL IS FINISHED ---
       var mask = document.getElementById('cg-loading-mask');
       if (mask) mask.style.display = 'none';
     }, 150);
   });
+
 });
 
   if (isInChat()) {
