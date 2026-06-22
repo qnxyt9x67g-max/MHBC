@@ -13,7 +13,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // MHBC Service Worker — caching + background notifications
-const CACHE = 'mhbc-66';
+const CACHE = 'mhbc-67';
 
 const ASSETS = [
   './',
