@@ -1509,7 +1509,7 @@ function setReply(messageId, authorName) {
     var inlineInput = document.getElementById('inline-reply-input-' + messageId);
     if (inlineInput) {
       inlineInput.focus();
-      inlineInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            inlineInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }, 100);
 }
@@ -3332,48 +3332,61 @@ if (mainInput) {
     }, 100);
   }
 
-   // Input handling for chat
-mainInput.addEventListener('focus', function() {
+  function updateSendBtnLabel() {
+    var btn = document.getElementById('cg-send-btn');
+    if (btn) btn.textContent = mainInput.value.trim() ? 'Send' : 'Return';
+  }
+
+  // Input handling for chat
+  mainInput.addEventListener('focus', function() {
     jumpToBottomForMainInput();
-    
+    updateSendBtnLabel();
+
     var nav = document.querySelector('.bottom-nav');
     var inputBar = document.querySelector('.cg-input-bar');
     var msgs = document.querySelector('.cg-messages');
-    
+
     if (nav) nav.style.display = 'none';
     if (inputBar) inputBar.style.bottom = '0';
     if (msgs) msgs.style.paddingBottom = '0';
-    
+
     setTimeout(function() {
       window.scrollTo(0, document.body.scrollHeight);
     }, 120);
-});
+  });
 
-mainInput.addEventListener('click', jumpToBottomForMainInput);
+  mainInput.addEventListener('click', jumpToBottomForMainInput);
 
-mainInput.addEventListener('blur', function() {
+  mainInput.addEventListener('blur', function() {
     var nav = document.querySelector('.bottom-nav');
     var inputBar = document.querySelector('.cg-input-bar');
     var msgs = document.querySelector('.cg-messages');
-    
+
     if (nav) nav.style.display = '';
     if (inputBar) inputBar.style.bottom = '';
     if (msgs) msgs.style.paddingBottom = '';
-    
-    // Slightly longer delay + smooth scroll to reduce flicker
-    setTimeout(function() {
-      window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: 'smooth'
-      });
-    }, 200);
-});
 
-mainInput.addEventListener('input', function() {
+    // Reset button label
+    var btn = document.getElementById('cg-send-btn');
+    if (btn) btn.textContent = 'Send';
+
+    // Sparse rooms (content fits screen): scroll to 0 so fixed nav lands correctly.
+    // Full rooms: scroll to bottom as before.
+    setTimeout(function() {
+      var scrollTarget = document.body.scrollHeight > window.innerHeight + 10
+        ? document.body.scrollHeight
+        : 0;
+      window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+    }, 200);
+  });
+
+  mainInput.addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 200) + 'px';
-});
+    updateSendBtnLabel();
+  });
 }
+
 
 var ls = localStorage.getItem('mhbc_lastseen');
 if (ls) { 
@@ -3500,11 +3513,25 @@ if (ls) {
 
   var sendBtn = document.getElementById('cg-send-btn');
 if (sendBtn) {
-  sendBtn.addEventListener('click', function() {
+  function handleSend() {
     unlockAudio();
+    var input = document.getElementById('cg-msg-input');
+    if (!input || !input.value.trim()) {
+      // "Return" mode: just dismiss the keyboard
+      if (input) input.blur();
+      return;
+    }
     sendMessage();
+  }
+  // touchend fires before blur on iOS, preventing the two-tap problem.
+  // preventDefault stops the synthetic click from also firing on mobile.
+  sendBtn.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    handleSend();
   });
+  sendBtn.addEventListener('click', handleSend); // desktop fallback
 }
+
 
   var replyCancel = document.getElementById('cg-reply-cancel');
   if (replyCancel) replyCancel.addEventListener('click', clearReply);
