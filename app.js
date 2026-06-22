@@ -2599,10 +2599,7 @@ function renderMembersListFromData(members) {
     listEl.appendChild(pendingList);
   }
 
-  var approvedLabel = document.createElement('div');
-  approvedLabel.className = 'section-label';
-  approvedLabel.textContent = 'MEMBERS';
-  listEl.appendChild(approvedLabel);
+  // "MEMBERS" label is now in the sticky header — no need to re-render it here
 
   var approvedList = document.createElement('div');
   approvedList.className = 'cg-member-list';
