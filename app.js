@@ -2678,29 +2678,55 @@ function loadMembersList(forceRefresh) {
     renderMembersListFromData(cache.members);
   }
 
-    db.collection('groups').doc(currentGroup).collection('members').get().then(function(snap) {
-    var members = [];
-    snap.forEach(function(d) {
-      var m = d.data();
-      m._id = d.id;
-      members.push(m);
-    });
+    var targetGroup = currentGroup;
+  var watchdogTimedOut = false;
 
-    if (members.length > 0) {
-      saveMembersCache(currentGroup, members);
-      renderMembersListFromData(members);
-    } else if (!cache) {
-      listEl.innerHTML = '<div class="cg-empty-note">Members couldn\'t be loaded. Check back shortly.</div>';
-    }
-    // If empty result but cache exists, keep showing cached data already on screen
-  }).catch(function(err) {
-    if (!cache) {
-      listEl.innerHTML = '<div class="cg-empty-note">Members couldn\'t be loaded. Check back shortly.</div>';
-    }
+  var stallTimer = setTimeout(function() {
+    watchdogTimedOut = true;
+    console.warn('Members fetch stalled. Forcing Firestore network reboot...');
+    db.disableNetwork()
+      .then(function() { return db.enableNetwork(); })
+      .then(function() {
+        if (currentGroup === targetGroup && membersPanelIsOpen) {
+          executeMembersFetch();
+        }
+      })
+      .catch(function() {});
+  }, 3500);
+
+  function executeMembersFetch() {
+    db.collection('groups').doc(targetGroup).collection('members').get()
+      .then(function(snap) {
+        clearTimeout(stallTimer);
+        if (watchdogTimedOut) return;
+
+        var members = [];
+        snap.forEach(function(d) {
+          var m = d.data();
+          m._id = d.id;
+          members.push(m);
+        });
+
+        if (members.length > 0) {
+          saveMembersCache(targetGroup, members);
+          renderMembersListFromData(members);
+        } else if (!cache && listEl) {
+          listEl.innerHTML = '<div class="cg-empty-note">Members couldn\'t be loaded. Check back shortly.</div>';
+        }
+        // If empty result but cache exists, keep showing cached data already on screen
+      })
+      .catch(function(err) {
+        clearTimeout(stallTimer);
+        if (watchdogTimedOut) return;
+        if (!cache && listEl) {
+          listEl.innerHTML = '<div class="cg-empty-note">Members couldn\'t be loaded. Check back shortly.</div>';
+        }
         console.error('Members load error:', err);
-  });
-}
+      });
+  }
 
+  executeMembersFetch();
+}
 
 
 // Approve: update member doc + sync identity doc
