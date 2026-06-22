@@ -1509,7 +1509,7 @@ function setReply(messageId, authorName) {
     var inlineInput = document.getElementById('inline-reply-input-' + messageId);
     if (inlineInput) {
       inlineInput.focus();
-            inlineInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+     inlineInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, 100);
 }
