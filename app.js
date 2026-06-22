@@ -2350,18 +2350,35 @@ thread.id = 'thread-' + msg._id;
   inlineInput.placeholder = 'Write a reply...';
   inlineInput.rows = 1;
 
-  inlineInput.addEventListener('input', function() {
+    inlineInput.addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 200) + 'px';
   });
   inlineInput.addEventListener('focus', function() {
     var nav = document.querySelector('.bottom-nav');
     if (nav) nav.style.display = 'none';
+
+    var inputTarget = this;
+    setTimeout(function() {
+      var isSparse = document.body.scrollHeight <= window.innerHeight + 50;
+      if (isSparse) {
+        window.scrollTo(0, 0);
+      } else {
+        inputTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }, 200);
   });
   inlineInput.addEventListener('blur', function() {
     var nav = document.querySelector('.bottom-nav');
-    if (nav) nav.style.display = '';
+    setTimeout(function() {
+      if (nav) {
+        nav.style.display = 'none';
+        void nav.offsetHeight; // Force DOM repaint
+        nav.style.display = '';
+      }
+    }, 300);
   });
+
 
 
   var inlineSend = document.createElement('button');
@@ -3323,12 +3340,17 @@ if (enableChurchRow) {
 
 var mainInput = document.getElementById('cg-msg-input');
 if (mainInput) {
-  function jumpToBottomForMainInput() {
+    function jumpToBottomForMainInput() {
     if (replyingTo) {
       clearReply();
     }
     setTimeout(function() {
-      window.scrollTo(0, document.body.scrollHeight);
+      var isSparse = document.body.scrollHeight <= window.innerHeight + 50;
+      if (isSparse) {
+        window.scrollTo(0, 0);
+      } else {
+        window.scrollTo(0, document.body.scrollHeight);
+      }
     }, 100);
   }
 
@@ -3350,9 +3372,21 @@ if (mainInput) {
     if (inputBar) inputBar.style.bottom = '0';
     if (msgs) msgs.style.paddingBottom = '0';
 
+    // Override iOS native body-shift on focus for short rooms
     setTimeout(function() {
-      window.scrollTo(0, document.body.scrollHeight);
-    }, 120);
+      var isSparse = document.body.scrollHeight <= window.innerHeight + 50;
+      if (isSparse) {
+        window.scrollTo(0, 0);
+      } else {
+        window.scrollTo(0, document.body.scrollHeight);
+      }
+    }, 150);
+
+    // Second safety catch for slow iOS keyboard pop-up animations
+    setTimeout(function() {
+      var isSparse = document.body.scrollHeight <= window.innerHeight + 50;
+      if (isSparse) window.scrollTo(0, 0);
+    }, 350);
   });
 
   mainInput.addEventListener('click', jumpToBottomForMainInput);
@@ -3362,7 +3396,6 @@ if (mainInput) {
     var inputBar = document.querySelector('.cg-input-bar');
     var msgs = document.querySelector('.cg-messages');
 
-    if (nav) nav.style.display = '';
     if (inputBar) inputBar.style.bottom = '';
     if (msgs) msgs.style.paddingBottom = '';
 
@@ -3370,15 +3403,19 @@ if (mainInput) {
     var btn = document.getElementById('cg-send-btn');
     if (btn) btn.textContent = 'Send';
 
-    // Sparse rooms (content fits screen): scroll to 0 so fixed nav lands correctly.
-    // Full rooms: scroll to bottom as before.
+    // Wait 300ms for iOS keyboard to drop fully before repainting fixed nav
     setTimeout(function() {
-      var scrollTarget = document.body.scrollHeight > window.innerHeight + 10
-        ? document.body.scrollHeight
-        : 0;
+      if (nav) {
+        nav.style.display = 'none';
+        void nav.offsetHeight; // Force synchronous DOM repaint to kill stretched height
+        nav.style.display = '';
+      }
+      var isSparse = document.body.scrollHeight <= window.innerHeight + 50;
+      var scrollTarget = isSparse ? 0 : document.body.scrollHeight;
       window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-    }, 200);
+    }, 300);
   });
+
 
   mainInput.addEventListener('input', function() {
     this.style.height = 'auto';
