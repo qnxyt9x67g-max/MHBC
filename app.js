@@ -2367,7 +2367,7 @@ thread.id = 'thread-' + msg._id;
       }
       // Then: smoothly center the input in whatever space remains above the keyboard
       setTimeout(function() {
-        inputTarget.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        inputTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 150);
     }, 100);
   });
