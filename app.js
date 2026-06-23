@@ -2354,26 +2354,35 @@ thread.id = 'thread-' + msg._id;
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 200) + 'px';
   });
-    inlineInput.addEventListener('focus', function() {
+      inlineInput.addEventListener('focus', function() {
     var nav = document.querySelector('.bottom-nav');
     if (nav) nav.style.display = 'none';
 
     var inputTarget = this;
-    setTimeout(function() {
-      // First: scroll the thread into view with minimum movement
-      var thread = inputTarget.closest('.cg-thread');
-      if (thread) {
-        thread.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+    if (window.visualViewport) {
+      // Wait for keyboard to fully open, then align reply box bottom
+      // flush with the top of the keyboard (block:'end' on visual viewport = Pic 2)
+      function onKeyboardOpen() {
+        window.visualViewport.removeEventListener('resize', onKeyboardOpen);
+        inputTarget.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }
-      // Then: smoothly center the input in whatever space remains above the keyboard
+      window.visualViewport.addEventListener('resize', onKeyboardOpen);
+      // Safety cleanup if resize never fires (desktop, already-open keyboard)
       setTimeout(function() {
-        inputTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 150);
-    }, 100);
+        window.visualViewport.removeEventListener('resize', onKeyboardOpen);
+      }, 800);
+    } else {
+      setTimeout(function() {
+        inputTarget.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 350);
+    }
   });
   inlineInput.addEventListener('blur', function() {
     var nav = document.querySelector('.bottom-nav');
-    if (nav) nav.style.display = '';
+    // Delay until keyboard animation completes — same fix as mainInput
+    setTimeout(function() {
+      if (nav) nav.style.display = '';
+    }, 400);
   });
 
 
@@ -3350,8 +3359,11 @@ if (mainInput) {
     if (btn) btn.textContent = mainInput.value.trim() ? 'Send' : 'Return';
   }
 
+    var blurRestoreTimer = null;
+
   // Input handling for chat
   mainInput.addEventListener('focus', function() {
+    clearTimeout(blurRestoreTimer); // cancel pending restore if user re-taps quickly
     jumpToBottomForMainInput();
     updateSendBtnLabel();
 
@@ -3371,27 +3383,32 @@ if (mainInput) {
   mainInput.addEventListener('click', jumpToBottomForMainInput);
 
   mainInput.addEventListener('blur', function() {
-    var nav = document.querySelector('.bottom-nav');
-    var inputBar = document.querySelector('.cg-input-bar');
     var msgs = document.querySelector('.cg-messages');
-
-    if (nav) nav.style.display = '';
-    if (inputBar) inputBar.style.bottom = '';
     if (msgs) msgs.style.paddingBottom = '';
 
-    // Reset button label
+    // Reset button label immediately
     var btn = document.getElementById('cg-send-btn');
     if (btn) btn.textContent = 'Send';
 
-        // Wait 400ms so iOS keyboard animation is fully complete before checking dimensions.
-    // At 200ms the keyboard is still visible, giving a wrong innerHeight reading.
-    // Full rooms: scroll to bottom. Sparse rooms: do nothing — browser naturally sits at 0.
-    setTimeout(function() {
+    // Delay nav + inputBar restoration until keyboard animation completes (~400ms on iOS).
+    // Restoring immediately while the keyboard is still sliding away causes the nav to
+    // anchor to an intermediate viewport height — the "tall nav" glitch in sparse rooms.
+    // During the delay the visual state matches the keyboard-open state (nav hidden,
+    // inputBar at bottom:0), which users already accept, so no jarring transition.
+    blurRestoreTimer = setTimeout(function() {
+      var nav = document.querySelector('.bottom-nav');
+      var inputBar = document.querySelector('.cg-input-bar');
+      if (nav) nav.style.display = '';
+      if (inputBar) inputBar.style.bottom = '';
+      // Full rooms: scroll to bottom. Sparse rooms: snap to top so nav re-anchors cleanly.
       if (document.body.scrollHeight > window.innerHeight + 10) {
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'instant' });
       }
     }, 400);
   });
+
 
   mainInput.addEventListener('input', function() {
     this.style.height = 'auto';
