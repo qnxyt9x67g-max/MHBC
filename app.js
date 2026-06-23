@@ -1631,8 +1631,6 @@ function showMessageMenu(msgId, isMe) {
 
 function editMessage(msgId) {
   if (!navigator.onLine) { showToast('No connection.'); return; }
-  // Singleton guard — bail if an edit overlay is already open (double-tap race).
-  if (document.querySelector('.cg-edit-overlay')) return;
   var msgRef = db.collection('groups').doc(currentGroup).collection('messages').doc(msgId);
 
   msgRef.get().then(function(snap) {
@@ -1646,10 +1644,8 @@ function editMessage(msgId) {
 
     var currentText = snap.data().text || '';
 
-        var overlay = document.createElement('div');
-    overlay.className = 'cg-edit-overlay';
+    var overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-
 
     var box = document.createElement('div');
     box.style.cssText = 'background:#1a2a44;border:1px solid #c9a84c;border-radius:12px;padding:20px;width:100%;max-width:400px;';
@@ -2358,68 +2354,14 @@ thread.id = 'thread-' + msg._id;
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 200) + 'px';
   });
-    inlineInput.addEventListener('focus', function() {
+  inlineInput.addEventListener('focus', function() {
     var nav = document.querySelector('.bottom-nav');
     if (nav) nav.style.display = 'none';
-
-    if (!window.visualViewport) return;
-    var inputTarget = this;
-    var replyWrapper = inputTarget.closest('.cg-inline-reply-box') || inputTarget.parentElement;
-    var settleTimer = null;
-
-    function onKeyboardRising() {
-      clearTimeout(settleTimer);
-      // 120ms with no further viewport change = keyboard animation finished
-      settleTimer = setTimeout(function() {
-        window.visualViewport.removeEventListener('resize', onKeyboardRising);
-        var visibleHeight = window.visualViewport.height;
-        var rect = replyWrapper.getBoundingClientRect();
-        // Dock the reply box bottom 12px above the keyboard top
-        var scrollDistance = rect.bottom - (visibleHeight - 12);
-        if (Math.abs(scrollDistance) > 4) {
-          window.scrollBy({ top: scrollDistance, behavior: 'smooth' });
-        }
-      }, 120);
-    }
-
-    window.visualViewport.addEventListener('resize', onKeyboardRising);
-    // Safety cleanup: keyboard was already open when reply was tapped
-    setTimeout(function() {
-      window.visualViewport.removeEventListener('resize', onKeyboardRising);
-    }, 700);
   });
-
   inlineInput.addEventListener('blur', function() {
-    // Same visualViewport settle + absolute-kick as mainInput to prevent raised-nav glitch.
-    function restoreNavAndRepaint() {
-      var nav = document.querySelector('.bottom-nav');
-      if (nav) {
-        nav.style.display = '';
-        nav.style.position = 'absolute';
-        nav.offsetHeight;
-        nav.style.position = '';
-      }
-    }
-    if (window.visualViewport) {
-      function checkSettled() {
-        if (window.visualViewport.height >= window.innerHeight - 15) {
-          window.visualViewport.removeEventListener('resize', checkSettled);
-          restoreNavAndRepaint();
-        }
-      }
-      window.visualViewport.addEventListener('resize', checkSettled);
-      setTimeout(function() {
-        window.visualViewport.removeEventListener('resize', checkSettled);
-        restoreNavAndRepaint();
-      }, 500);
-    } else {
-      setTimeout(function() {
-        var nav = document.querySelector('.bottom-nav');
-        if (nav) nav.style.display = '';
-      }, 400);
-    }
+    var nav = document.querySelector('.bottom-nav');
+    if (nav) nav.style.display = '';
   });
-
 
 
   var inlineSend = document.createElement('button');
@@ -3415,59 +3357,28 @@ if (mainInput) {
 
   mainInput.addEventListener('click', jumpToBottomForMainInput);
 
-    mainInput.addEventListener('blur', function() {
+  mainInput.addEventListener('blur', function() {
+    var nav = document.querySelector('.bottom-nav');
+    var inputBar = document.querySelector('.cg-input-bar');
     var msgs = document.querySelector('.cg-messages');
+
+    if (nav) nav.style.display = '';
+    if (inputBar) inputBar.style.bottom = '';
     if (msgs) msgs.style.paddingBottom = '';
 
+    // Reset button label
     var btn = document.getElementById('cg-send-btn');
     if (btn) btn.textContent = 'Send';
 
-    // Keep nav/inputBar hidden until the iOS keyboard animation is fully done.
-    // Restoring them while the keyboard is still sliding causes WebKit to cache
-    // fixed-layer positions at an intermediate viewport height (the raised-nav glitch).
-    // The "absolute-kick" forces the GPU compositor to flush stale coordinates.
-    function restoreNavAndRepaint() {
-      var nav = document.querySelector('.bottom-nav');
-      var inputBar = document.querySelector('.cg-input-bar');
-      if (nav) {
-        nav.style.display = '';
-        nav.style.position = 'absolute';
-        nav.offsetHeight; // synchronous layout flush
-        nav.style.position = '';
-      }
-      if (inputBar) {
-        inputBar.style.bottom = '';
-        inputBar.style.position = 'absolute';
-        inputBar.offsetHeight;
-        inputBar.style.position = '';
-      }
-      window.scrollTo({
-        top: document.body.scrollHeight > window.innerHeight + 10
-          ? document.body.scrollHeight
-          : 0,
-        behavior: 'instant'
-      });
-    }
-
-    if (window.visualViewport) {
-      function checkSettled() {
-        // visualViewport.height returns to ~innerHeight once keyboard is fully gone
-        if (window.visualViewport.height >= window.innerHeight - 15) {
-          window.visualViewport.removeEventListener('resize', checkSettled);
-          restoreNavAndRepaint();
-        }
-      }
-      window.visualViewport.addEventListener('resize', checkSettled);
-      // Failsafe: keyboard was never open, or desktop, or instant dismiss
-      setTimeout(function() {
-        window.visualViewport.removeEventListener('resize', checkSettled);
-        restoreNavAndRepaint();
-      }, 500);
-    } else {
-      setTimeout(restoreNavAndRepaint, 400);
-    }
+    // Sparse rooms (content fits screen): scroll to 0 so fixed nav lands correctly.
+    // Full rooms: scroll to bottom as before.
+    setTimeout(function() {
+      var scrollTarget = document.body.scrollHeight > window.innerHeight + 10
+        ? document.body.scrollHeight
+        : 0;
+      window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+    }, 200);
   });
-
 
   mainInput.addEventListener('input', function() {
     this.style.height = 'auto';
