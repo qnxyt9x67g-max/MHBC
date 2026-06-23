@@ -2354,9 +2354,23 @@ thread.id = 'thread-' + msg._id;
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 200) + 'px';
   });
-  inlineInput.addEventListener('focus', function() {
+    inlineInput.addEventListener('focus', function() {
     var nav = document.querySelector('.bottom-nav');
     if (nav) nav.style.display = 'none';
+
+    var inputTarget = this;
+    setTimeout(function() {
+      // Use visualViewport.height if available — it always reflects the
+      // keyboard-shrunk visible area on iOS. Fall back to innerHeight.
+      var visibleH = (window.visualViewport && window.visualViewport.height)
+                     || window.innerHeight;
+      var rect = inputTarget.getBoundingClientRect();
+      var gap = rect.bottom - visibleH;
+      if (gap > -20) {
+        // Reply box is near or behind the keyboard — scroll to close the gap
+        window.scrollBy({ top: gap + 20, behavior: 'smooth' });
+      }
+    }, 400);
   });
   inlineInput.addEventListener('blur', function() {
     var nav = document.querySelector('.bottom-nav');
