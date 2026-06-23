@@ -2354,23 +2354,9 @@ thread.id = 'thread-' + msg._id;
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 200) + 'px';
   });
-    inlineInput.addEventListener('focus', function() {
+  inlineInput.addEventListener('focus', function() {
     var nav = document.querySelector('.bottom-nav');
     if (nav) nav.style.display = 'none';
-
-    var inputTarget = this;
-    setTimeout(function() {
-      // Use visualViewport.height if available — it always reflects the
-      // keyboard-shrunk visible area on iOS. Fall back to innerHeight.
-      var visibleH = (window.visualViewport && window.visualViewport.height)
-                     || window.innerHeight;
-      var rect = inputTarget.getBoundingClientRect();
-      var gap = rect.bottom - visibleH;
-      if (gap > -20) {
-        // Reply box is near or behind the keyboard — scroll to close the gap
-        window.scrollBy({ top: gap + 20, behavior: 'smooth' });
-      }
-    }, 400);
   });
   inlineInput.addEventListener('blur', function() {
     var nav = document.querySelector('.bottom-nav');
@@ -3351,7 +3337,7 @@ if (mainInput) {
     if (btn) btn.textContent = mainInput.value.trim() ? 'Send' : 'Return';
   }
 
-    // Input handling for chat
+  // Input handling for chat
   mainInput.addEventListener('focus', function() {
     jumpToBottomForMainInput();
     updateSendBtnLabel();
@@ -3376,28 +3362,22 @@ if (mainInput) {
     var inputBar = document.querySelector('.cg-input-bar');
     var msgs = document.querySelector('.cg-messages');
 
-    // 1. Instantly restore message padding only, so chat text doesn't jump.
-    // CRITICAL: Keep Nav and InputBar hidden/frozen while keyboard collapses!
+    if (nav) nav.style.display = '';
+    if (inputBar) inputBar.style.bottom = '';
     if (msgs) msgs.style.paddingBottom = '';
 
     // Reset button label
     var btn = document.getElementById('cg-send-btn');
     if (btn) btn.textContent = 'Send';
 
-    // 2. Wait 400ms for the iOS keyboard animation to be 100% finished
+    // Sparse rooms (content fits screen): scroll to 0 so fixed nav lands correctly.
+    // Full rooms: scroll to bottom as before.
     setTimeout(function() {
-      if (nav) nav.style.display = '';
-      if (inputBar) inputBar.style.bottom = '';
-
-      // The WebKit Jiggle: Forces iOS to recalculate position:fixed coordinates
-      window.scrollTo(window.scrollX, window.scrollY);
-
-      if (document.body.scrollHeight > window.innerHeight + 10) {
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'instant' });
-      }
-    }, 400);
+      var scrollTarget = document.body.scrollHeight > window.innerHeight + 10
+        ? document.body.scrollHeight
+        : 0;
+      window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+    }, 200);
   });
 
   mainInput.addEventListener('input', function() {
@@ -3406,7 +3386,6 @@ if (mainInput) {
     updateSendBtnLabel();
   });
 }
-
 
 
 var ls = localStorage.getItem('mhbc_lastseen');
