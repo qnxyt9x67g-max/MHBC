@@ -1763,10 +1763,16 @@ function extractYouTubeId(url) {
 
 // ---- RICH MEDIA RENDERER ----
 function renderMessageContent(text, container) {
+  if (!text) return;
+
+  // Split on URLs but preserve newlines and whitespace
   var parts = text.split(/(https?:\/\/[^\s]+)/g);
+
   parts.forEach(function(part) {
     if (!part) return;
+
     if (part.match(/^https?:\/\//)) {
+      // URL / Media handling
       var url = part;
       var ytId = extractYouTubeId(url);
       if (ytId) {
@@ -1796,9 +1802,24 @@ function renderMessageContent(text, container) {
       link.href = url; link.textContent = url; link.target = '_blank'; link.className = 'msg-link';
       container.appendChild(link);
     } else {
-      if (part.trim()) {
-        var span = document.createElement('span'); span.textContent = part; container.appendChild(span);
-      }
+      // Plain text: preserve newlines and blank lines
+      var lines = part.split('\n');
+      lines.forEach(function(line, index) {
+        if (index > 0) {
+          var br = document.createElement('br');
+          container.appendChild(br);
+        }
+        // Extra blank line when user hit Enter twice
+        if (line === '' && index > 0) {
+          var extraBr = document.createElement('br');
+          container.appendChild(extraBr);
+        }
+        if (line) {
+          var span = document.createElement('span');
+          span.textContent = line;
+          container.appendChild(span);
+        }
+      });
     }
   });
 }
