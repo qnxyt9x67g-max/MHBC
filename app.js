@@ -3551,8 +3551,8 @@ if (sendBtn) {
 if (msgInput) {
   msgInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
-      unlockAudio();
-      sendMessage();
+      // Enter just makes a new line (no auto-send)
+      // The textarea will naturally grow thanks to the existing 'input' listener
     }
   });
 }
