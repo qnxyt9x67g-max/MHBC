@@ -3516,15 +3516,20 @@ if (sendBtn) {
   function handleSend() {
     unlockAudio();
     var input = document.getElementById('cg-msg-input');
-    if (!input || !input.value.trim()) {
-      // "Return" mode: just dismiss the keyboard
-      if (input) input.blur();
+    if (!input) return;
+
+    if (!input.value.trim()) {
+      // Empty → Return mode: just dismiss keyboard
+      input.blur();
       return;
     }
+
+    // Has text → Send AND close keyboard (same as Return behavior)
     sendMessage();
+    input.blur();                    // ← This closes the keyboard
   }
+
   // touchend fires before blur on iOS, preventing the two-tap problem.
-  // preventDefault stops the synthetic click from also firing on mobile.
   sendBtn.addEventListener('touchend', function(e) {
     e.preventDefault();
     handleSend();
