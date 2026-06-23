@@ -21,6 +21,7 @@ var pendingListeners = {};
 var lastSeenTimestamps = {};
 var replyingTo = null;
 var longPressTimer = null;
+var editInProgress = false;
 var audioUnlocked = false;
 var audioCtx = null;
 var authReady = false;
@@ -1631,9 +1632,13 @@ function showMessageMenu(msgId, isMe) {
 
 function editMessage(msgId) {
   if (!navigator.onLine) { showToast('No connection.'); return; }
+  if (editInProgress) { showToast('Opening editor…'); return; }
+  editInProgress = true;
+  setTimeout(function() { editInProgress = false; }, 8000); // safety reset if something hangs
   var msgRef = db.collection('groups').doc(currentGroup).collection('messages').doc(msgId);
 
   msgRef.get().then(function(snap) {
+    editInProgress = false;
     if (!snap.exists) {
       var state = getCurrentRoomState();
       removeMessageFromRoomState(state, msgId);
@@ -1735,7 +1740,8 @@ function editMessage(msgId) {
       textarea.focus();
       textarea.setSelectionRange(textarea.value.length, textarea.value.length);
     }, 100);
-  }).catch(function(err) {
+    }).catch(function(err) {
+    editInProgress = false;
     console.error('Edit lookup failed:', err);
     alert('Edit failed: ' + err.message);
   });
