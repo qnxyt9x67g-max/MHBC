@@ -2354,9 +2354,22 @@ thread.id = 'thread-' + msg._id;
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 200) + 'px';
   });
-  inlineInput.addEventListener('focus', function() {
+    inlineInput.addEventListener('focus', function() {
     var nav = document.querySelector('.bottom-nav');
     if (nav) nav.style.display = 'none';
+
+    var inputTarget = this;
+    setTimeout(function() {
+      // First: scroll the thread into view with minimum movement
+      var thread = inputTarget.closest('.cg-thread');
+      if (thread) {
+        thread.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+      }
+      // Then: smoothly center the input in whatever space remains above the keyboard
+      setTimeout(function() {
+        inputTarget.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 150);
+    }, 100);
   });
   inlineInput.addEventListener('blur', function() {
     var nav = document.querySelector('.bottom-nav');
@@ -3370,14 +3383,14 @@ if (mainInput) {
     var btn = document.getElementById('cg-send-btn');
     if (btn) btn.textContent = 'Send';
 
-    // Sparse rooms (content fits screen): scroll to 0 so fixed nav lands correctly.
-    // Full rooms: scroll to bottom as before.
+        // Wait 400ms so iOS keyboard animation is fully complete before checking dimensions.
+    // At 200ms the keyboard is still visible, giving a wrong innerHeight reading.
+    // Full rooms: scroll to bottom. Sparse rooms: do nothing — browser naturally sits at 0.
     setTimeout(function() {
-      var scrollTarget = document.body.scrollHeight > window.innerHeight + 10
-        ? document.body.scrollHeight
-        : 0;
-      window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-    }, 200);
+      if (document.body.scrollHeight > window.innerHeight + 10) {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      }
+    }, 400);
   });
 
   mainInput.addEventListener('input', function() {
