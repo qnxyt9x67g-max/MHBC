@@ -3351,7 +3351,7 @@ if (mainInput) {
     if (btn) btn.textContent = mainInput.value.trim() ? 'Send' : 'Return';
   }
 
-  // Input handling for chat
+    // Input handling for chat
   mainInput.addEventListener('focus', function() {
     jumpToBottomForMainInput();
     updateSendBtnLabel();
@@ -3376,22 +3376,28 @@ if (mainInput) {
     var inputBar = document.querySelector('.cg-input-bar');
     var msgs = document.querySelector('.cg-messages');
 
-    if (nav) nav.style.display = '';
-    if (inputBar) inputBar.style.bottom = '';
+    // 1. Instantly restore message padding only, so chat text doesn't jump.
+    // CRITICAL: Keep Nav and InputBar hidden/frozen while keyboard collapses!
     if (msgs) msgs.style.paddingBottom = '';
 
     // Reset button label
     var btn = document.getElementById('cg-send-btn');
     if (btn) btn.textContent = 'Send';
 
-    // Sparse rooms (content fits screen): scroll to 0 so fixed nav lands correctly.
-    // Full rooms: scroll to bottom as before.
+    // 2. Wait 400ms for the iOS keyboard animation to be 100% finished
     setTimeout(function() {
-      var scrollTarget = document.body.scrollHeight > window.innerHeight + 10
-        ? document.body.scrollHeight
-        : 0;
-      window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-    }, 200);
+      if (nav) nav.style.display = '';
+      if (inputBar) inputBar.style.bottom = '';
+
+      // The WebKit Jiggle: Forces iOS to recalculate position:fixed coordinates
+      window.scrollTo(window.scrollX, window.scrollY);
+
+      if (document.body.scrollHeight > window.innerHeight + 10) {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }
+    }, 400);
   });
 
   mainInput.addEventListener('input', function() {
@@ -3400,6 +3406,7 @@ if (mainInput) {
     updateSendBtnLabel();
   });
 }
+
 
 
 var ls = localStorage.getItem('mhbc_lastseen');
