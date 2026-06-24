@@ -448,39 +448,43 @@ function playNotificationSound() {
   if (!audioCtx) return;
   try {
     if (audioCtx.state === 'suspended') audioCtx.resume();
+
     var osc = audioCtx.createOscillator();
     var gain = audioCtx.createGain();
     osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.frequency.value = 520; osc.type = 'sine';
-    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-    osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.4);
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(680, audioCtx.currentTime);     // soft rising tone
+    osc.frequency.linearRampToValueAtTime(920, audioCtx.currentTime + 0.25);
+
+    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.45);
+
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.45);
   } catch(e) {}
 }
+
 function playSendSound() {
   unlockAudio();
   if (!audioCtx) return;
-
   try {
     if (audioCtx.state === 'suspended') audioCtx.resume();
 
     var osc = audioCtx.createOscillator();
     var gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
 
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    osc.frequency.value = 760;
     osc.type = 'sine';
+    osc.frequency.value = 880;                    // gentle "pop" / sent tone
 
-    gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.16);
+    gain.gain.setValueAtTime(0.22, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
 
     osc.start(audioCtx.currentTime);
-    osc.stop(audioCtx.currentTime + 0.16);
+    osc.stop(audioCtx.currentTime + 0.18);
   } catch(e) {}
 }
-// ---- BADGES ----
 // ---- BADGES ----
 
 // ---- APP ICON BADGE (iOS) ----
