@@ -778,8 +778,34 @@ function startOver() {
   showCGScreen('select');
 }
 
+// ---- ROOM SWITCH CLEANUP ----
+// Called before currentGroup changes so the old listener can never write
+// into the new room's state. localStorage cache is preserved intentionally
+// so returning to a room costs zero extra Firestore reads.
+function leaveCurrentRoom() {
+  if (messageListener) {
+    messageListener();
+    messageListener = null;
+  }
+  if (currentGroup) {
+    delete roomMessageStateByGroup[currentGroup];
+  }
+  var messagesEl = document.getElementById('cg-messages');
+  if (messagesEl) messagesEl.innerHTML = '';
+  replyingTo = null;
+  var replyBar = document.getElementById('cg-reply-bar');
+  if (replyBar) replyBar.style.display = 'none';
+  var mask = document.getElementById('cg-loading-mask');
+  if (mask) mask.style.display = 'none';
+}
+
 function selectGroup(groupId, groupName) {
   navToken++;
+
+  // Kill the old listener BEFORE currentGroup changes — prevents stale
+  // snapshots from writing into the new room's message state.
+  leaveCurrentRoom();
+
   currentGroup = groupId;
   currentGroupName = groupName;
 
@@ -1534,10 +1560,10 @@ function refreshCurrentMembersBadge() {
   }
 }
 function enterChat() {
-  if (messageListener) {
-    messageListener();
-    messageListener = null;
-  }
+  // Second safety net: clears any listener that may have fired between
+  // selectGroup's leaveCurrentRoom() call and now (e.g. during approval flow).
+  leaveCurrentRoom();
+
   roomMessageStateByGroup[currentGroup] = getRoomMessageCache(currentGroup);
 
   var previousOpenedTs = getLastOpenedTimestamp(currentGroup);
@@ -2626,6 +2652,7 @@ function sendMessage() {
 }
 
 function leaveChat() {
+  leaveCurrentRoom();
   clearReply();
   currentUser = null;
   currentGroup = null;
@@ -3826,10 +3853,7 @@ window.onload = function () {
   if (backToSelect)
     backToSelect.addEventListener('click', function () {
       navToken++;
-      if (messageListener) {
-        messageListener();
-        messageListener = null;
-      }
+      leaveCurrentRoom();
       currentGroup = null;
       currentGroupName = null;
       showCGScreen('select');
