@@ -2917,19 +2917,37 @@ function loadMembersList(forceRefresh) {
   }
 
   var targetGroup = currentGroup;
-  var watchdogTimedOut = false;
+  var done = false;
 
+  // The old code used watchdogTimedOut=true before calling the retry, which caused
+  // the retry's .then() to bail immediately — screen stayed on "Loading..." forever.
+  // done is only set true when we have an actual result (success or terminal failure).
+
+  function showFallback() {
+    if (done) return;
+    done = true;
+    if (currentGroup !== targetGroup || !listEl) return;
+    if (!cache) {
+      listEl.innerHTML =
+        '<div class="cg-empty-note">Couldn\'t load members right now. Tap back and try again shortly.</div>';
+    }
+    // Stale cache already on screen — leave it; something is better than nothing.
+  }
+
+  // Overall give-up: 12s covers first attempt + reboot delay + retry
+  var giveUpTimer = setTimeout(showFallback, 12000);
+
+  // Stall detector: if no response in 3.5s, reboot Firestore network and retry once
   var stallTimer = setTimeout(function () {
-    watchdogTimedOut = true;
-    console.warn('Members fetch stalled. Forcing Firestore network reboot...');
+    if (done) return;
+    console.warn('Members fetch stalled — rebooting Firestore network...');
     db.disableNetwork()
       .then(function () {
         return db.enableNetwork();
       })
       .then(function () {
-        if (currentGroup === targetGroup && membersPanelIsOpen) {
-          executeMembersFetch();
-        }
+        if (done || currentGroup !== targetGroup || !membersPanelIsOpen) return;
+        executeMembersFetch();
       })
       .catch(function () {});
   }, 3500);
@@ -2940,8 +2958,10 @@ function loadMembersList(forceRefresh) {
       .collection('members')
       .get()
       .then(function (snap) {
+        if (done) return;
+        done = true;
         clearTimeout(stallTimer);
-        if (watchdogTimedOut) return;
+        clearTimeout(giveUpTimer);
 
         var members = [];
         snap.forEach(function (d) {
@@ -2956,11 +2976,13 @@ function loadMembersList(forceRefresh) {
         } else if (!cache && listEl) {
           listEl.innerHTML = '<div class="cg-empty-note">Members couldn\'t be loaded. Check back shortly.</div>';
         }
-        // If empty result but cache exists, keep showing cached data already on screen
+        // Empty result with stale cache already on screen — leave it.
       })
       .catch(function (err) {
+        if (done) return;
+        done = true;
         clearTimeout(stallTimer);
-        if (watchdogTimedOut) return;
+        clearTimeout(giveUpTimer);
         if (!cache && listEl) {
           listEl.innerHTML = '<div class="cg-empty-note">Members couldn\'t be loaded. Check back shortly.</div>';
         }
