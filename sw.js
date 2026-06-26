@@ -13,7 +13,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // MHBC Service Worker — caching + background notifications
-const CACHE = 'mhbc92';
+const CACHE = 'mhbc93';
 
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './manifest.json'];
 
@@ -52,12 +52,12 @@ self.addEventListener('fetch', (e) => {
 function updateClosedAppBadge(badgeCount) {
   badgeCount = parseInt(badgeCount || '0', 10) || 0;
 
-  if (badgeCount > 0 && 'setAppBadge' in self.registration) {
-    return self.registration.setAppBadge(badgeCount).catch(function () {});
+  if (badgeCount > 0 && 'setAppBadge' in navigator) {
+    return navigator.setAppBadge(badgeCount).catch(function () {});
   }
 
-  if (badgeCount <= 0 && 'clearAppBadge' in self.registration) {
-    return self.registration.clearAppBadge().catch(function () {});
+  if (badgeCount <= 0 && 'clearAppBadge' in navigator) {
+    return navigator.clearAppBadge().catch(function () {});
   }
 
   return Promise.resolve();
