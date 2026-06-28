@@ -1013,7 +1013,13 @@ function submitLogin() {
       runLoginPipeline();
     })
     .catch(function () {
-      runLoginPipeline();
+      errEl.textContent = 'Network too weak to verify session security. Please try again.';
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Log In';
+        loginBtn.style.opacity = '1';
+      }
+      loginInProgress = false;
     });
 
   function runLoginPipeline() {
