@@ -30,6 +30,7 @@ var unreadCount = 0;
 var membersPanelIsOpen = false;
 var lastSeenTimestamps = {};
 var replyingTo = null;
+var deleteInProgressIds = {};
 var editInProgress = false;
 var audioUnlocked = false;
 var audioCtx = null;
@@ -1665,7 +1666,10 @@ function sendInlineReply(parentId) {
   input.style.height = 'auto';
   playSendSound();
 
+  var nowMs = Date.now();
+  var localTs = { toMillis: function () { return nowMs; } };
   var nowTs = firebase.firestore.FieldValue.serverTimestamp();
+  var replyAuthor = replyingTo ? replyingTo.author : '';
 
   var msgData = {
     text: text,
@@ -1677,24 +1681,47 @@ function sendInlineReply(parentId) {
     edited: false,
     deleted: false,
     replyTo: parentId,
-    replyToAuthor: replyingTo ? replyingTo.author : ''
+    replyToAuthor: replyAuthor
   };
 
-  db.collection('groups')
-    .doc(currentGroup)
-    .collection('messages')
-    .add(msgData)
-    .then(function () {
-      suppressAutoScrollUntil = Date.now() + 2000;
-      clearReply();
+  var docRef = db.collection('groups').doc(currentGroup).collection('messages').doc();
 
-      setTimeout(function () {
-        var thread = document.getElementById('thread-' + parentId);
-        if (thread) {
-          thread.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 150);
-    });
+  // Show the reply immediately — a pending serverTimestamp() reads back as
+  // null on this device until the write is acknowledged, so the live
+  // "new messages" listener can't show it until the round trip completes.
+  var state = getCurrentRoomState();
+  mergeMessagesIntoRoomState(state, [{
+    _id: docRef.id,
+    text: text,
+    author: currentUser.name,
+    authorKey: currentMemberKey,
+    authorUid: currentUID,
+    timestamp: localTs,
+    updatedAt: localTs,
+    edited: false,
+    deleted: false,
+    replyTo: parentId,
+    replyToAuthor: replyAuthor
+  }]);
+  saveRoomMessageCache(currentGroup, state);
+
+  suppressAutoScrollUntil = Date.now() + 2000;
+  clearReply();
+
+  setTimeout(function () {
+    var thread = document.getElementById('thread-' + parentId);
+    if (thread) {
+      thread.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 150);
+
+  docRef.set(msgData).catch(function (err) {
+    console.error('SEND REPLY FAILED:', err);
+    removeMessageFromRoomState(state, docRef.id);
+    saveRoomMessageCache(currentGroup, state);
+    renderCurrentRoomMessages(false);
+    showToast('Reply failed to send. Check your connection and try again.');
+  });
 }
 
 // ---- MESSAGE OWNERSHIP — three-tier fallback ----
@@ -1733,7 +1760,10 @@ function showMessageMenu(msgId, isMe) {
         showToast('No connection.');
         return;
       }
+      if (deleteInProgressIds[msgId]) return;
+
       if (confirm('Delete this message?')) {
+        deleteInProgressIds[msgId] = true;
         suppressAutoScrollUntil = Date.now() + 2000;
 
         db.collection('groups')
@@ -1747,6 +1777,7 @@ function showMessageMenu(msgId, isMe) {
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           })
           .then(function () {
+            delete deleteInProgressIds[msgId];
             var state = getCurrentRoomState();
             if (state.messagesById[msgId]) {
               state.messagesById[msgId].text = '';
@@ -1757,6 +1788,7 @@ function showMessageMenu(msgId, isMe) {
             }
           })
           .catch(function (err) {
+            delete deleteInProgressIds[msgId];
             console.error('Soft delete failed:', err);
           });
       }
@@ -1845,11 +1877,16 @@ function editMessage(msgId) {
         if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
       }
 
+      var editSaveInProgress = false;
+
       cancelBtn.addEventListener('click', function () {
+        if (editSaveInProgress) return; // save already in flight — Cancel can't stop it
         closeOverlay();
       });
 
       saveBtn.addEventListener('click', function () {
+        if (editSaveInProgress) return;
+
         var newText = textarea.value.trim();
 
         if (!newText || newText === currentText) {
@@ -1858,6 +1895,13 @@ function editMessage(msgId) {
         }
 
         suppressAutoScrollUntil = Date.now() + 2000;
+
+        editSaveInProgress = true;
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+        saveBtn.style.opacity = '0.6';
+        cancelBtn.style.opacity = '0.4';
+        saveBtn.textContent = 'Saving…';
 
         msgRef
           .update({
@@ -1882,6 +1926,12 @@ function editMessage(msgId) {
           })
           .catch(function (err) {
             console.error('Edit failed:', err);
+            editSaveInProgress = false;
+            saveBtn.disabled = false;
+            cancelBtn.disabled = false;
+            saveBtn.style.opacity = '1';
+            cancelBtn.style.opacity = '1';
+            saveBtn.textContent = 'Save';
             alert('Edit failed: ' + err.message);
           });
       });
@@ -2630,6 +2680,8 @@ function sendMessage() {
   input.style.height = 'auto';
   playSendSound();
 
+  var nowMs = Date.now();
+  var localTs = { toMillis: function () { return nowMs; } };
   var nowTs = firebase.firestore.FieldValue.serverTimestamp();
 
   var msgData = {
@@ -2643,18 +2695,34 @@ function sendMessage() {
     deleted: false
   };
 
-  db.collection('groups')
-    .doc(currentGroup)
-    .collection('messages')
-    .add(msgData)
-    .then(function () {
-      var messagesEl = document.getElementById('cg-messages');
-      if (messagesEl) {
-        setTimeout(function () {
-          window.scrollTo(0, document.body.scrollHeight);
-        }, 300);
-      }
-    });
+  var docRef = db.collection('groups').doc(currentGroup).collection('messages').doc();
+
+  // Show the message immediately — a pending serverTimestamp() reads back as
+  // null on this device until the write is acknowledged, so the live
+  // "new messages" listener can't show it until the round trip completes.
+  var state = getCurrentRoomState();
+  mergeMessagesIntoRoomState(state, [{
+    _id: docRef.id,
+    text: text,
+    author: currentUser.name,
+    authorKey: currentMemberKey,
+    authorUid: currentUID,
+    timestamp: localTs,
+    updatedAt: localTs,
+    edited: false,
+    deleted: false
+  }]);
+  saveRoomMessageCache(currentGroup, state);
+  renderCurrentRoomMessages(true);
+
+  docRef.set(msgData).catch(function (err) {
+    console.error('SEND MESSAGE FAILED:', err);
+    removeMessageFromRoomState(state, docRef.id);
+    saveRoomMessageCache(currentGroup, state);
+    renderCurrentRoomMessages(false);
+    input.value = text;
+    showToast('Message failed to send. Check your connection and try again.');
+  });
 }
 
 function leaveChat() {
