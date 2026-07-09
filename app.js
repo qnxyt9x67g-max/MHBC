@@ -45,9 +45,12 @@ var ROOM_MEMBERS_CACHE_PREFIX = 'mhbc_members_cache_';
 var ROOM_MEMBERS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 var PRAYER_LINKS = {
   c101: 'https://docs.google.com/spreadsheets/d/1-7kNm-5l8F1okka9bU4mpvQDXd2OusWYNQeC9PuJnZQ/edit?usp=drivesdk',
-  narthex: 'https://docs.google.com/spreadsheets/d/1GZUm483lFgxLGM5o6NJBH3z5Fri2FCekFzuKNXF1TgM/edit?usp=drivesdk',
-  fellowship1: 'https://docs.google.com/spreadsheets/d/1Dw8g6q_dE-3ObNr5jbddJ5CIqnzo1NtbU3ZGjoTn1Ws/edit?usp=drivesdk',
-  fellowship2: 'https://docs.google.com/spreadsheets/d/1dVE3TlLK3svbtA2Qp-wxnQJE_ztXLwBzvCW32F0pDI8/edit?usp=drivesdk',
+  narthex:
+    'https://docs.google.com/spreadsheets/d/1GZUm483lFgxLGM5o6NJBH3z5Fri2FCekFzuKNXF1TgM/edit?usp=drivesdk',
+  fellowship1:
+    'https://docs.google.com/spreadsheets/d/1Dw8g6q_dE-3ObNr5jbddJ5CIqnzo1NtbU3ZGjoTn1Ws/edit?usp=drivesdk',
+  fellowship2:
+    'https://docs.google.com/spreadsheets/d/1dVE3TlLK3svbtA2Qp-wxnQJE_ztXLwBzvCW32F0pDI8/edit?usp=drivesdk',
   trac: 'https://docs.google.com/spreadsheets/d/1UlIxBJS2ZZlX5QnsjGIckcULLsZ6r7U6mNtaDVe3udQ/edit?usp=drivesdk'
 };
 var BUBBLE_COLORS = [
@@ -143,7 +146,10 @@ function getLoginGuard(groupId, normalizedName) {
 
 function setLoginGuard(groupId, normalizedName, failedCount, lockoutUntil) {
   var key = getLoginGuardKey(groupId, normalizedName);
-  localStorage.setItem(key, JSON.stringify({ failedCount: failedCount, lockoutUntil: lockoutUntil }));
+  localStorage.setItem(
+    key,
+    JSON.stringify({ failedCount: failedCount, lockoutUntil: lockoutUntil })
+  );
 }
 
 function clearLoginGuard(groupId, normalizedName) {
@@ -331,7 +337,8 @@ function initMessaging() {
     .then(function (reg) {
       return navigator.serviceWorker.ready.then(function () {
         return messaging.getToken({
-          vapidKey: 'BBPJw98hi9HkHDJHAJMXvUu6l9lmBMjJdTrKxLVLqx-KT5tcHDua9tq2FRxKanZxuSXJ6D0XRvITjWmVXGTMhKE',
+          vapidKey:
+            'BBPJw98hi9HkHDJHAJMXvUu6l9lmBMjJdTrKxLVLqx-KT5tcHDua9tq2FRxKanZxuSXJ6D0XRvITjWmVXGTMhKE',
           serviceWorkerRegistration: reg
         });
       });
@@ -645,7 +652,8 @@ function updateSelectConnectionStatus() {
     if (!selectScreen) return;
     el = document.createElement('div');
     el.id = 'cg-connection-status';
-    el.style.cssText = 'text-align:center;font-size:13px;padding:4px 16px 8px;font-family:Lato,sans-serif;';
+    el.style.cssText =
+      'text-align:center;font-size:13px;padding:4px 16px 8px;font-family:Lato,sans-serif;';
     selectScreen.insertBefore(el, selectScreen.firstChild);
   }
   if (!navigator.onLine) {
@@ -900,7 +908,9 @@ function showLoginScreen(groupId, groupName) {
 // ---- PENDING SCREEN MESSAGES ----
 function showFirstTimeMessage() {
   var el = document.getElementById('cg-pending-msg');
-  if (el) el.textContent = 'Your request to join has been sent! Your group leader will approve you shortly.';
+  if (el)
+    el.textContent =
+      'Your request to join has been sent! Your group leader will approve you shortly.';
 }
 
 function showReturningUserMessage() {
@@ -980,7 +990,9 @@ function submitLogin() {
   var remainingLockout = getRemainingLockoutMs(currentGroup, normalized);
   if (remainingLockout > 0) {
     errEl.textContent =
-      'Too many failed attempts. Please wait ' + formatRemainingLockout(remainingLockout) + ' before trying again.';
+      'Too many failed attempts. Please wait ' +
+      formatRemainingLockout(remainingLockout) +
+      ' before trying again.';
     if (loginBtn) {
       loginBtn.disabled = false;
       loginBtn.textContent = 'Log In';
@@ -1002,7 +1014,8 @@ function submitLogin() {
         return snap.exists && snap.data().normalizedName !== normalized;
       });
       if (conflict) {
-        errEl.textContent = "This device is tied to another user's profile. Please try again on a different device.";
+        errEl.textContent =
+          "This device is tied to another user's profile. Please try again on a different device.";
         if (loginBtn) {
           loginBtn.disabled = false;
           loginBtn.textContent = 'Log In';
@@ -1061,7 +1074,11 @@ function submitLogin() {
             return;
           }
 
-          var identityRef = db.collection('groups').doc(currentGroup).collection('identities').doc(normalized);
+          var identityRef = db
+            .collection('groups')
+            .doc(currentGroup)
+            .collection('identities')
+            .doc(normalized);
 
           identityRef
             .get()
@@ -1091,7 +1108,11 @@ function submitLogin() {
 
                   clearLoginGuard(currentGroup, normalized);
 
-                  var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(currentUID);
+                  var memberRef = db
+                    .collection('groups')
+                    .doc(currentGroup)
+                    .collection('members')
+                    .doc(currentUID);
                   memberRef
                     .get()
                     .then(function (memberSnap) {
@@ -1124,7 +1145,8 @@ function submitLogin() {
                           silentlyRestoreRoomsFromUID();
                           enterChat();
                         } else {
-                          document.getElementById('cg-pending-title').textContent = currentGroupName;
+                          document.getElementById('cg-pending-title').textContent =
+                            currentGroupName;
                           showReturningUserMessage();
                           showCGScreen('pending');
                         }
@@ -1162,11 +1184,16 @@ function submitLogin() {
                                 });
                               }
                               if (groupsToMigrate.length > 0 || discoveredOldUID) {
-                                var migrateAll = firebase.functions().httpsCallable('migrateAllGroupsV2');
+                                var migrateAll = firebase
+                                  .functions()
+                                  .httpsCallable('migrateAllGroupsV2');
                                 migrationInProgress = true;
                                 migrateAll({ groups: groupsToMigrate, oldUID: discoveredOldUID })
                                   .then(function (res) {
-                                    console.log('In-session multi-group migration successful:', res.data);
+                                    console.log(
+                                      'In-session multi-group migration successful:',
+                                      res.data
+                                    );
                                     var groupNames = {
                                       c101: 'C101',
                                       narthex: 'Narthex',
@@ -1177,7 +1204,8 @@ function submitLogin() {
                                     if (res.data && Array.isArray(res.data.results)) {
                                       res.data.results.forEach(function (r) {
                                         if (
-                                          (r.status === 'migrated' || r.status === 'migrated-by-uid') &&
+                                          (r.status === 'migrated' ||
+                                            r.status === 'migrated-by-uid') &&
                                           r.displayName &&
                                           r.normalizedName
                                         ) {
@@ -1194,7 +1222,10 @@ function submitLogin() {
                                     migrationInProgress = false;
                                   })
                                   .catch(function (err) {
-                                    console.log('In-session multi-group migration skipped:', err.message);
+                                    console.log(
+                                      'In-session multi-group migration skipped:',
+                                      err.message
+                                    );
                                   })
                                   .finally(function () {
                                     migrationInProgress = false;
@@ -1232,7 +1263,8 @@ function submitLogin() {
                                   saveUser(currentUser);
                                   setLastGroup(currentGroup);
                                   listenForBadgeUpdates();
-                                  document.getElementById('cg-pending-title').textContent = currentGroupName;
+                                  document.getElementById('cg-pending-title').textContent =
+                                    currentGroupName;
                                   showReturningUserMessage();
                                   showCGScreen('pending');
                                   if (loginBtn) {
@@ -1277,7 +1309,8 @@ function submitLogin() {
                                   saveUser(currentUser);
                                   setLastGroup(currentGroup);
                                   listenForBadgeUpdates();
-                                  document.getElementById('cg-pending-title').textContent = currentGroupName;
+                                  document.getElementById('cg-pending-title').textContent =
+                                    currentGroupName;
                                   showReturningUserMessage();
                                   showCGScreen('pending');
                                   if (loginBtn) {
@@ -1333,15 +1366,20 @@ function submitLogin() {
                       createdAt: Date.now()
                     })
                     .then(function () {
-                      return db.collection('groups').doc(currentGroup).collection('members').doc(currentUID).set({
-                        uid: currentUID,
-                        normalizedName: normalized,
-                        displayName: userName,
-                        approved: false,
-                        isAdmin: false,
-                        createdAt: Date.now(),
-                        lastLoginAt: Date.now()
-                      });
+                      return db
+                        .collection('groups')
+                        .doc(currentGroup)
+                        .collection('members')
+                        .doc(currentUID)
+                        .set({
+                          uid: currentUID,
+                          normalizedName: normalized,
+                          displayName: userName,
+                          approved: false,
+                          isAdmin: false,
+                          createdAt: Date.now(),
+                          lastLoginAt: Date.now()
+                        });
                     })
                     .then(function () {
                       clearLoginGuard(currentGroup, normalized);
@@ -1576,12 +1614,16 @@ function enterChat() {
   var previousOpenedTs = getLastOpenedTimestamp(currentGroup);
   var hadUnreadAtEntry = (unreadCountsByGroup[currentGroup] || 0) > 0;
 
-  roomMessageStateByGroup[currentGroup].newMessageBoundaryTs = hadUnreadAtEntry ? previousOpenedTs || 0 : 0;
+  roomMessageStateByGroup[currentGroup].newMessageBoundaryTs = hadUnreadAtEntry
+    ? previousOpenedTs || 0
+    : 0;
 
-  roomMessageStateByGroup[currentGroup].showNewMessageDivider = hadUnreadAtEntry && previousOpenedTs > 0;
+  roomMessageStateByGroup[currentGroup].showNewMessageDivider =
+    hadUnreadAtEntry && previousOpenedTs > 0;
   var mainTitle = document.getElementById('cg-main-title');
   if (mainTitle) {
-    mainTitle.innerHTML = 'C.A.R.E. Groups<br><span class="cg-room-title-line">' + currentGroupName + '</span>';
+    mainTitle.innerHTML =
+      'C.A.R.E. Groups<br><span class="cg-room-title-line">' + currentGroupName + '</span>';
   }
 
   var prayerBtn = document.getElementById('cg-prayer-btn');
@@ -1667,7 +1709,11 @@ function sendInlineReply(parentId) {
   playSendSound();
 
   var nowMs = Date.now();
-  var localTs = { toMillis: function () { return nowMs; } };
+  var localTs = {
+    toMillis: function () {
+      return nowMs;
+    }
+  };
   var nowTs = firebase.firestore.FieldValue.serverTimestamp();
   var replyAuthor = replyingTo ? replyingTo.author : '';
 
@@ -1690,19 +1736,21 @@ function sendInlineReply(parentId) {
   // null on this device until the write is acknowledged, so the live
   // "new messages" listener can't show it until the round trip completes.
   var state = getCurrentRoomState();
-  mergeMessagesIntoRoomState(state, [{
-    _id: docRef.id,
-    text: text,
-    author: currentUser.name,
-    authorKey: currentMemberKey,
-    authorUid: currentUID,
-    timestamp: localTs,
-    updatedAt: localTs,
-    edited: false,
-    deleted: false,
-    replyTo: parentId,
-    replyToAuthor: replyAuthor
-  }]);
+  mergeMessagesIntoRoomState(state, [
+    {
+      _id: docRef.id,
+      text: text,
+      author: currentUser.name,
+      authorKey: currentMemberKey,
+      authorUid: currentUID,
+      timestamp: localTs,
+      updatedAt: localTs,
+      edited: false,
+      deleted: false,
+      replyTo: parentId,
+      replyToAuthor: replyAuthor
+    }
+  ]);
   saveRoomMessageCache(currentGroup, state);
 
   suppressAutoScrollUntil = Date.now() + 2000;
@@ -1728,7 +1776,14 @@ function sendInlineReply(parentId) {
 function isMyMessage(msg) {
   if (msg.authorUid && currentUID && msg.authorUid === currentUID) return true;
   if (msg.authorKey && currentMemberKey && msg.authorKey === currentMemberKey) return true;
-  if (!msg.authorUid && !msg.authorKey && msg.author && currentUser && msg.author === currentUser.name) return true;
+  if (
+    !msg.authorUid &&
+    !msg.authorKey &&
+    msg.author &&
+    currentUser &&
+    msg.author === currentUser.name
+  )
+    return true;
   return false;
 }
 
@@ -2074,8 +2129,10 @@ function getMessageTime(msg) {
 }
 function getUpdatedTime(msg) {
   if (!msg) return 0;
-  if (msg.updatedAt && typeof msg.updatedAt.toMillis === 'function') return msg.updatedAt.toMillis();
-  if (msg.updatedAt && typeof msg.updatedAt.seconds === 'number') return msg.updatedAt.seconds * 1000;
+  if (msg.updatedAt && typeof msg.updatedAt.toMillis === 'function')
+    return msg.updatedAt.toMillis();
+  if (msg.updatedAt && typeof msg.updatedAt.seconds === 'number')
+    return msg.updatedAt.seconds * 1000;
   if (typeof msg.updatedAt === 'number') return msg.updatedAt;
   return getMessageTime(msg);
 }
@@ -2229,7 +2286,8 @@ function renderMissingParentReply(msg, container, showDivider) {
 function createNewMessageDivider() {
   var divider = document.createElement('div');
   divider.className = 'cg-new-message-divider';
-  divider.textContent = 'Here’s where you last left off. New replies to older messages may still appear above.';
+  divider.textContent =
+    'Here’s where you last left off. New replies to older messages may still appear above.';
   return divider;
 }
 function renderCurrentRoomMessages(allowAutoScroll) {
@@ -2407,7 +2465,13 @@ function attachRecentMessagesListener() {
       snapshot.docChanges().forEach(function (change) {
         var msg = normalizeFirestoreMessage(change.doc);
 
-        if (change.type === 'added' && isInChat() && currentGroup && msg.authorUid && msg.authorUid !== currentUID) {
+        if (
+          change.type === 'added' &&
+          isInChat() &&
+          currentGroup &&
+          msg.authorUid &&
+          msg.authorUid !== currentUID
+        ) {
           incomingFromOtherPerson = true;
         }
 
@@ -2465,7 +2529,8 @@ function loadMessages(scrollOnOpen) {
     })
     .catch(function (err) {
       console.error('LOAD MESSAGES FAILED:', err);
-      messagesEl.innerHTML = '<div class="cg-no-msgs">Unable to load messages right now.<br>' + err.message + '</div>';
+      messagesEl.innerHTML =
+        '<div class="cg-no-msgs">Unable to load messages right now.<br>' + err.message + '</div>';
       messagesEl.style.visibility = 'visible';
       var mask = document.getElementById('cg-loading-mask');
       if (mask) mask.style.display = 'none';
@@ -2681,7 +2746,11 @@ function sendMessage() {
   playSendSound();
 
   var nowMs = Date.now();
-  var localTs = { toMillis: function () { return nowMs; } };
+  var localTs = {
+    toMillis: function () {
+      return nowMs;
+    }
+  };
   var nowTs = firebase.firestore.FieldValue.serverTimestamp();
 
   var msgData = {
@@ -2701,17 +2770,19 @@ function sendMessage() {
   // null on this device until the write is acknowledged, so the live
   // "new messages" listener can't show it until the round trip completes.
   var state = getCurrentRoomState();
-  mergeMessagesIntoRoomState(state, [{
-    _id: docRef.id,
-    text: text,
-    author: currentUser.name,
-    authorKey: currentMemberKey,
-    authorUid: currentUID,
-    timestamp: localTs,
-    updatedAt: localTs,
-    edited: false,
-    deleted: false
-  }]);
+  mergeMessagesIntoRoomState(state, [
+    {
+      _id: docRef.id,
+      text: text,
+      author: currentUser.name,
+      authorKey: currentMemberKey,
+      authorUid: currentUID,
+      timestamp: localTs,
+      updatedAt: localTs,
+      edited: false,
+      deleted: false
+    }
+  ]);
   saveRoomMessageCache(currentGroup, state);
   renderCurrentRoomMessages(true);
 
@@ -2751,7 +2822,7 @@ function markAsRead() {
 
   const userRef = db.collection('users').doc(currentUID);
 
-  userRef.get().then(doc => {
+  userRef.get().then((doc) => {
     if (!doc.exists) return;
 
     let data = doc.data() || {};
@@ -2766,10 +2837,10 @@ function markAsRead() {
     unread[currentGroup] = 0;
 
     let totalUnread = 0;
-    Object.values(unread).forEach(v => (totalUnread += Number(v) || 0));
+    Object.values(unread).forEach((v) => (totalUnread += Number(v) || 0));
 
     let totalPending = 0;
-    Object.values(pending).forEach(v => (totalPending += Number(v) || 0));
+    Object.values(pending).forEach((v) => (totalPending += Number(v) || 0));
 
     let badgeTotal = totalUnread + totalPending;
 
@@ -3048,7 +3119,8 @@ function loadMembersList(forceRefresh) {
           saveMembersCache(targetGroup, members);
           renderMembersListFromData(members);
         } else if (!cache && listEl) {
-          listEl.innerHTML = '<div class="cg-empty-note">Members couldn\'t be loaded. Check back shortly.</div>';
+          listEl.innerHTML =
+            '<div class="cg-empty-note">Members couldn\'t be loaded. Check back shortly.</div>';
         }
         // Empty result with stale cache already on screen — leave it.
       })
@@ -3058,7 +3130,8 @@ function loadMembersList(forceRefresh) {
         clearTimeout(stallTimer);
         clearTimeout(giveUpTimer);
         if (!cache && listEl) {
-          listEl.innerHTML = '<div class="cg-empty-note">Members couldn\'t be loaded. Check back shortly.</div>';
+          listEl.innerHTML =
+            '<div class="cg-empty-note">Members couldn\'t be loaded. Check back shortly.</div>';
         }
         console.error('Members load error:', err);
       });
@@ -3266,7 +3339,11 @@ function submitChangePassword() {
     return;
   }
 
-  var identityRef = db.collection('groups').doc(currentGroup).collection('identities').doc(currentMemberKey);
+  var identityRef = db
+    .collection('groups')
+    .doc(currentGroup)
+    .collection('identities')
+    .doc(currentMemberKey);
 
   identityRef
     .get()
@@ -3664,7 +3741,10 @@ function populateChapters(book, selected) {
 function openBible() {
   var book = document.getElementById('bibleBook').value;
   var chapter = document.getElementById('bibleChapter').value;
-  window.open('https://www.bible.com/bible/' + currentTrans + '/' + book + '.' + chapter + '.' + currentCode, '_blank');
+  window.open(
+    'https://www.bible.com/bible/' + currentTrans + '/' + book + '.' + chapter + '.' + currentCode,
+    '_blank'
+  );
 }
 
 function tryGenerateQR() {
@@ -3742,45 +3822,93 @@ function openChurchAlerts() {
 
   const container = document.getElementById('church-alert-content');
   if (container) {
-    container.innerHTML = '<p style="text-align:center; padding:60px 20px; color:#c9a84c;">Loading latest alert...</p>';
+    container.innerHTML =
+      '<p style="text-align:center; padding:60px 20px; color:#c9a84c;">Loading latest alert...</p>';
   }
 
-  db.collection('churchAlerts')
-    .orderBy('sentAt', 'desc')
-    .limit(1)
-    .get()
-    .then(snapshot => {
-      const container = document.getElementById('church-alert-content');
-      if (!container) return;
+  var done = false;
 
-      if (snapshot.empty) {
-        if (snapshot.metadata.fromCache) {
-          container.innerHTML =
-            '<p style="text-align:center; padding:40px; color:#7a8fa8;">Unable to connect. Check your connection and try again.</p>';
-        } else {
-          container.innerHTML = '<p style="text-align:center; padding:40px; color:#7a8fa8;">No church alerts yet.</p>';
+  // Stall detector: if no response in 3.5s, reboot Firestore network and retry once.
+  // Same fix as loadMembersList — a hung connection sometimes needs a kick
+  // before it'll resolve; disable/enable network mimics a force-close + reopen.
+  var stallTimer = setTimeout(function () {
+    if (done) return;
+    console.warn('Church alert fetch stalled — rebooting Firestore network...');
+    db.disableNetwork()
+      .then(function () {
+        return db.enableNetwork();
+      })
+      .then(function () {
+        if (done) return;
+        executeAlertFetch();
+      })
+      .catch(function () {});
+  }, 3500);
+
+  // Overall give-up: 12s covers first attempt + reboot delay + retry
+  var giveUpTimer = setTimeout(function () {
+    if (done) return;
+    done = true;
+    const container = document.getElementById('church-alert-content');
+    if (container) {
+      container.innerHTML =
+        '<p style="text-align:center; padding:40px; color:#7a8fa8;">Unable to connect. Check your connection and try again.</p>';
+    }
+  }, 12000);
+
+  function executeAlertFetch() {
+    db.collection('churchAlerts')
+      .orderBy('sentAt', 'desc')
+      .limit(1)
+      .get()
+      .then((snapshot) => {
+        if (done) return;
+        done = true;
+        clearTimeout(stallTimer);
+        clearTimeout(giveUpTimer);
+
+        const container = document.getElementById('church-alert-content');
+        if (!container) return;
+
+        if (snapshot.empty) {
+          if (snapshot.metadata.fromCache) {
+            container.innerHTML =
+              '<p style="text-align:center; padding:40px; color:#7a8fa8;">Unable to connect. Check your connection and try again.</p>';
+          } else {
+            container.innerHTML =
+              '<p style="text-align:center; padding:40px; color:#7a8fa8;">No church alerts yet.</p>';
+          }
+          return;
         }
-        return;
-      }
 
-      const data = snapshot.docs[0].data() || {};
-      const time = data.sentAt ? new Date(data.sentAt.toMillis()).toLocaleString() : 'Unknown time';
+        const data = snapshot.docs[0].data() || {};
+        const time = data.sentAt
+          ? new Date(data.sentAt.toMillis()).toLocaleString()
+          : 'Unknown time';
 
-      container.innerHTML = `
-        <div class="alert-item">
-          <div class="alert-title">${data.title || 'Church Alert'}</div>
-          <div class="alert-body">${data.body || ''}</div>
-          <div class="alert-time">${time}</div>
-        </div>
-      `;
-    })
-    .catch(err => {
-      console.error('Error loading alert:', err); // keep this one for troubleshooting
-      const container = document.getElementById('church-alert-content');
-      if (container) {
-        container.innerHTML = '<p style="color:#ff6b6b; text-align:center;">Error loading alert.</p>';
-      }
-    });
+        container.innerHTML = `
+          <div class="alert-item">
+            <div class="alert-title">${data.title || 'Church Alert'}</div>
+            <div class="alert-body">${data.body || ''}</div>
+            <div class="alert-time">${time}</div>
+          </div>
+        `;
+      })
+      .catch((err) => {
+        if (done) return;
+        done = true;
+        clearTimeout(stallTimer);
+        clearTimeout(giveUpTimer);
+        console.error('Error loading alert:', err); // keep this one for troubleshooting
+        const container = document.getElementById('church-alert-content');
+        if (container) {
+          container.innerHTML =
+            '<p style="color:#ff6b6b; text-align:center;">Error loading alert.</p>';
+        }
+      });
+  }
+
+  executeAlertFetch();
 }
 // ---- INIT ----
 window.onload = function () {
@@ -3855,7 +3983,8 @@ window.onload = function () {
       // Sparse rooms (content fits screen): scroll to 0 so fixed nav lands correctly.
       // Full rooms: scroll to bottom as before.
       setTimeout(function () {
-        var scrollTarget = document.body.scrollHeight > window.innerHeight + 10 ? document.body.scrollHeight : 0;
+        var scrollTarget =
+          document.body.scrollHeight > window.innerHeight + 10 ? document.body.scrollHeight : 0;
         window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
       }, 200);
     });
@@ -4073,7 +4202,10 @@ window.onload = function () {
   var locationCard = document.getElementById('location-card');
   if (locationCard)
     locationCard.addEventListener('click', function () {
-      window.open('https://www.google.com/maps/search/?api=1&query=301+Teel+Road+Beckley+WV+25801', '_blank');
+      window.open(
+        'https://www.google.com/maps/search/?api=1&query=301+Teel+Road+Beckley+WV+25801',
+        '_blank'
+      );
     });
 
   var ytLaunch = document.getElementById('yt-launch');
@@ -4234,10 +4366,12 @@ window.onload = function () {
       btn.style.pointerEvents = 'none';
     });
     updateSelectConnectionStatus();
-    document.querySelectorAll('#cg-msg-input, .cg-inline-reply-input, .cg-edit-input').forEach(function (input) {
-      input.disabled = true;
-      input.placeholder = 'No connection...';
-    });
+    document
+      .querySelectorAll('#cg-msg-input, .cg-inline-reply-input, .cg-edit-input')
+      .forEach(function (input) {
+        input.disabled = true;
+        input.placeholder = 'No connection...';
+      });
     document
       .querySelectorAll('#cg-send-btn, .cg-inline-reply-send, .cg-edit-save-btn, .msg-menu-delete')
       .forEach(function (btn) {
@@ -4254,11 +4388,14 @@ window.onload = function () {
       });
     }
     updateSelectConnectionStatus();
-    document.querySelectorAll('#cg-msg-input, .cg-inline-reply-input, .cg-edit-input').forEach(function (input) {
-      input.disabled = false;
-      if (input.id === 'cg-msg-input') input.placeholder = 'Type a message...';
-      if (input.classList.contains('cg-inline-reply-input')) input.placeholder = 'Write a reply...';
-    });
+    document
+      .querySelectorAll('#cg-msg-input, .cg-inline-reply-input, .cg-edit-input')
+      .forEach(function (input) {
+        input.disabled = false;
+        if (input.id === 'cg-msg-input') input.placeholder = 'Type a message...';
+        if (input.classList.contains('cg-inline-reply-input'))
+          input.placeholder = 'Write a reply...';
+      });
     document
       .querySelectorAll('#cg-send-btn, .cg-inline-reply-send, .cg-edit-save-btn, .msg-menu-delete')
       .forEach(function (btn) {
