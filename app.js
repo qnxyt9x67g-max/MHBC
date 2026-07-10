@@ -2155,6 +2155,7 @@ function loadOlderMessages() {
         mergeMessagesIntoRoomState(state, older);
         saveRoomMessageCache(currentGroup, state);
         refreshHasOlderMessages();
+        renderCurrentRoomMessages(false);
       });
   }
 
