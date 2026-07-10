@@ -1037,78 +1037,24 @@ function submitLogin() {
     });
 
   function runLoginPipeline() {
-    db.collection('config')
-      .doc('rooms')
-      .get()
-      .then(function (snap) {
-        if (!snap.exists) {
-          errEl.textContent = 'Configuration error. Contact your admin.';
-          if (loginBtn) {
-            loginBtn.disabled = false;
-            loginBtn.textContent = 'Log In';
-            loginBtn.style.opacity = '1';
-          }
-          loginInProgress = false;
-          return;
-        }
-        var config = snap.data();
+    var identityRef = db.collection('groups').doc(currentGroup).collection('identities').doc(normalized);
 
-        hashInput(roomPass, config[currentGroup + '_salt']).then(function (enteredRoomHash) {
-          if (enteredRoomHash !== config[currentGroup + '_hash']) {
-            recordFailedLogin(currentGroup, normalized);
-            var remainingAfterRoomFailure = getRemainingLockoutMs(currentGroup, normalized);
-            if (remainingAfterRoomFailure > 0) {
-              errEl.textContent =
-                'Too many failed attempts. Please wait ' +
-                formatRemainingLockout(remainingAfterRoomFailure) +
-                ' before trying again.';
-            } else {
-              errEl.textContent = 'Incorrect room password. Check with your group leader.';
-            }
-            if (loginBtn) {
-              loginBtn.disabled = false;
-              loginBtn.textContent = 'Log In';
-              loginBtn.style.opacity = '1';
-            }
-            loginInProgress = false;
-            return;
-          }
+    // Room password + personal password are now verified entirely server-side
+    // (verifyLoginV2), so passwordHash/passwordSalt never reach the client.
+    var verifyLogin = firebase.functions().httpsCallable('verifyLoginV2');
+    verifyLogin({
+      groupId: currentGroup,
+      normalizedName: normalized,
+      roomPassword: roomPass,
+      userPassword: userPassword
+    })
+      .then(function (verifyResult) {
+        if (verifyResult.data.identityExists) {
+          var identity = { displayName: verifyResult.data.displayName };
 
-          var identityRef = db
-            .collection('groups')
-            .doc(currentGroup)
-            .collection('identities')
-            .doc(normalized);
+          clearLoginGuard(currentGroup, normalized);
 
-          identityRef
-            .get()
-            .then(function (identitySnap) {
-              if (identitySnap.exists) {
-                var identity = identitySnap.data();
-                hashInput(userPassword, identity.passwordSalt).then(function (enteredHash) {
-                  if (enteredHash !== identity.passwordHash) {
-                    recordFailedLogin(currentGroup, normalized);
-                    var remainingAfterFailure = getRemainingLockoutMs(currentGroup, normalized);
-                    if (remainingAfterFailure > 0) {
-                      errEl.textContent =
-                        'Too many failed attempts. Please wait ' +
-                        formatRemainingLockout(remainingAfterFailure) +
-                        ' before trying again.';
-                    } else {
-                      errEl.textContent = 'Incorrect password. Try again.';
-                    }
-                    if (loginBtn) {
-                      loginBtn.disabled = false;
-                      loginBtn.textContent = 'Log In';
-                      loginBtn.style.opacity = '1';
-                    }
-                    loginInProgress = false;
-                    return;
-                  }
-
-                  clearLoginGuard(currentGroup, normalized);
-
-                  var memberRef = db
+          var memberRef = db
                     .collection('groups')
                     .doc(currentGroup)
                     .collection('members')
@@ -1155,7 +1101,7 @@ function submitLogin() {
                         migrateUid({
                           groupId: currentGroup,
                           normalizedName: normalized,
-                          passwordHash: identity.passwordHash
+                          userPassword: userPassword
                         })
                           .then(function (result) {
                             if (result.data.status === 'migrated') {
@@ -1350,7 +1296,6 @@ function submitLogin() {
                       loginInProgress = false;
                       errEl.textContent = 'Member lookup error: ' + err.message;
                     });
-                });
               } else {
                 // Brand new profile registration path
                 var passwordSalt = generateSalt();
@@ -1415,17 +1360,6 @@ function submitLogin() {
                     });
                 });
               }
-            })
-            .catch(function (err) {
-              if (loginBtn) {
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Log In';
-                loginBtn.style.opacity = '1';
-              }
-              loginInProgress = false;
-              errEl.textContent = 'Identity lookup error: ' + err.message;
-            });
-        });
       })
       .catch(function (err) {
         if (loginBtn) {
@@ -1434,7 +1368,26 @@ function submitLogin() {
           loginBtn.style.opacity = '1';
         }
         loginInProgress = false;
-        errEl.textContent = 'Config error: ' + err.message;
+
+        if (err && err.code === 'permission-denied') {
+          // Wrong room password or wrong personal password (server-verified).
+          recordFailedLogin(currentGroup, normalized);
+          var remainingAfterFailure = getRemainingLockoutMs(currentGroup, normalized);
+          if (remainingAfterFailure > 0) {
+            errEl.textContent =
+              'Too many failed attempts. Please wait ' +
+              formatRemainingLockout(remainingAfterFailure) +
+              ' before trying again.';
+          } else {
+            errEl.textContent = err.message;
+          }
+        } else if (err && err.code === 'resource-exhausted') {
+          // Server-enforced lockout — authoritative even if the local guard
+          // was cleared (new device, cleared storage, etc).
+          errEl.textContent = err.message;
+        } else {
+          errEl.textContent = 'Login error: ' + (err && err.message ? err.message : 'Please try again.');
+        }
       });
   }
 }
