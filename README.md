@@ -13,11 +13,13 @@ Members join one or more **C.A.R.E. Groups** (small groups), each with its own p
 
 ### Auth & Identity
 
-Firebase Anonymous Auth provides a trusted device/session UID. A separate name + password system (stored in Firestore) handles human identity, account recovery, and portability across devices. Admin status is assigned manually in the Firebase console.
+Firebase Anonymous Auth provides a trusted device/session UID. A separate name + password system (stored in Firestore) handles human identity, account recovery, and portability across devices. Passwords are salted (SHA-256) and verified entirely server-side by the `verifyLoginV2` Cloud Function — the client sends the plaintext password over HTTPS and never reads a stored hash or salt directly. Repeated failed attempts trigger a server-enforced lockout (10 attempts / 15 minutes, tracked on the identity doc) in addition to a client-side guard. Admin status is assigned manually in the Firebase console.
 
 ### Badges & Notifications
 
 All badge counts (unread messages + pending approvals) are managed server-side by Cloud Functions. Clients only read the final computed values — keeping badge-related Firestore costs near zero.
+
+Client writes to a user's own `users/{uid}` doc (badge-clearing, token registration) are restricted by Firestore rules to an explicit field whitelist. Since Firestore evaluates that whitelist against the *entire resulting document*, not just the fields being written, any new field added to `users/{uid}` anywhere in the codebase — client or Cloud Function — must also be added to that whitelist, or every future client write to that document will start silently failing.
 
 ### Messages & Offline Support
 
@@ -37,7 +39,7 @@ To quickly respond to maintenance, outages, or special events, several pre-built
 **Frontend Logic (`app.js` variants)**
 - `app_js_emergency_shutdown.js` — Complete client-side lockout
 - `app_js_no_live_service.js` — Disables only live service / watch features
-- `app_js_emergency_shutdownand_no_live_service.js` — Combined shutdown
+- `app_js_emergency_shutdown_and_no_live_service.js` — Combined shutdown
 
 **Backend Functions (`index.js` variants)**
 - `index_js_emergency_shutdown.js` — Global kill switch (disables all triggers)
@@ -52,6 +54,7 @@ To quickly respond to maintenance, outages, or special events, several pre-built
 | `onChurchAlertCreatedV2`       | New church alert         | Broadcast alert and update badges |
 | `sundayServiceReminderV2`      | Cron (Sun 9:00 AM ET)    | Pre-service reminder |
 | `wednesdayServiceReminderV2`   | Cron (Wed 6:30 PM ET)    | Pre-service reminder |
+| `verifyLoginV2`                | Callable                 | Server-side room + personal password verification and lockout |
 | `migrateUidV2`                 | Callable                 | Migrate single group membership |
 | `migrateAllGroupsV2`           | Callable                 | Migrate all groups + tokens |
 | `migrateTokenV2`               | Callable                 | Migrate FCM token to new UID |
@@ -66,4 +69,4 @@ To quickly respond to maintenance, outages, or special events, several pre-built
 | `sw.js`             | Service worker (caching + background FCM) |
 | `manifest.json`     | PWA configuration |
 | `index.js`          | Cloud Functions (backend logic) |
-| `Firestore_Rules`   | Security rules |
+| `firestore.rules`   | Security rules |
