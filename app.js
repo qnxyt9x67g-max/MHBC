@@ -3885,20 +3885,6 @@ window.onload = function () {
     });
   }
 
-  var manageNotificationsRow = document.getElementById('manageNotificationsRow');
-  if (manageNotificationsRow) {
-    manageNotificationsRow.addEventListener('click', function () {
-      showPage('manage-notifications');
-    });
-  }
-
-  var manageNotificationsBack = document.getElementById('manage-notifications-back');
-  if (manageNotificationsBack) {
-    manageNotificationsBack.addEventListener('click', function () {
-      showPage('more');
-    });
-  }
-
   var mainInput = document.getElementById('cg-msg-input');
   if (mainInput) {
     function jumpToBottomForMainInput() {
