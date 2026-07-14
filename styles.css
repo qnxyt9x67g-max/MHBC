@@ -1335,6 +1335,10 @@ body {
   gap: 6px;
 }
 
+.msg-text {
+  display: block;
+}
+
 /* ---- EDITED LABEL ---- */
 .msg-edited {
   font-size: 10px;
