@@ -2561,7 +2561,10 @@ function buildMessageRow(msg, isPrimary) {
     deletedSpan.textContent = '(message deleted)';
     wrapper.appendChild(deletedSpan);
   } else {
-    renderMessageContent(msg.text, wrapper);
+    var textBlock = document.createElement('div');
+    textBlock.className = 'msg-text';
+    renderMessageContent(msg.text, textBlock);
+    wrapper.appendChild(textBlock);
 
     if (msg.edited) {
       var editedTag = document.createElement('span');
