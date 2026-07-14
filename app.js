@@ -2053,23 +2053,18 @@ function renderMessageContent(text, container) {
       container.appendChild(link);
     } else {
       // Plain text: preserve newlines and blank lines
-      var lines = part.split('\n');
-      lines.forEach(function (line, index) {
-        if (index > 0) {
-          var br = document.createElement('br');
-          container.appendChild(br);
-        }
-        // Extra blank line when user hit Enter twice
-        if (line === '' && index > 0) {
-          var extraBr = document.createElement('br');
-          container.appendChild(extraBr);
-        }
-        if (line) {
-          var span = document.createElement('span');
-          span.textContent = line;
-          container.appendChild(span);
-        }
-      });
+var lines = part.split('\n');
+lines.forEach(function (line, index) {
+  if (index > 0) {
+    var br = document.createElement('br');
+    container.appendChild(br);
+  }
+  if (line) {
+    var span = document.createElement('span');
+    span.textContent = line;
+    container.appendChild(span);
+  }
+});
     }
   });
 }
