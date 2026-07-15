@@ -96,6 +96,13 @@ function getBubbleColor(name) {
   return BUBBLE_COLORS[Math.abs(hash) % BUBBLE_COLORS.length];
 }
 
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 function normalizeName(name) {
   return name
     .trim()
@@ -3840,8 +3847,8 @@ function openChurchAlerts() {
 
         container.innerHTML = `
           <div class="alert-item">
-            <div class="alert-title">${data.title || 'Church Alert'}</div>
-            <div class="alert-body">${data.body || ''}</div>
+            <div class="alert-title">${escapeHtml(data.title) || 'Church Alert'}</div>
+            <div class="alert-body">${escapeHtml(data.body)}</div>
             <div class="alert-time">${time}</div>
           </div>
         `;
