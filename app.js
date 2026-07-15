@@ -103,6 +103,12 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;');
 }
 
+function linkifyEscaped(escapedStr) {
+  return escapedStr.replace(/(https?:\/\/[^\s<]+)/g, function (url) {
+    return '<a href="' + url + '" target="_blank" rel="noopener" class="alert-link">' + url + '</a>';
+  });
+}
+
 function normalizeName(name) {
   return name
     .trim()
@@ -3848,7 +3854,7 @@ function openChurchAlerts() {
         container.innerHTML = `
           <div class="alert-item">
             <div class="alert-title">${escapeHtml(data.title) || 'Church Alert'}</div>
-            <div class="alert-body">${escapeHtml(data.body)}</div>
+            <div class="alert-body">${linkifyEscaped(escapeHtml(data.body))}</div>
             <div class="alert-time">${time}</div>
           </div>
         `;
