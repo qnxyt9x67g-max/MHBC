@@ -3944,8 +3944,6 @@ window.onload = function () {
       }, 120);
     });
 
-    mainInput.addEventListener('click', jumpToBottomForMainInput);
-
     mainInput.addEventListener('blur', function () {
       var nav = document.querySelector('.bottom-nav');
       var inputBar = document.querySelector('.cg-input-bar');
