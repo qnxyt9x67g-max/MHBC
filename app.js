@@ -3912,6 +3912,8 @@ window.onload = function () {
 
   var mainInput = document.getElementById('cg-msg-input');
   if (mainInput) {
+    var mainInputFocused = false;
+
     function jumpToBottomForMainInput() {
       if (replyingTo) {
         clearReply();
@@ -3926,8 +3928,26 @@ window.onload = function () {
       if (btn) btn.textContent = mainInput.value.trim() ? 'Send' : 'Return';
     }
 
+    // iOS keyboard fix: keep the input bar pinned above the keyboard even
+    // while the message list is being scrolled. Only acts while the main
+    // input is actually focused, so it never touches other pages/devices
+    // where no keyboard is up (e.g. Safari's toolbar collapsing on scroll).
+    function adjustInputBarForKeyboard() {
+      if (!mainInputFocused) return;
+      var inputBar = document.querySelector('.cg-input-bar');
+      if (!inputBar || !window.visualViewport) return;
+      var offset = window.innerHeight - window.visualViewport.height;
+      inputBar.style.bottom = (offset > 0 ? offset : 0) + 'px';
+    }
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', adjustInputBarForKeyboard);
+      window.visualViewport.addEventListener('scroll', adjustInputBarForKeyboard);
+    }
+
     // Input handling for chat
     mainInput.addEventListener('focus', function () {
+      mainInputFocused = true;
       jumpToBottomForMainInput();
       updateSendBtnLabel();
 
@@ -3941,10 +3961,12 @@ window.onload = function () {
 
       setTimeout(function () {
         window.scrollTo(0, document.body.scrollHeight);
+        adjustInputBarForKeyboard();
       }, 120);
     });
 
     mainInput.addEventListener('blur', function () {
+      mainInputFocused = false;
       var nav = document.querySelector('.bottom-nav');
       var inputBar = document.querySelector('.cg-input-bar');
       var msgs = document.querySelector('.cg-messages');
