@@ -3913,6 +3913,7 @@ window.onload = function () {
   var mainInput = document.getElementById('cg-msg-input');
   if (mainInput) {
     var mainInputFocused = false;
+    var keyboardTrackingRAF = null;
 
     function jumpToBottomForMainInput() {
       if (replyingTo) {
@@ -3949,6 +3950,17 @@ window.onload = function () {
       window.visualViewport.addEventListener('scroll', adjustInputBarForKeyboard);
     }
 
+    // visualViewport's resize/scroll events can be throttled by iOS during a
+    // fast scroll gesture, causing the bar to visibly lag before catching up.
+    // Polling once per animation frame while focused guarantees it stays in
+    // sync regardless of event timing, and costs nothing once you blur.
+    function keyboardTrackingLoop() {
+      adjustInputBarForKeyboard();
+      if (mainInputFocused) {
+        keyboardTrackingRAF = requestAnimationFrame(keyboardTrackingLoop);
+      }
+    }
+
     // Input handling for chat
     mainInput.addEventListener('focus', function () {
       mainInputFocused = true;
@@ -3967,10 +3979,17 @@ window.onload = function () {
         window.scrollTo(0, document.body.scrollHeight);
         adjustInputBarForKeyboard();
       }, 120);
+
+      if (keyboardTrackingRAF) cancelAnimationFrame(keyboardTrackingRAF);
+      keyboardTrackingRAF = requestAnimationFrame(keyboardTrackingLoop);
     });
 
     mainInput.addEventListener('blur', function () {
       mainInputFocused = false;
+      if (keyboardTrackingRAF) {
+        cancelAnimationFrame(keyboardTrackingRAF);
+        keyboardTrackingRAF = null;
+      }
       var nav = document.querySelector('.bottom-nav');
       var inputBar = document.querySelector('.cg-input-bar');
       var msgs = document.querySelector('.cg-messages');
