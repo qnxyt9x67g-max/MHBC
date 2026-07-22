@@ -3936,7 +3936,11 @@ window.onload = function () {
       if (!mainInputFocused) return;
       var inputBar = document.querySelector('.cg-input-bar');
       if (!inputBar || !window.visualViewport) return;
-      var offset = window.innerHeight - window.visualViewport.height;
+      var vv = window.visualViewport;
+      // Account for both the keyboard shrinking the visible area (vv.height)
+      // AND the visible area sliding down within the page (vv.offsetTop) —
+      // iOS does the latter during scroll while the keyboard is open.
+      var offset = window.innerHeight - vv.height - vv.offsetTop;
       inputBar.style.bottom = (offset > 0 ? offset : 0) + 'px';
     }
 
