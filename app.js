@@ -1896,6 +1896,16 @@ function editMessage(msgId) {
 
       function closeOverlay() {
         if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+
+        // The overlay's textarea being removed drops keyboard focus, which
+        // starts the keyboard-close animation and brings the app header
+        // back. For a message near the top of the screen that reappearing
+        // header can end up covering it, since nothing re-scrolls for it.
+        // Recenter it once that settles, the same way a new reply does.
+        setTimeout(function () {
+          var msgEl = document.querySelector('[data-msg-id="' + msgId + '"]');
+          if (msgEl) msgEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
       }
 
       var editSaveInProgress = false;
@@ -2520,6 +2530,7 @@ function buildMessageRow(msg, isPrimary) {
 
   var row = document.createElement('div');
   row.className = isPrimary ? 'cg-primary-row' : 'cg-reply-row';
+  row.setAttribute('data-msg-id', msg._id);
 
   var avatar = document.createElement('div');
   avatar.className = isPrimary ? 'cg-avatar' : 'cg-avatar cg-avatar-sm';
@@ -3913,7 +3924,6 @@ window.onload = function () {
   var mainInput = document.getElementById('cg-msg-input');
   if (mainInput) {
     var mainInputFocused = false;
-    var keyboardTrackingRAF = null;
 
     function jumpToBottomForMainInput() {
       if (replyingTo) {
@@ -3929,47 +3939,11 @@ window.onload = function () {
       if (btn) btn.textContent = mainInput.value.trim() ? 'Send' : 'Return';
     }
 
-    // iOS keyboard fix: keep the input bar pinned above the keyboard even
-    // while the message list is being scrolled. Only acts while the main
-    // input is actually focused, so it never touches other pages/devices
-    // where no keyboard is up (e.g. Safari's toolbar collapsing on scroll).
-    function adjustInputBarForKeyboard() {
-      if (!mainInputFocused) return;
-      var inputBar = document.querySelector('.cg-input-bar');
-      if (!inputBar || !window.visualViewport) return;
-      var vv = window.visualViewport;
-      var baseline = window.innerHeight - vv.height; // keyboard height only — what the first version used; it never sank
-      var corrected = baseline - vv.offsetTop; // also accounts for page panning — what stopped it floating to the top
-
-      // iOS has an open WebKit bug where offsetTop is briefly over-reported
-      // right as an upward scroll begins, which over-corrects and sinks the
-      // bar behind the keyboard for the first couple of messages. Flooring
-      // the correction at half the keyboard-height baseline stops a bad
-      // reading from sinking it that far, while still applying enough
-      // correction during a longer scroll to stop it floating above the
-      // keyboard.
-      var floor = baseline * 0.5;
-      var target = corrected < floor ? floor : corrected;
-      if (target < 0) target = 0;
-
-      inputBar.style.bottom = Math.round(target) + 'px';
-    }
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', adjustInputBarForKeyboard);
-      window.visualViewport.addEventListener('scroll', adjustInputBarForKeyboard);
-    }
-
-    // visualViewport's resize/scroll events can be throttled by iOS during a
-    // fast scroll gesture, causing the bar to visibly lag before catching up.
-    // Polling once per animation frame while focused guarantees it stays in
-    // sync regardless of event timing, and costs nothing once you blur.
-    function keyboardTrackingLoop() {
-      adjustInputBarForKeyboard();
-      if (mainInputFocused) {
-        keyboardTrackingRAF = requestAnimationFrame(keyboardTrackingLoop);
-      }
-    }
+    // Keeping the input bar pinned above the keyboard is now handled by the
+    // visualViewport-driven fix at the very end of this file (search for
+    // "applyWebKitFixes"). It reacts to visualViewport resize/scroll events
+    // plus focusin/focusout on #cg-msg-input, so it doesn't need anything
+    // registered here.
 
     // Input handling for chat
     mainInput.addEventListener('focus', function () {
@@ -3987,19 +3961,12 @@ window.onload = function () {
 
       setTimeout(function () {
         window.scrollTo(0, document.body.scrollHeight);
-        adjustInputBarForKeyboard();
       }, 120);
-
-      if (keyboardTrackingRAF) cancelAnimationFrame(keyboardTrackingRAF);
-      keyboardTrackingRAF = requestAnimationFrame(keyboardTrackingLoop);
     });
 
     mainInput.addEventListener('blur', function () {
       mainInputFocused = false;
-      if (keyboardTrackingRAF) {
-        cancelAnimationFrame(keyboardTrackingRAF);
-        keyboardTrackingRAF = null;
-      }
+
       var nav = document.querySelector('.bottom-nav');
       var inputBar = document.querySelector('.cg-input-bar');
       var msgs = document.querySelector('.cg-messages');
@@ -4436,73 +4403,94 @@ window.onload = function () {
       });
   });
 };
+
 // ============================================================
-// iOS Safari / WebKit UI Fixes (Zoom, Keyboard, & Input Bar)
+// iOS Safari / WebKit fixes: keyboard-pinned input bar (issue 2) +
+// post-pinch-zoom fixed-element repaint (issue 1)
 // ============================================================
 (function applyWebKitFixes() {
   if (!window.visualViewport) return;
 
+  var pinchZoomed = false;
+
+  // Forces WebKit to recompute a fixed-position element's geometry from
+  // the current viewport instead of whatever it cached mid pinch-zoom.
+  // Pulling the element out of the render tree and straight back in (with
+  // no paint able to happen in between, since both writes happen in the
+  // same synchronous pass) does that without any visible flicker — it's
+  // the same effect as the manual scroll that already fixes it by hand.
+  function forceRelayout(el) {
+    if (!el) return;
+    var prevDisplay = el.style.display;
+    el.style.display = 'none';
+    void el.offsetHeight; // read forces a synchronous layout pass
+    el.style.display = prevDisplay;
+  }
+
   function syncViewport() {
     var inputBar = document.getElementById('cg-input-bar');
     var bottomNav = document.querySelector('.bottom-nav');
-    
-    // iOS Safari's native keyboard toolbar (arrows/checkmark) often overlaps the viewport.
-    // We subtract ~45px to push the chat bar just above it.
-    var accessoryBarOffset = 45; 
 
-    // Check if the user is specifically focused on the main chat input
+    // iOS Safari's native keyboard toolbar (arrows/checkmark) often overlaps the viewport.
+    var accessoryBarOffset = 45;
+
     var isMainInputActive = document.activeElement && document.activeElement.id === 'cg-msg-input';
 
-    // Issue 2: Pin the chat input bar perfectly to the visual keyboard,
-    // BUT ONLY if the main input is actually the one being used.
+    // Issue 2: pin the chat input bar to the visual keyboard, but only
+    // while the main chat input is actually the focused field — never
+    // touches inline replies or the edit overlay, which have their own
+    // working focus/scroll handling.
     if (inputBar && inputBar.style.display !== 'none') {
       if (window.visualViewport.height < window.innerHeight - 50 && isMainInputActive) {
-        // Switch to absolute positioning locked to the visual viewport's exact coordinates.
         inputBar.style.position = 'absolute';
-        inputBar.style.top = (window.visualViewport.pageTop + window.visualViewport.height - inputBar.offsetHeight - accessoryBarOffset) + 'px';
+        inputBar.style.top =
+          window.visualViewport.pageTop +
+          window.visualViewport.height -
+          inputBar.offsetHeight -
+          accessoryBarOffset +
+          'px';
         inputBar.style.bottom = 'auto';
       } else {
-        // Revert to normal CSS fixed positioning when keyboard is closed or editing a different field
         inputBar.style.position = '';
         inputBar.style.top = '';
         inputBar.style.bottom = '';
       }
     }
 
-    // Issue 1: Fix phantom thickness/floating of bottom nav during zoom
-    if (bottomNav) {
-      if (window.visualViewport.scale > 1) {
-        // Adjust for the gap created by zooming
-        var offset = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
-        bottomNav.style.transform = 'translateY(' + Math.max(0, offset) + 'px)';
-      } else {
-        bottomNav.style.transform = '';
-      }
+    // Issue 1: the bottom nav (and input bar, if visible) can render with
+    // stale, oversized fixed-position geometry once a pinch-zoom gesture
+    // settles back at 100%. Track when we're mid-zoom, then force a
+    // relayout the moment scale drops back to ~1 — exactly the state the
+    // screenshots show, and the state the old fix never actually touched
+    // since it only ever adjusted things while still zoomed in.
+    if (window.visualViewport.scale > 1.02) {
+      pinchZoomed = true;
+    } else if (pinchZoomed) {
+      pinchZoomed = false;
+      forceRelayout(bottomNav);
+      if (inputBar) forceRelayout(inputBar);
     }
   }
 
-  // Track layout changes exactly as the user scrolls or the keyboard animates
   window.visualViewport.addEventListener('resize', syncViewport);
   window.visualViewport.addEventListener('scroll', syncViewport);
 
-  // Issue 1: Force Safari to redraw the layout when exiting the main input
-  // Scoped strictly to the main input so it doesn't break scroll position when editing inline messages.
-  document.addEventListener('focusout', function(e) {
+  // Scoped strictly to the main chat input so it never touches scroll
+  // position while editing a message or replying inline.
+  document.addEventListener('focusout', function (e) {
     if (e.target.id === 'cg-msg-input') {
-      setTimeout(function() {
+      setTimeout(function () {
         window.scrollTo(window.scrollX, window.scrollY);
         syncViewport();
       }, 100);
     }
   });
 
-  // Issue 3: Let your existing app.js handle the scrolling, 
-  // but force the viewport to recalculate to prevent visual glitches.
-  document.addEventListener('focusin', function(e) {
+  document.addEventListener('focusin', function (e) {
     if (e.target.id === 'cg-msg-input') {
-      setTimeout(function() {
+      setTimeout(function () {
         syncViewport();
-      }, 300); // 300ms allows the iOS keyboard animation to finish
+      }, 300); // lets the iOS keyboard-open animation finish first
     }
   });
 })();
