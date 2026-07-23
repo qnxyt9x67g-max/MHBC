@@ -4436,3 +4436,67 @@ window.onload = function () {
       });
   });
 };
+// ============================================================
+// iOS Safari / WebKit UI Fixes (Zoom, Keyboard, & Input Bar)
+// ============================================================
+(function applyWebKitFixes() {
+  if (!window.visualViewport) return;
+
+  function syncViewport() {
+    var inputBar = document.getElementById('cg-input-bar');
+    var bottomNav = document.querySelector('.bottom-nav');
+
+    // Issue 2: Pin the chat input bar perfectly to the visual keyboard
+    if (inputBar && inputBar.style.display !== 'none') {
+      // If the visual viewport is significantly smaller than the window, the keyboard is likely up
+      if (window.visualViewport.height < window.innerHeight - 50) {
+        // Switch to absolute positioning locked to the visual viewport's exact coordinates.
+        // This prevents Safari from "detaching" the bar during elastic scroll bounces.
+        inputBar.style.position = 'absolute';
+        inputBar.style.top = (window.visualViewport.pageTop + window.visualViewport.height - inputBar.offsetHeight) + 'px';
+        inputBar.style.bottom = 'auto';
+      } else {
+        // Revert to normal CSS fixed positioning when keyboard is closed
+        inputBar.style.position = '';
+        inputBar.style.top = '';
+        inputBar.style.bottom = '';
+      }
+    }
+
+    // Issue 1: Fix phantom thickness/floating of bottom nav during zoom
+    if (bottomNav) {
+      if (window.visualViewport.scale > 1) {
+        // Adjust for the gap created by zooming
+        var offset = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
+        bottomNav.style.transform = 'translateY(' + Math.max(0, offset) + 'px)';
+      } else {
+        bottomNav.style.transform = '';
+      }
+    }
+  }
+
+  // Track layout changes exactly as the user scrolls or the keyboard animates
+  window.visualViewport.addEventListener('resize', syncViewport);
+  window.visualViewport.addEventListener('scroll', syncViewport);
+
+  // Issue 1: Force Safari to redraw the layout when exiting an input (closes keyboard)
+  // This kills the "phantom thick bar" artifact by forcing a layout recalculation.
+  document.addEventListener('focusout', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+      setTimeout(function() {
+        window.scrollTo(window.scrollX, window.scrollY);
+        syncViewport();
+      }, 100);
+    }
+  });
+
+  // Issue 3: Let your existing app.js handle the scrolling, 
+  // but force the viewport to recalculate to prevent visual glitches.
+  document.addEventListener('focusin', function(e) {
+    if (e.target.id === 'cg-msg-input') {
+      setTimeout(function() {
+        syncViewport();
+      }, 300); // 300ms allows the iOS keyboard animation to finish
+    }
+  });
+})();
