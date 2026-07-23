@@ -4445,15 +4445,18 @@ window.onload = function () {
   function syncViewport() {
     var inputBar = document.getElementById('cg-input-bar');
     var bottomNav = document.querySelector('.bottom-nav');
+    
+    // iOS Safari's native keyboard toolbar (arrows/checkmark) often overlaps the viewport.
+    // We subtract ~45px to push the chat bar just above it.
+    var accessoryBarOffset = 45; 
 
     // Issue 2: Pin the chat input bar perfectly to the visual keyboard
     if (inputBar && inputBar.style.display !== 'none') {
       // If the visual viewport is significantly smaller than the window, the keyboard is likely up
       if (window.visualViewport.height < window.innerHeight - 50) {
         // Switch to absolute positioning locked to the visual viewport's exact coordinates.
-        // This prevents Safari from "detaching" the bar during elastic scroll bounces.
         inputBar.style.position = 'absolute';
-        inputBar.style.top = (window.visualViewport.pageTop + window.visualViewport.height - inputBar.offsetHeight) + 'px';
+        inputBar.style.top = (window.visualViewport.pageTop + window.visualViewport.height - inputBar.offsetHeight - accessoryBarOffset) + 'px';
         inputBar.style.bottom = 'auto';
       } else {
         // Revert to normal CSS fixed positioning when keyboard is closed
