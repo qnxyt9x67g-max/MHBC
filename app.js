@@ -3980,6 +3980,17 @@ window.onload = function () {
         adjustInputBarForKeyboard();
       }, 120);
 
+      // iOS 26 has an open WebKit bug where visualViewport.offsetTop is
+      // stale right after the keyboard opens, which is what causes the bar
+      // to visibly lag for the first few messages of an upward scroll. A
+      // net-zero 1px scroll nudge forces WebKit to recompute it before you
+      // start scrolling for real.
+      setTimeout(function () {
+        window.scrollBy(0, 1);
+        window.scrollBy(0, -1);
+        adjustInputBarForKeyboard();
+      }, 350);
+
       if (keyboardTrackingRAF) cancelAnimationFrame(keyboardTrackingRAF);
       keyboardTrackingRAF = requestAnimationFrame(keyboardTrackingLoop);
     });
