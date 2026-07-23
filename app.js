@@ -3913,6 +3913,7 @@ window.onload = function () {
   var mainInput = document.getElementById('cg-msg-input');
   if (mainInput) {
     var mainInputFocused = false;
+    var keyboardTrackingRAF = null;
 
     function jumpToBottomForMainInput() {
       if (replyingTo) {
@@ -3936,13 +3937,38 @@ window.onload = function () {
       if (!mainInputFocused) return;
       var inputBar = document.querySelector('.cg-input-bar');
       if (!inputBar || !window.visualViewport) return;
-      var offset = window.innerHeight - window.visualViewport.height;
-      inputBar.style.bottom = (offset > 0 ? offset : 0) + 'px';
+      var vv = window.visualViewport;
+      var baseline = window.innerHeight - vv.height; // keyboard height only — what the first version used; it never sank
+      var corrected = baseline - vv.offsetTop; // also accounts for page panning — what stopped it floating to the top
+
+      // iOS has an open WebKit bug where offsetTop is briefly over-reported
+      // right as an upward scroll begins, which over-corrects and sinks the
+      // bar behind the keyboard for the first couple of messages. Flooring
+      // the correction at half the keyboard-height baseline stops a bad
+      // reading from sinking it that far, while still applying enough
+      // correction during a longer scroll to stop it floating above the
+      // keyboard.
+      var floor = baseline * 0.5;
+      var target = corrected < floor ? floor : corrected;
+      if (target < 0) target = 0;
+
+      inputBar.style.bottom = Math.round(target) + 'px';
     }
 
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', adjustInputBarForKeyboard);
       window.visualViewport.addEventListener('scroll', adjustInputBarForKeyboard);
+    }
+
+    // visualViewport's resize/scroll events can be throttled by iOS during a
+    // fast scroll gesture, causing the bar to visibly lag before catching up.
+    // Polling once per animation frame while focused guarantees it stays in
+    // sync regardless of event timing, and costs nothing once you blur.
+    function keyboardTrackingLoop() {
+      adjustInputBarForKeyboard();
+      if (mainInputFocused) {
+        keyboardTrackingRAF = requestAnimationFrame(keyboardTrackingLoop);
+      }
     }
 
     // Input handling for chat
@@ -3963,10 +3989,17 @@ window.onload = function () {
         window.scrollTo(0, document.body.scrollHeight);
         adjustInputBarForKeyboard();
       }, 120);
+
+      if (keyboardTrackingRAF) cancelAnimationFrame(keyboardTrackingRAF);
+      keyboardTrackingRAF = requestAnimationFrame(keyboardTrackingLoop);
     });
 
     mainInput.addEventListener('blur', function () {
       mainInputFocused = false;
+      if (keyboardTrackingRAF) {
+        cancelAnimationFrame(keyboardTrackingRAF);
+        keyboardTrackingRAF = null;
+      }
       var nav = document.querySelector('.bottom-nav');
       var inputBar = document.querySelector('.cg-input-bar');
       var msgs = document.querySelector('.cg-messages');
