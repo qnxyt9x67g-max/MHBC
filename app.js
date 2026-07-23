@@ -4450,16 +4450,19 @@ window.onload = function () {
     // We subtract ~45px to push the chat bar just above it.
     var accessoryBarOffset = 45; 
 
-    // Issue 2: Pin the chat input bar perfectly to the visual keyboard
+    // Check if the user is specifically focused on the main chat input
+    var isMainInputActive = document.activeElement && document.activeElement.id === 'cg-msg-input';
+
+    // Issue 2: Pin the chat input bar perfectly to the visual keyboard,
+    // BUT ONLY if the main input is actually the one being used.
     if (inputBar && inputBar.style.display !== 'none') {
-      // If the visual viewport is significantly smaller than the window, the keyboard is likely up
-      if (window.visualViewport.height < window.innerHeight - 50) {
+      if (window.visualViewport.height < window.innerHeight - 50 && isMainInputActive) {
         // Switch to absolute positioning locked to the visual viewport's exact coordinates.
         inputBar.style.position = 'absolute';
         inputBar.style.top = (window.visualViewport.pageTop + window.visualViewport.height - inputBar.offsetHeight - accessoryBarOffset) + 'px';
         inputBar.style.bottom = 'auto';
       } else {
-        // Revert to normal CSS fixed positioning when keyboard is closed
+        // Revert to normal CSS fixed positioning when keyboard is closed or editing a different field
         inputBar.style.position = '';
         inputBar.style.top = '';
         inputBar.style.bottom = '';
@@ -4482,10 +4485,10 @@ window.onload = function () {
   window.visualViewport.addEventListener('resize', syncViewport);
   window.visualViewport.addEventListener('scroll', syncViewport);
 
-  // Issue 1: Force Safari to redraw the layout when exiting an input (closes keyboard)
-  // This kills the "phantom thick bar" artifact by forcing a layout recalculation.
+  // Issue 1: Force Safari to redraw the layout when exiting the main input
+  // Scoped strictly to the main input so it doesn't break scroll position when editing inline messages.
   document.addEventListener('focusout', function(e) {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+    if (e.target.id === 'cg-msg-input') {
       setTimeout(function() {
         window.scrollTo(window.scrollX, window.scrollY);
         syncViewport();
