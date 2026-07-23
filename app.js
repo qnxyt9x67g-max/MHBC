@@ -1896,6 +1896,16 @@ function editMessage(msgId) {
 
       function closeOverlay() {
         if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+
+        // The overlay's textarea being removed drops keyboard focus, which
+        // starts the keyboard-close animation and brings the app header
+        // back. For a message near the top of the screen that reappearing
+        // header can end up covering it, since nothing re-scrolls for it.
+        // Recenter it once that settles, the same way a new reply does.
+        setTimeout(function () {
+          var msgEl = document.querySelector('[data-msg-id="' + msgId + '"]');
+          if (msgEl) msgEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
       }
 
       var editSaveInProgress = false;
@@ -2520,6 +2530,7 @@ function buildMessageRow(msg, isPrimary) {
 
   var row = document.createElement('div');
   row.className = isPrimary ? 'cg-primary-row' : 'cg-reply-row';
+  row.setAttribute('data-msg-id', msg._id);
 
   var avatar = document.createElement('div');
   avatar.className = isPrimary ? 'cg-avatar' : 'cg-avatar cg-avatar-sm';
