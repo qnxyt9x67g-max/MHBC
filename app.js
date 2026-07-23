@@ -3913,7 +3913,6 @@ window.onload = function () {
   var mainInput = document.getElementById('cg-msg-input');
   if (mainInput) {
     var mainInputFocused = false;
-    var keyboardTrackingRAF = null;
 
     function jumpToBottomForMainInput() {
       if (replyingTo) {
@@ -3937,28 +3936,13 @@ window.onload = function () {
       if (!mainInputFocused) return;
       var inputBar = document.querySelector('.cg-input-bar');
       if (!inputBar || !window.visualViewport) return;
-      var vv = window.visualViewport;
-      // Account for both the keyboard shrinking the visible area (vv.height)
-      // AND the visible area sliding down within the page (vv.offsetTop) —
-      // iOS does the latter during scroll while the keyboard is open.
-      var offset = window.innerHeight - vv.height - vv.offsetTop;
+      var offset = window.innerHeight - window.visualViewport.height;
       inputBar.style.bottom = (offset > 0 ? offset : 0) + 'px';
     }
 
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', adjustInputBarForKeyboard);
       window.visualViewport.addEventListener('scroll', adjustInputBarForKeyboard);
-    }
-
-    // visualViewport's resize/scroll events can be throttled by iOS during a
-    // fast scroll gesture, causing the bar to visibly lag before catching up.
-    // Polling once per animation frame while focused guarantees it stays in
-    // sync regardless of event timing, and costs nothing once you blur.
-    function keyboardTrackingLoop() {
-      adjustInputBarForKeyboard();
-      if (mainInputFocused) {
-        keyboardTrackingRAF = requestAnimationFrame(keyboardTrackingLoop);
-      }
     }
 
     // Input handling for chat
@@ -3979,28 +3963,10 @@ window.onload = function () {
         window.scrollTo(0, document.body.scrollHeight);
         adjustInputBarForKeyboard();
       }, 120);
-
-      // iOS 26 has an open WebKit bug where visualViewport.offsetTop is
-      // stale right after the keyboard opens, which is what causes the bar
-      // to visibly lag for the first few messages of an upward scroll. A
-      // net-zero 1px scroll nudge forces WebKit to recompute it before you
-      // start scrolling for real.
-      setTimeout(function () {
-        window.scrollBy(0, 1);
-        window.scrollBy(0, -1);
-        adjustInputBarForKeyboard();
-      }, 350);
-
-      if (keyboardTrackingRAF) cancelAnimationFrame(keyboardTrackingRAF);
-      keyboardTrackingRAF = requestAnimationFrame(keyboardTrackingLoop);
     });
 
     mainInput.addEventListener('blur', function () {
       mainInputFocused = false;
-      if (keyboardTrackingRAF) {
-        cancelAnimationFrame(keyboardTrackingRAF);
-        keyboardTrackingRAF = null;
-      }
       var nav = document.querySelector('.bottom-nav');
       var inputBar = document.querySelector('.cg-input-bar');
       var msgs = document.querySelector('.cg-messages');
