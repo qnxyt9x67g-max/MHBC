@@ -4431,28 +4431,22 @@ window.onload = function () {
     var inputBar = document.getElementById('cg-input-bar');
     var bottomNav = document.querySelector('.bottom-nav');
 
-    // iOS Safari's native keyboard toolbar (arrows/checkmark) often overlaps the viewport.
-    var accessoryBarOffset = 45;
-
     var isMainInputActive = document.activeElement && document.activeElement.id === 'cg-msg-input';
 
-    // Issue 2: pin the chat input bar to the visual keyboard, but only
-    // while the main chat input is actually the focused field — never
-    // touches inline replies or the edit overlay, which have their own
-    // working focus/scroll handling.
+    // Issue 2: pin the chat input bar to the top edge of the keyboard.
+    // .cg-input-bar is already position:fixed in the stylesheet, so this
+    // only needs to move its "bottom" offset — fixed positioning is
+    // anchored to the viewport itself and doesn't depend on scroll
+    // position, unlike the position:absolute + pageTop math this replaces
+    // (that's what was leaving the large gap above the keyboard).
     if (inputBar && inputBar.style.display !== 'none') {
       if (window.visualViewport.height < window.innerHeight - 50 && isMainInputActive) {
-        inputBar.style.position = 'absolute';
-        inputBar.style.top =
-          window.visualViewport.pageTop +
-          window.visualViewport.height -
-          inputBar.offsetHeight -
-          accessoryBarOffset +
-          'px';
-        inputBar.style.bottom = 'auto';
+        var baseline = window.innerHeight - window.visualViewport.height; // keyboard height
+        var target = baseline - window.visualViewport.offsetTop; // also accounts for page panning
+        if (target < 0) target = 0;
+        if (target > baseline) target = baseline;
+        inputBar.style.bottom = Math.round(target) + 'px';
       } else {
-        inputBar.style.position = '';
-        inputBar.style.top = '';
         inputBar.style.bottom = '';
       }
     }
