@@ -4415,10 +4415,6 @@ window.onload = function () {
 
   // Forces WebKit to recompute a fixed-position element's geometry from
   // the current viewport instead of whatever it cached mid pinch-zoom.
-  // Pulling the element out of the render tree and straight back in (with
-  // no paint able to happen in between, since both writes happen in the
-  // same synchronous pass) does that without any visible flicker — it's
-  // the same effect as the manual scroll that already fixes it by hand.
   function forceRelayout(el) {
     if (!el) return;
     var prevDisplay = el.style.display;
@@ -4434,29 +4430,23 @@ window.onload = function () {
     var isMainInputActive = document.activeElement && document.activeElement.id === 'cg-msg-input';
 
     // Issue 2: pin the chat input bar to the top edge of the keyboard.
-    // .cg-input-bar is already position:fixed in the stylesheet, so this
-    // only needs to move its "bottom" offset — fixed positioning is
-    // anchored to the viewport itself and doesn't depend on scroll
-    // position, unlike the position:absolute + pageTop math this replaces
-    // (that's what was leaving the large gap above the keyboard).
     if (inputBar && inputBar.style.display !== 'none') {
       if (window.visualViewport.height < window.innerHeight - 50 && isMainInputActive) {
-        var baseline = window.innerHeight - window.visualViewport.height; // keyboard height
-        var target = baseline - window.visualViewport.offsetTop; // also accounts for page panning
-        if (target < 0) target = 0;
-        if (target > baseline) target = baseline;
-        inputBar.style.bottom = Math.round(target) + 'px';
+        // iOS Safari automatically pushes bottom:0 elements up when the keyboard opens.
+        // To avoid double-counting the offset, we override 'bottom' completely and 
+        // calculate the exact 'top' coordinate based strictly on the visual viewport.
+        var targetTop = window.visualViewport.offsetTop + window.visualViewport.height - inputBar.offsetHeight;
+        
+        inputBar.style.top = Math.round(targetTop) + 'px';
+        inputBar.style.bottom = 'auto'; // Disable CSS bottom behavior
       } else {
+        // Restore standard CSS styling when the keyboard is closed
+        inputBar.style.top = '';
         inputBar.style.bottom = '';
       }
     }
 
-    // Issue 1: the bottom nav (and input bar, if visible) can render with
-    // stale, oversized fixed-position geometry once a pinch-zoom gesture
-    // settles back at 100%. Track when we're mid-zoom, then force a
-    // relayout the moment scale drops back to ~1 — exactly the state the
-    // screenshots show, and the state the old fix never actually touched
-    // since it only ever adjusted things while still zoomed in.
+    // Issue 1: Pinch-zoom reflow
     if (window.visualViewport.scale > 1.02) {
       pinchZoomed = true;
     } else if (pinchZoomed) {
