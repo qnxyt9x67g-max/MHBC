@@ -1663,6 +1663,24 @@ function clearReply() {
   renderCurrentRoomMessages(false);
 }
 
+// Re-centers a message after the reply box closes (Send or Cancel). One
+// scrollIntoView isn't reliable here: the keyboard is closing, the app
+// header is reappearing, and the message list just got fully rebuilt, all
+// on their own timelines, so a single well-timed correction can still get
+// nudged out of place by whichever of those finishes last. Firing a few
+// passes over the next second (matching the "self-healing scroll" pattern
+// already used for the scroll-to-bottom case) converges on the right spot
+// regardless of which one it was. Each pass is a no-op if it's already
+// centered, so this doesn't fight a user who starts scrolling on their own.
+function recenterMessageAfterReplyClose(msgId) {
+  [300, 550, 900].forEach(function (delay) {
+    setTimeout(function () {
+      var msgEl = document.querySelector('[data-msg-id="' + msgId + '"]');
+      if (msgEl) msgEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, delay);
+  });
+}
+
 function sendInlineReply(parentId) {
   var input = document.getElementById('inline-reply-input-' + parentId);
   if (!input || !db || !currentUID) return;
@@ -1722,12 +1740,11 @@ function sendInlineReply(parentId) {
   suppressAutoScrollUntil = Date.now() + 2000;
   clearReply();
 
-  setTimeout(function () {
-    var thread = document.getElementById('thread-' + parentId);
-    if (thread) {
-      thread.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }, 150);
+  // Same recenter used when the reply box is cancelled: closing it drops
+  // keyboard focus and collapses the space it was taking up, which can
+  // leave the parent message scrolled out from under the header. Wait for
+  // that to settle, then gently bring it back into view.
+  recenterMessageAfterReplyClose(parentId);
 
   docRef.set(msgData).catch(function (err) {
     console.error('SEND REPLY FAILED:', err);
@@ -2681,7 +2698,23 @@ function renderThread(msg, replies, container, showDivider) {
     inlineCancel.type = 'button';
     inlineCancel.textContent = 'Cancel';
     inlineCancel.addEventListener('click', function () {
+      var replyMsgId = msg._id;
+
+      // clearReply() re-renders the message list, and that render's own
+      // auto-scroll-to-bottom (in renderCurrentRoomMessages) was free to
+      // fire right after since nothing was holding it off here — it was
+      // winning the race against the recenter below and yanking the view
+      // down to the bottom, which is what actually sent the message
+      // shooting up out of view. Hold it off the same way sendInlineReply
+      // already does.
+      suppressAutoScrollUntil = Date.now() + 2000;
       clearReply();
+
+      // Closing the reply box drops keyboard focus and collapses the space
+      // it was taking up, which can leave the message it was attached to
+      // scrolled out from under the header. Recenter it once that settles,
+      // same as the edit-box close fix.
+      recenterMessageAfterReplyClose(replyMsgId);
     });
 
     var inlineBtnGroup = document.createElement('div');
