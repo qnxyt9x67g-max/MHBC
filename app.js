@@ -1740,11 +1740,11 @@ function sendInlineReply(parentId) {
   suppressAutoScrollUntil = Date.now() + 2000;
   clearReply();
 
-  // Same recenter used when the reply box is cancelled: closing it drops
-  // keyboard focus and collapses the space it was taking up, which can
-  // leave the parent message scrolled out from under the header. Wait for
-  // that to settle, then gently bring it back into view.
-  recenterMessageAfterReplyClose(parentId);
+  // Center the reply itself, not the parent — for a long parent message or
+  // one with a lot of replies already under it, centering the parent would
+  // leave the reply the user just sent scrolled out of sight below it.
+  // (Cancel still centers the parent, since there's no reply to show yet.)
+  recenterMessageAfterReplyClose(docRef.id);
 
   docRef.set(msgData).catch(function (err) {
     console.error('SEND REPLY FAILED:', err);
