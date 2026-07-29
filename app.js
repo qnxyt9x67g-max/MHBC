@@ -212,11 +212,6 @@ function showComingSoon() {
   showToast('Coming soon! 🎵');
 }
 
-// Filled in after your first `firebase deploy --only functions` — copy the
-// URL the terminal prints for getChurchAlertV2 and paste it here. Looks
-// like https://getchurchalertv2-xxxxxxxxxx-uc.a.run.app
-var CHURCH_ALERT_ENDPOINT = https://us-central1-mhbc-app.cloudfunctions.net/getChurchAlertV2;
-
 function initFirebase() {
   firebase.initializeApp({
     apiKey: 'AIzaSyBYt5RR0YGB9u9n7QgvAGXnvmrb7-xTg-Y',
@@ -226,24 +221,6 @@ function initFirebase() {
     messagingSenderId: '482094427911',
     appId: '1:482094427911:web:7ed5ec06b716ae66a4dfa2'
   });
-
-  // App Check (reCAPTCHA v3 — free, invisible to users). Deployed in
-  // Monitor Mode to start: tokens are attached to every Firestore/Functions
-  // call and logged in the console, but nothing is rejected yet. Flip
-  // enforcement on per-product (Firestore, Functions) in the Firebase
-  // console only after watching the Monitor Mode metrics for a while.
-  // TODO: replace with your real reCAPTCHA v3 site key.
-  // Guarded with a typeof check so a stale cached copy of this file (or a
-  // failure to load firebase-app-check.js) can never break the rest of the
-  // app — it just silently skips App Check for that session.
-  if (typeof firebase.appCheck === 'function') {
-    try {
-      firebase.appCheck().activate(6Ld3PmstAAAAAHQK7P-u8QKlbRqVmuF5U029GsL9, true);
-    } catch (e) {
-      console.warn('App Check init failed (non-fatal):', e);
-    }
-  }
-
   db = firebase.firestore();
 
   // Auto-detect: Try WebSockets first, fall back to Long Polling if needed
@@ -1133,56 +1110,86 @@ function submitLogin() {
                           showCGScreen('pending');
                         }
                       } else {
-                        var migrateAll = firebase.functions().httpsCallable('migrateAllGroupsV2');
-                        migrationInProgress = true;
-                        migrateAll({
+                        var migrateUid = firebase.functions().httpsCallable('migrateUidV2');
+                        migrateUid({
                           groupId: currentGroup,
                           normalizedName: normalized,
                           userPassword: userPassword
                         })
-                          .then(function (res) {
-                            migrationInProgress = false;
-                            var groupNames = {
-                              c101: 'C101',
-                              narthex: 'Narthex',
-                              fellowship1: 'Fellowship Hall 1st Floor',
-                              fellowship2: 'Fellowship Hall 2nd Floor',
-                              trac: 'T.R.A.C.'
-                            };
-                            var anchorResult = null;
-                            if (res.data && Array.isArray(res.data.results)) {
-                              res.data.results.forEach(function (r) {
-                                if (
-                                  (r.status === 'migrated' ||
-                                    r.status === 'migrated-by-uid') &&
-                                  r.displayName &&
-                                  r.normalizedName
-                                ) {
-                                  saveUser({
-                                    group: r.groupId,
-                                    groupName: groupNames[r.groupId] || r.groupId,
-                                    name: r.displayName,
-                                    normalizedName: r.normalizedName,
-                                    isAdmin: r.isAdmin === true
-                                  });
-                                  if (r.groupId === currentGroup) {
-                                    anchorResult = r;
-                                  }
-                                }
-                              });
-                            }
-
-                            if (anchorResult) {
+                          .then(function (result) {
+                            if (result.data.status === 'migrated') {
                               currentMemberKey = normalized;
                               currentUser = {
                                 group: currentGroup,
                                 groupName: currentGroupName,
-                                name: anchorResult.displayName,
+                                name: result.data.displayName,
                                 normalizedName: normalized,
-                                isAdmin: anchorResult.isAdmin === true
+                                isAdmin: result.data.isAdmin === true
                               };
                               saveUser(currentUser);
                               setLastGroup(currentGroup);
+                              var discoveredOldUID = result.data.oldUID || null;
+                              var allSaved = getSavedUsers();
+                              var groupsToMigrate = [];
+                              if (allSaved && Object.keys(allSaved).length > 0) {
+                                Object.keys(allSaved).forEach(function (groupId) {
+                                  var s = allSaved[groupId];
+                                  if (s && s.normalizedName) {
+                                    groupsToMigrate.push({
+                                      groupId: groupId,
+                                      normalizedName: s.normalizedName
+                                    });
+                                  }
+                                });
+                              }
+                              if (groupsToMigrate.length > 0 || discoveredOldUID) {
+                                var migrateAll = firebase
+                                  .functions()
+                                  .httpsCallable('migrateAllGroupsV2');
+                                migrationInProgress = true;
+                                migrateAll({ groups: groupsToMigrate, oldUID: discoveredOldUID })
+                                  .then(function (res) {
+                                    console.log(
+                                      'In-session multi-group migration successful:',
+                                      res.data
+                                    );
+                                    var groupNames = {
+                                      c101: 'C101',
+                                      narthex: 'Narthex',
+                                      fellowship1: 'Fellowship Hall 1st Floor',
+                                      fellowship2: 'Fellowship Hall 2nd Floor',
+                                      trac: 'T.R.A.C.'
+                                    };
+                                    if (res.data && Array.isArray(res.data.results)) {
+                                      res.data.results.forEach(function (r) {
+                                        if (
+                                          (r.status === 'migrated' ||
+                                            r.status === 'migrated-by-uid') &&
+                                          r.displayName &&
+                                          r.normalizedName
+                                        ) {
+                                          saveUser({
+                                            group: r.groupId,
+                                            groupName: groupNames[r.groupId] || r.groupId,
+                                            name: r.displayName,
+                                            normalizedName: r.normalizedName,
+                                            isAdmin: r.isAdmin === true
+                                          });
+                                        }
+                                      });
+                                    }
+                                    migrationInProgress = false;
+                                  })
+                                  .catch(function (err) {
+                                    console.log(
+                                      'In-session multi-group migration skipped:',
+                                      err.message
+                                    );
+                                  })
+                                  .finally(function () {
+                                    migrationInProgress = false;
+                                  });
+                              }
                               listenForBadgeUpdates();
                               if (loginBtn) {
                                 loginBtn.disabled = false;
@@ -1193,9 +1200,6 @@ function submitLogin() {
                               silentlyRestoreRoomsFromUID();
                               enterChat();
                             } else {
-                              // Anchor room had nothing to migrate (e.g. already
-                              // up to date) — fall back to a fresh pending
-                              // registration for this room.
                               memberRef
                                 .set({
                                   uid: currentUID,
@@ -1241,7 +1245,6 @@ function submitLogin() {
                             }
                           })
                           .catch(function (err) {
-                            migrationInProgress = false;
                             if (err.code === 'not-found') {
                               memberRef
                                 .set({
@@ -1312,7 +1315,6 @@ function submitLogin() {
                 hashInput(userPassword, passwordSalt).then(function (passwordHash) {
                   identityRef
                     .set({
-                      uid: currentUID,
                       displayName: userName,
                       normalizedName: normalized,
                       passwordHash: passwordHash,
@@ -1744,25 +1746,12 @@ function sendInlineReply(parentId) {
   // (Cancel still centers the parent, since there's no reply to show yet.)
   recenterMessageAfterReplyClose(docRef.id);
 
-  // Batched with the member doc's lastMessageAt update — firestore.rules
-  // requires that write to land alongside the message (see
-  // messageCooldownOk there), and a batch keeps the two atomic: either
-  // both land or neither does.
-  var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(currentUID);
-  var batch = db.batch();
-  batch.set(docRef, msgData);
-  batch.update(memberRef, { lastMessageAt: nowTs });
-
-  batch.commit().catch(function (err) {
+  docRef.set(msgData).catch(function (err) {
     console.error('SEND REPLY FAILED:', err);
     removeMessageFromRoomState(state, docRef.id);
     saveRoomMessageCache(currentGroup, state);
     renderCurrentRoomMessages(false);
-    if (err && err.code === 'permission-denied') {
-      showToast("Sending too fast — wait a second and try again.");
-    } else {
-      showToast('Reply failed to send. Check your connection and try again.');
-    }
+    showToast('Reply failed to send. Check your connection and try again.');
   });
 }
 
@@ -1962,25 +1951,12 @@ function editMessage(msgId) {
         cancelBtn.style.opacity = '0.4';
         saveBtn.textContent = 'Saving…';
 
-        // Batched with the *editor's* own lastMessageAt update — covers
-        // both a member editing their own message and an admin editing
-        // someone else's, since either way it's the acting user's send
-        // rate we're throttling. firestore.rules exempts deletes
-        // (deleted: true) from this check, but a text edit needs it —
-        // otherwise "create one message, then edit it in a tight loop"
-        // would have been an unthrottled way around the create cooldown.
-        var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(currentUID);
-        var batch = db.batch();
-        batch.update(msgRef, {
-          text: newText,
-          edited: true,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          lastEditedBy: currentUID
-        });
-        batch.update(memberRef, { lastMessageAt: firebase.firestore.FieldValue.serverTimestamp() });
-
-        batch
-          .commit()
+        msgRef
+          .update({
+            text: newText,
+            edited: true,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          })
           .then(function () {
             playSendSound();
 
@@ -2004,11 +1980,7 @@ function editMessage(msgId) {
             saveBtn.style.opacity = '1';
             cancelBtn.style.opacity = '1';
             saveBtn.textContent = 'Save';
-            if (err && err.code === 'permission-denied') {
-              alert('Sending too fast — wait a second and try again.');
-            } else {
-              alert('Edit failed: ' + err.message);
-            }
+            alert('Edit failed: ' + err.message);
           });
       });
 
@@ -2823,26 +2795,13 @@ function sendMessage() {
   saveRoomMessageCache(currentGroup, state);
   renderCurrentRoomMessages(true);
 
-  // Batched with the member doc's lastMessageAt update — firestore.rules
-  // requires that write to land alongside the message (see
-  // messageCooldownOk there), and a batch keeps the two atomic: either
-  // both land or neither does.
-  var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(currentUID);
-  var batch = db.batch();
-  batch.set(docRef, msgData);
-  batch.update(memberRef, { lastMessageAt: nowTs });
-
-  batch.commit().catch(function (err) {
+  docRef.set(msgData).catch(function (err) {
     console.error('SEND MESSAGE FAILED:', err);
     removeMessageFromRoomState(state, docRef.id);
     saveRoomMessageCache(currentGroup, state);
     renderCurrentRoomMessages(false);
     input.value = text;
-    if (err && err.code === 'permission-denied') {
-      showToast("Sending too fast — wait a second and try again.");
-    } else {
-      showToast('Message failed to send. Check your connection and try again.');
-    }
+    showToast('Message failed to send. Check your connection and try again.');
   });
 }
 
@@ -3878,7 +3837,24 @@ function openChurchAlerts() {
 
   var done = false;
 
-  // Give-up: 8s covers a slow CDN edge miss + function cold start.
+  // Stall detector: if no response in 3.5s, reboot Firestore network and retry once.
+  // Same fix as loadMembersList — a hung connection sometimes needs a kick
+  // before it'll resolve; disable/enable network mimics a force-close + reopen.
+  var stallTimer = setTimeout(function () {
+    if (done) return;
+    console.warn('Church alert fetch stalled — rebooting Firestore network...');
+    db.disableNetwork()
+      .then(function () {
+        return db.enableNetwork();
+      })
+      .then(function () {
+        if (done) return;
+        executeAlertFetch();
+      })
+      .catch(function () {});
+  }, 3500);
+
+  // Overall give-up: 12s covers first attempt + reboot delay + retry
   var giveUpTimer = setTimeout(function () {
     if (done) return;
     done = true;
@@ -3887,41 +3863,42 @@ function openChurchAlerts() {
       container.innerHTML =
         '<p style="text-align:center; padding:40px; color:#7a8fa8;">Unable to connect. Check your connection and try again.</p>';
     }
-  }, 8000);
+  }, 12000);
 
-  // Served through Firebase Hosting's CDN (see getChurchAlertV2 +
-  // firebase.json) instead of a direct Firestore read. Repeat opens within
-  // the 5-minute cache window are answered by the CDN edge and never touch
-  // this app's Firestore billing or the function at all.
   function executeAlertFetch() {
-    fetch(CHURCH_ALERT_ENDPOINT)
-      .then(function (res) {
-        if (!res.ok) throw new Error('Bad response: ' + res.status);
-        return res.json();
-      })
-      .then(function (data) {
+    db.collection('churchAlerts')
+      .orderBy('sentAt', 'desc')
+      .limit(1)
+      .get()
+      .then((snapshot) => {
         if (done) return;
         done = true;
+        clearTimeout(stallTimer);
         clearTimeout(giveUpTimer);
 
         const container = document.getElementById('church-alert-content');
         if (!container) return;
 
-        if (!data || !data.alert) {
-          container.innerHTML =
-            '<p style="text-align:center; padding:40px; color:#7a8fa8;">No church alerts yet.</p>';
+        if (snapshot.empty) {
+          if (snapshot.metadata.fromCache) {
+            container.innerHTML =
+              '<p style="text-align:center; padding:40px; color:#7a8fa8;">Unable to connect. Check your connection and try again.</p>';
+          } else {
+            container.innerHTML =
+              '<p style="text-align:center; padding:40px; color:#7a8fa8;">No church alerts yet.</p>';
+          }
           return;
         }
 
-        const alertData = data.alert;
-        const time = alertData.sentAt
-          ? new Date(alertData.sentAt).toLocaleString()
+        const data = snapshot.docs[0].data() || {};
+        const time = data.sentAt
+          ? new Date(data.sentAt.toMillis()).toLocaleString()
           : 'Unknown time';
 
         container.innerHTML = `
           <div class="alert-item">
-            <div class="alert-title">${escapeHtml(alertData.title) || 'Church Alert'}</div>
-            <div class="alert-body">${linkifyEscaped(escapeHtml(alertData.body))}</div>
+            <div class="alert-title">${escapeHtml(data.title) || 'Church Alert'}</div>
+            <div class="alert-body">${linkifyEscaped(escapeHtml(data.body))}</div>
             <div class="alert-time">${time}</div>
           </div>
         `;
@@ -3929,6 +3906,7 @@ function openChurchAlerts() {
       .catch((err) => {
         if (done) return;
         done = true;
+        clearTimeout(stallTimer);
         clearTimeout(giveUpTimer);
         console.error('Error loading alert:', err); // keep this one for troubleshooting
         const container = document.getElementById('church-alert-content');
@@ -4375,14 +4353,30 @@ window.onload = function () {
         currentMemberKey = savedUser.normalizedName;
       }
 
-      // NOTE: this used to also silently call migrateAllGroupsV2 here with
-      // no password, trusting locally-cached room names alone. That was
-      // the unauthenticated-migration hole — removed rather than patched
-      // around, since there's no way to prove identity here without some
-      // form of credential, and this path has none by design (it runs
-      // automatically on app open, before any login screen). See chat for
-      // the tradeoff this creates and the options for restoring some form
-      // of "just works" recovery here if you want it back.
+      // Silently migrate all saved groups to new UID if needed
+      var allSaved = getSavedUsers();
+      if (allSaved && Object.keys(allSaved).length > 0) {
+        var groupsToMigrate = [];
+        Object.keys(allSaved).forEach(function (groupId) {
+          var s = allSaved[groupId];
+          if (s && s.normalizedName) {
+            groupsToMigrate.push({
+              groupId: groupId,
+              normalizedName: s.normalizedName
+            });
+          }
+        });
+        if (groupsToMigrate.length > 0) {
+          var migrateAll = firebase.functions().httpsCallable('migrateAllGroupsV2');
+          migrateAll({ groups: groupsToMigrate })
+            .then(function (result) {
+              console.log('Multi-group migration result:', result.data);
+            })
+            .catch(function (err) {
+              console.log('Multi-group migration skipped or failed:', err.message);
+            });
+        }
+      }
     } else {
       authReady = false;
       auth.signInAnonymously().catch(function (err) {
@@ -4416,22 +4410,14 @@ window.onload = function () {
         return;
       }
 
-      // Batched with the alertCooldowns write — firestore.rules requires
-      // that alongside the alert itself (see alertCooldownOk there).
-      var alertRef = db.collection('churchAlerts').doc();
-      var cooldownRef = db.collection('alertCooldowns').doc(currentUID);
-      var alertBatch = db.batch();
-      alertBatch.set(alertRef, {
-        title: title,
-        body: body,
-        createdBy: currentUID,
-        createdByName: currentUser ? currentUser.name : '',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      alertBatch.set(cooldownRef, { lastAlertAt: firebase.firestore.FieldValue.serverTimestamp() });
-
-      alertBatch
-        .commit()
+      db.collection('churchAlerts')
+        .add({
+          title: title,
+          body: body,
+          createdBy: currentUID,
+          createdByName: currentUser ? currentUser.name : '',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        })
         .then(function () {
           document.getElementById('church-alert-title').value = '';
           document.getElementById('church-alert-body').value = '';
@@ -4439,11 +4425,7 @@ window.onload = function () {
           alert('Church alert sent.');
         })
         .catch(function (err) {
-          if (err && err.code === 'permission-denied') {
-            alert('Please wait a moment before sending another alert.');
-          } else {
-            alert('Alert failed: ' + err.message);
-          }
+          alert('Alert failed: ' + err.message);
         });
     });
   }
