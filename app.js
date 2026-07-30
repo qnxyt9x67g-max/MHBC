@@ -4270,6 +4270,22 @@ window.onload = function () {
       handleSend();
     });
     sendBtn.addEventListener('click', handleSend); // desktop fallback
+
+    // Desktop equivalent of the touchend fix above. Clicking this button
+    // blurs #cg-msg-input, and that blur handler synchronously reflows the
+    // layout (nav bar reappears, input bar shifts) — which can move this
+    // button out from under the cursor between mousedown and mouseup, so
+    // the click never fires and nothing happens on the first click. (Touch
+    // taps don't have this problem: touchend's implied click always
+    // targets wherever the tap started, not wherever the layout ended up.)
+    // preventDefault() on mousedown stops the button from taking focus at
+    // all, so the input never blurs, nothing reflows, and the button stays
+    // put through mouseup — the click handler above still runs normally
+    // afterward, and handleSend() itself still blurs the input once send
+    // actually completes.
+    sendBtn.addEventListener('mousedown', function (e) {
+      e.preventDefault();
+    });
   }
 
   var replyCancel = document.getElementById('cg-reply-cancel');
