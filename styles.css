@@ -928,6 +928,26 @@ body {
   border-color: var(--gold);
 }
 
+/* Chrome/Safari/Edge force a bright-yellow background (and leave text at
+   whatever color it defaults to) on any autofilled input, regardless of
+   our own background/color rules — a plain `background-color` override
+   loses to it. The inset box-shadow trick paints over it instead of
+   fighting it directly, -webkit-text-fill-color is what actually controls
+   autofilled text color in these browsers (plain `color` doesn't), and the
+   long transition-delay stops the yellow from flashing on screen before
+   this rule takes effect. Firefox doesn't do the forced-yellow thing, so
+   this is WebKit/Blink-only by design. */
+.cg-input:-webkit-autofill,
+.cg-input:-webkit-autofill:hover,
+.cg-input:-webkit-autofill:focus,
+.cg-input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--white);
+  -webkit-box-shadow: 0 0 0 1000px var(--navy) inset;
+  box-shadow: 0 0 0 1000px var(--navy) inset;
+  caret-color: var(--white);
+  transition: background-color 5000s ease-in-out 0s;
+}
+
 .cg-eye-btn {
   position: absolute;
   right: 10px;
