@@ -4287,6 +4287,26 @@ window.onload = function () {
       toggleVisible('cg-user-pin', this);
     });
 
+  // Room password is a shared group secret, not a personal credential, so
+  // it shouldn't be autofilled the way the name/individual-password fields
+  // are. autocomplete="off" + readonly in index.html stops it from being
+  // filled on page load, but iOS/Android can still try to refill a
+  // password-type field later, e.g. when the user taps into the name or
+  // individual-password field and a saved-credential suggestion bar
+  // appears. Toggling readonly off only while this field actually has
+  // focus, and back on the moment it doesn't (blur fires whether the user
+  // tabs to another field or taps elsewhere on the page), closes that gap
+  // without blocking normal typing.
+  var roomPasswordInput = document.getElementById('cg-room-password');
+  if (roomPasswordInput) {
+    roomPasswordInput.addEventListener('focus', function () {
+      roomPasswordInput.removeAttribute('readonly');
+    });
+    roomPasswordInput.addEventListener('blur', function () {
+      roomPasswordInput.setAttribute('readonly', 'readonly');
+    });
+  }
+
   var msgInput = document.getElementById('cg-msg-input');
   if (msgInput) {
     msgInput.addEventListener('keydown', function (e) {
