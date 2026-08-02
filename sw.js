@@ -13,7 +13,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // MHBC Service Worker — caching + background notifications
-const CACHE = 'mhbc115';
+const CACHE = 'mhbc116';
 
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './manifest.json'];
 
@@ -32,13 +32,21 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  // Only intercept same-origin requests (the app shell: HTML/CSS/JS/manifest).
+  // Everything else — Firestore, Auth, reCAPTCHA/App Check, FCM, etc. — bypasses
+  // the service worker entirely so those SDKs handle their own network requests
+  // untouched, preserving headers like x-firebase-appcheck.
+  if (!e.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
   e.respondWith(
     fetch(e.request)
       .then((response) => {
         var copy = response.clone();
 
         caches.open(CACHE).then((cache) => {
-          if (e.request.method === 'GET' && e.request.url.startsWith(self.location.origin)) {
+          if (e.request.method === 'GET') {
             cache.put(e.request, copy);
           }
         });
