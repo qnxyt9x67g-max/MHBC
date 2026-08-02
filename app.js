@@ -236,8 +236,9 @@ function initFirebase() {
   // Guarded with a typeof check so a stale cached copy of this file (or a
   // failure to load firebase-app-check.js) can never break the rest of the
   // app — it just silently skips App Check for that session.
-  if (typeof firebase.appCheck === 'function') {
+    if (typeof firebase.appCheck === 'function') {
     try {
+      self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; // TEMP — remove after debug test
       firebase.appCheck().activate('6Ld3PmstAAAAAHQK7P-u8QKlbRqVmuF5U029GsL9', true);
     } catch (e) {
       console.warn('App Check init failed (non-fatal):', e);
