@@ -227,23 +227,6 @@ function initFirebase() {
     appId: '1:482094427911:web:7ed5ec06b716ae66a4dfa2'
   });
 
-  // App Check (reCAPTCHA v3 — free, invisible to users). Deployed in
-  // Monitor Mode to start: tokens are attached to every Firestore/Functions
-  // call and logged in the console, but nothing is rejected yet. Flip
-  // enforcement on per-product (Firestore, Functions) in the Firebase
-  // console only after watching the Monitor Mode metrics for a while.
-  // TODO: replace with your real reCAPTCHA v3 site key.
-  // Guarded with a typeof check so a stale cached copy of this file (or a
-  // failure to load firebase-app-check.js) can never break the rest of the
-  // app — it just silently skips App Check for that session.
-  if (typeof firebase.appCheck === 'function') {
-    try {
-      firebase.appCheck().activate('6Ld3PmstAAAAAHQK7P-u8QKlbRqVmuF5U029GsL9', true);
-    } catch (e) {
-      console.warn('App Check init failed (non-fatal):', e);
-    }
-  }
-
   db = firebase.firestore();
 
   // Auto-detect: Try WebSockets first, fall back to Long Polling if needed
@@ -1125,7 +1108,7 @@ function submitLogin() {
                         loginInProgress = false;
                         if (memberData.approved) {
                           silentlyRestoreRoomsFromUID();
-                          enterChat();
+                          refreshTokenThenEnterChat();
                         } else {
                           document.getElementById('cg-pending-title').textContent =
                             currentGroupName;
@@ -1191,7 +1174,7 @@ function submitLogin() {
                               }
                               loginInProgress = false;
                               silentlyRestoreRoomsFromUID();
-                              enterChat();
+                              refreshTokenThenEnterChat();
                             } else {
                               // Anchor room had nothing to migrate (e.g. already
                               // up to date) — fall back to a fresh pending
@@ -1423,7 +1406,7 @@ function checkApproval() {
         setLastGroup(currentGroup);
         listenForBadgeUpdates();
         silentlyRestoreRoomsFromUID();
-        enterChat();
+        refreshTokenThenEnterChat();
       } else {
         alert('Not approved yet. Please wait for your group leader to approve you.');
       }
@@ -1469,7 +1452,7 @@ function checkApprovalAndEnter() {
         setLastGroup(currentGroup);
         listenForBadgeUpdates();
         silentlyRestoreRoomsFromUID();
-        enterChat();
+        refreshTokenThenEnterChat();
       } else if (snap.exists) {
         document.getElementById('cg-pending-title').textContent = currentGroupName;
         showCGScreen('pending');
@@ -1566,6 +1549,29 @@ function refreshCurrentMembersBadge() {
   } else {
     membersBadge.style.display = 'none';
     membersBadge.textContent = '';
+  }
+}
+// firestore.rules now authorizes group membership straight off this
+// device's ID token (custom claims) instead of a live Firestore lookup, so
+// the token itself has to be current before any chat listener depending on
+// it opens. Cached tokens normally only refresh once an hour, which would
+// otherwise leave someone stuck for up to an hour right after being
+// approved (or after a room migration sets fresh claims) — this forces an
+// immediate refresh at exactly that boundary. Falls through to entering
+// chat either way; if the refresh call itself fails (offline, etc.) the
+// existing token is still used, same as before this existed.
+function refreshTokenThenEnterChat() {
+  if (auth && auth.currentUser) {
+    auth.currentUser
+      .getIdToken(true)
+      .catch(function (err) {
+        console.warn('Token refresh before entering chat failed (non-fatal):', err);
+      })
+      .then(function () {
+        enterChat();
+      });
+  } else {
+    enterChat();
   }
 }
 function enterChat() {
