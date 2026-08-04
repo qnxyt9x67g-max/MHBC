@@ -17,6 +17,8 @@ Firebase Anonymous Auth provides a trusted device/session UID. A separate name +
 
 Switching to a new device migrates a member's existing room membership(s) rather than creating a duplicate — an explicit login on one room verifies the password once and restores every other approved room automatically in the same step.
 
+Approved membership and admin status for security rules are mirrored in Auth custom claims (kept in sync when member documents change), so routine permission checks do not require extra Firestore reads on every request.
+
 ### Badges & Notifications
 
 All badge counts (unread messages + pending approvals) are managed server-side by Cloud Functions. Clients only read the final computed values — keeping badge-related Firestore costs near zero.
@@ -25,7 +27,7 @@ Client writes to a user's own `users/{uid}` doc (badge-clearing, token registrat
 
 ### Messages & Offline Support
 
-Each room uses a hybrid cache: up to 500 recent messages stored in `localStorage` + live `onSnapshot` listeners. Switching rooms is instant if cached data is available.
+Each room uses a hybrid cache: up to 500 recent messages stored in `localStorage` + live `onSnapshot` listeners. Switching rooms is instant if cached data is available. Entering a room goes through a short server-side session step so access stays tied to an approved, rate-aware open — message delivery itself remains realtime.
 
 ### Push Notifications
 
@@ -33,7 +35,7 @@ Powered by FCM through a service worker (`sw.js`). Background badge updates and 
 
 ### Abuse & Cost Protection
 
-The app includes layered safeguards — spanning Firestore security rules, Cloud Functions, and a billing-level kill switch — against spam, account abuse, and runaway Firebase costs. Specifics are intentionally not documented here; see `DEPLOY_GUIDE.md` (not committed to this public repo) if you need the details.
+The app includes layered safeguards — spanning Firestore security rules, Cloud Functions, Auth custom claims, and a billing-level kill switch — against spam, account abuse, scripted client abuse, and runaway Firebase costs. Sensitive paths (login, migration, room entry, members directory, and high-volume writes) are enforced server-side so client-only checks cannot be bypassed. Specifics are intentionally not documented here; see `DEPLOY_GUIDE.md` (not committed to this public repo) if you need the details.
 
 ## Emergency and Alternate Builds
 
@@ -74,6 +76,8 @@ Deploy **both** the emergency `index.html` and emergency `app.js` together for t
 | `messageSpamTrapV2`            | Message create/edit        | Abuse protection for chat volume |
 | `alertSpamTrapV2`              | New church alert           | Abuse protection for church-alert volume |
 | `globalSpamTrapV2`             | New `users/{uid}` document | Abuse protection for app |
+| `enterChatSessionV2`           | Callable                  | Server-side room entry / session grant |
+| `getMembersListV2`             | Callable                  | Server-side members directory (rate-limited) |
 | `stopBillingV2`                | Pub/Sub (billing alert)    | Emergency billing kill switch |
 
 ## Files
