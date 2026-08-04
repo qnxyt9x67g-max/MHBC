@@ -811,6 +811,8 @@ function startOver() {
 // into the new room's state. localStorage cache is preserved intentionally
 // so returning to a room costs zero extra Firestore reads.
 function leaveCurrentRoom() {
+  clearChatSessionRefresh();
+
   if (messageListener) {
     messageListener();
     messageListener = null;
@@ -1387,8 +1389,17 @@ function submitLogin() {
 }
 
 // ---- CHECK APPROVAL ----
+var lastCheckApprovalAt = 0;
+var CHECK_APPROVAL_COOLDOWN_MS = 5000;
+
 function checkApproval() {
   if (!currentUID || !currentGroup) return;
+  var now = Date.now();
+  if (now - lastCheckApprovalAt < CHECK_APPROVAL_COOLDOWN_MS) {
+    showToast('Please wait a few seconds before checking again.');
+    return;
+  }
+  lastCheckApprovalAt = now;
   var btn = document.getElementById('cg-check-btn');
   if (btn) {
     btn.disabled = true;
@@ -1537,6 +1548,59 @@ function setLastOpenedTimestamp(groupId) {
   if (!groupId) return;
   localStorage.setItem(getLastOpenedKey(groupId), String(Date.now()));
 }
+
+// ---- CHAT SESSION (enterChatSessionV2 → cs_<group> custom claim) ----
+// Opening a room goes through enterChatSessionV2 (1s cooldown, 120/hour).
+// The function sets claim cs_<group> = expiry. Rules check that claim for
+// list/onSnapshot — free deny if missing. Live messages stay onSnapshot.
+var chatSessionRefreshTimer = null;
+
+function clearChatSessionRefresh() {
+  if (chatSessionRefreshTimer) {
+    clearInterval(chatSessionRefreshTimer);
+    chatSessionRefreshTimer = null;
+  }
+}
+
+function enterChatSession() {
+  if (!currentUID || !currentGroup) {
+    return Promise.resolve({ ok: false });
+  }
+  var enter = firebase.functions().httpsCallable('enterChatSessionV2');
+  return enter({ groupId: currentGroup })
+    .then(function (result) {
+      // Claims only land on the ID token after a refresh — force one so
+      // messages list/onSnapshot rules see cs_<group> immediately.
+      if (auth && auth.currentUser) {
+        return auth.currentUser.getIdToken(true).then(function () {
+          return result.data || { ok: true };
+        });
+      }
+      return result.data || { ok: true };
+    })
+    .catch(function (err) {
+      var code = err && err.code ? String(err.code) : '';
+      if (code.indexOf('resource-exhausted') !== -1) {
+        showToast(err.message || 'Please wait before reopening chat.');
+      } else {
+        console.warn('enterChatSession:', err && err.message ? err.message : err);
+      }
+      return { ok: false, error: err };
+    });
+}
+
+function startChatSessionRefresh() {
+  clearChatSessionRefresh();
+  // Refresh session every 45 min while still in chat (session lasts 90 min).
+  chatSessionRefreshTimer = setInterval(function () {
+    if (!currentGroup || !isInChat()) {
+      clearChatSessionRefresh();
+      return;
+    }
+    enterChatSession();
+  }, 45 * 60 * 1000);
+}
+
 function refreshCurrentMembersBadge() {
   var membersBadge = document.getElementById('members-badge');
   if (!membersBadge || !currentGroup) return;
@@ -1629,8 +1693,18 @@ function enterChat() {
   }
   if (mask) mask.style.display = 'flex';
 
-  loadMessages(true);
-  markAsRead();
+  // Rate-limited session grant must succeed (or already be active) before
+  // list/onSnapshot — rules require the cs_<group> claim set by
+  // enterChatSessionV2 (chatSessionOk() in firestore.rules).
+  enterChatSession().then(function (result) {
+    // Even if rate-limited, try load: cache shows, and if a prior session is
+    // still valid the listener will attach; if not, list is denied cleanly.
+    loadMessages(true);
+    markAsRead();
+    if (result && result.ok !== false) {
+      startChatSessionRefresh();
+    }
+  });
 
   setTimeout(function () {
     setLastOpenedTimestamp(currentGroup);
@@ -2143,7 +2217,9 @@ lines.forEach(function (line, index) {
   });
 }
 function getMessageTime(msg) {
-  if (!msg || !msg.timestamp) return 0;
+  if (!msg) return 0;
+  if (typeof msg.timestampMs === 'number' && msg.timestampMs) return msg.timestampMs;
+  if (!msg.timestamp) return 0;
   if (typeof msg.timestamp.toMillis === 'function') return msg.timestamp.toMillis();
   if (typeof msg.timestamp.seconds === 'number') return msg.timestamp.seconds * 1000;
   if (typeof msg.timestamp === 'number') return msg.timestamp;
@@ -2151,6 +2227,7 @@ function getMessageTime(msg) {
 }
 function getUpdatedTime(msg) {
   if (!msg) return 0;
+  if (typeof msg.updatedAtMs === 'number' && msg.updatedAtMs) return msg.updatedAtMs;
   if (msg.updatedAt && typeof msg.updatedAt.toMillis === 'function')
     return msg.updatedAt.toMillis();
   if (msg.updatedAt && typeof msg.updatedAt.seconds === 'number')
@@ -2158,6 +2235,7 @@ function getUpdatedTime(msg) {
   if (typeof msg.updatedAt === 'number') return msg.updatedAt;
   return getMessageTime(msg);
 }
+
 function refreshHasOlderMessages() {
   var state = getCurrentRoomState();
   var previousValue = state.hasOlderMessages;
@@ -2481,6 +2559,7 @@ function attachRecentMessagesListener() {
     .collection('messages')
     .where('updatedAt', '>', firebase.firestore.Timestamp.fromMillis(newestUpdatedAt))
     .orderBy('updatedAt', 'asc')
+    .limit(51)
     .onSnapshot(function (snapshot) {
       var changed = false;
       var incomingFromOtherPerson = false;
@@ -2559,6 +2638,7 @@ function loadMessages(scrollOnOpen) {
       if (mask) mask.style.display = 'none';
     });
 }
+
 
 function buildMessageRow(msg, isPrimary) {
   var isMe = isMyMessage(msg);
@@ -2853,6 +2933,8 @@ function sendMessage() {
 }
 
 function leaveChat() {
+  clearChatSessionRefresh();
+
   leaveCurrentRoom();
   clearReply();
   currentUser = null;
@@ -2945,8 +3027,14 @@ function showMembersPanel() {
     pendingCountsByGroup[currentGroup] = 0;
   }
 
-  var forceRefresh = currentUser && currentUser.isAdmin;
-  loadMembersList(forceRefresh);
+  // Force-refresh is no longer automatic on every open — the 15s admin /
+  // 5min member client TTL below already tracks the server cooldown, and
+  // approveMember/denyMember/removeMember/clearRemovalFlag each already
+  // call loadMembersList(true) themselves right after their action
+  // succeeds. Forcing it here too meant an admin opening Members twice in
+  // a row within a few seconds hit getMembersListV2 both times for no
+  // reason — the server would just reject the second one anyway.
+  loadMembersList(false);
 }
 function renderMembersListFromData(members) {
   var listEl = document.getElementById('members-list');
@@ -3105,8 +3193,14 @@ function loadMembersList(forceRefresh) {
   if (!listEl) return;
 
   var cache = getMembersCache(currentGroup);
+  // Admins use a shorter client TTL (15s) so approve/deny stays responsive;
+  // the server still enforces the real cooldown (15s admin / 5 min member).
+  var clientTtlMs =
+    currentUser && currentUser.isAdmin ? 15 * 1000 : ROOM_MEMBERS_CACHE_TTL_MS;
+  var cacheIsFresh =
+    cache && cache.savedAt && Date.now() - cache.savedAt < clientTtlMs;
 
-  if (!forceRefresh && cache && isMembersCacheFresh(cache)) {
+  if (!forceRefresh && cacheIsFresh) {
     renderMembersListFromData(cache.members);
     return;
   }
@@ -3120,80 +3214,92 @@ function loadMembersList(forceRefresh) {
   var targetGroup = currentGroup;
   var done = false;
 
-  // The old code used watchdogTimedOut=true before calling the retry, which caused
-  // the retry's .then() to bail immediately — screen stayed on "Loading..." forever.
-  // done is only set true when we have an actual result (success or terminal failure).
-
-  function showFallback() {
+  function showFallback(msg) {
     if (done) return;
     done = true;
     if (currentGroup !== targetGroup || !listEl) return;
     if (!cache) {
       listEl.innerHTML =
-        '<div class="cg-empty-note">Couldn\'t load members right now. Tap back and try again shortly.</div>';
+        '<div class="cg-empty-note">' +
+        (msg || "Couldn't load members right now. Tap back and try again shortly.") +
+        '</div>';
     }
-    // Stale cache already on screen — leave it; something is better than nothing.
   }
 
-  // Overall give-up: 12s covers first attempt + reboot delay + retry
-  var giveUpTimer = setTimeout(showFallback, 12000);
+  var giveUpTimer = setTimeout(function () {
+    showFallback();
+  }, 12000);
+  var retried = false;
 
-  // Stall detector: if no response in 3.5s, reboot Firestore network and retry once
-  var stallTimer = setTimeout(function () {
-    if (done) return;
-    console.warn('Members fetch stalled — rebooting Firestore network...');
-    db.disableNetwork()
-      .then(function () {
-        return db.enableNetwork();
-      })
-      .then(function () {
-        if (done || currentGroup !== targetGroup || !membersPanelIsOpen) return;
-        executeMembersFetch();
-      })
-      .catch(function () {});
-  }, 3500);
-
-  function executeMembersFetch() {
-    db.collection('groups')
-      .doc(targetGroup)
-      .collection('members')
-      .get()
-      .then(function (snap) {
+  // Members list is served by getMembersListV2 (rate-limited, Admin SDK).
+  // Direct collection list is denied in firestore.rules — a DevTools script
+  // can no longer spam unbounded member-list reads.
+  function fetchMembers() {
+    var getMembers = firebase.functions().httpsCallable('getMembersListV2');
+    getMembers({ groupId: targetGroup })
+      .then(function (result) {
         if (done) return;
         done = true;
-        clearTimeout(stallTimer);
         clearTimeout(giveUpTimer);
+        if (currentGroup !== targetGroup) return;
 
-        var members = [];
-        snap.forEach(function (d) {
-          var m = d.data();
-          m._id = d.id;
-          members.push(m);
-        });
-
+        var members = (result.data && result.data.members) || [];
         if (members.length > 0) {
           saveMembersCache(targetGroup, members);
           renderMembersListFromData(members);
         } else if (!cache && listEl) {
           listEl.innerHTML =
-            '<div class="cg-empty-note">Members couldn\'t be loaded. Check back shortly.</div>';
+            '<div class="cg-empty-note">No members found for this group yet.</div>';
         }
-        // Empty result with stale cache already on screen — leave it.
       })
       .catch(function (err) {
         if (done) return;
+        var code = err && err.code ? String(err.code) : '';
+        var message = (err && err.message) || '';
+
+        // One-shot retry, but only for errors a retry could plausibly fix
+        // (a network blip, a cold-started function). Rate-limit, auth, and
+        // bad-input errors won't change on retry — retrying those just
+        // wastes another call, and for resource-exhausted specifically it
+        // eats further into the hourly cap for no benefit.
+        var isRetryable =
+          code.indexOf('resource-exhausted') === -1 &&
+          code.indexOf('permission-denied') === -1 &&
+          code.indexOf('invalid-argument') === -1 &&
+          code.indexOf('unauthenticated') === -1;
+
+        if (isRetryable && !retried && currentGroup === targetGroup) {
+          retried = true;
+          setTimeout(function () {
+            if (done || currentGroup !== targetGroup || !membersPanelIsOpen) return;
+            fetchMembers();
+          }, 1500);
+          return;
+        }
+
         done = true;
-        clearTimeout(stallTimer);
         clearTimeout(giveUpTimer);
+        // resource-exhausted = server cooldown / hourly cap — keep stale cache
+        // on screen and surface a short toast so the admin knows why.
+        if (code.indexOf('resource-exhausted') !== -1 || /wait|limit/i.test(message)) {
+          if (cache) {
+            showToast(message || 'Please wait before refreshing members.');
+          } else {
+            showFallback(message || 'Please wait before refreshing members.');
+          }
+          return;
+        }
         if (!cache && listEl) {
           listEl.innerHTML =
             '<div class="cg-empty-note">Members couldn\'t be loaded. Check back shortly.</div>';
+        } else if (cache) {
+          showToast("Couldn't refresh members. Showing last loaded list.");
         }
         console.error('Members load error:', err);
       });
   }
 
-  executeMembersFetch();
+  fetchMembers();
 }
 
 // Approve: update member doc + sync identity doc
