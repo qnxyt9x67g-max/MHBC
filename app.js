@@ -3302,9 +3302,32 @@ function loadMembersList(forceRefresh) {
   fetchMembers();
 }
 
+// Applies a local mutation to the cached members array and re-renders
+// immediately from it, instead of forcing a fresh getMembersListV2 call
+// after every approve/deny/remove. This is faster (no round trip) and
+// avoids an admin's own rapid-fire actions competing against each other
+// for the 15s per-admin server cooldown — e.g. approving 3 pending
+// members in a row used to make the 2nd and 3rd calls get rate-limited,
+// leaving the panel stuck on "Loading...". Falls back to a real fetch
+// only if there's no cache yet to patch (shouldn't normally happen, since
+// you have to be looking at a loaded list to tap an action button).
+function patchMembersCacheAndRender(groupId, mutateFn) {
+  var cache = getMembersCache(groupId);
+  if (!cache || !Array.isArray(cache.members)) {
+    if (groupId === currentGroup) loadMembersList(true);
+    return;
+  }
+  var updated = mutateFn(cache.members.slice());
+  saveMembersCache(groupId, updated);
+  if (groupId === currentGroup) {
+    renderMembersListFromData(updated);
+  }
+}
+
 // Approve: update member doc + sync identity doc
 function approveMember(memberUid) {
   var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(memberUid);
+  var group = currentGroup;
   memberRef
     .update({
       approved: true,
@@ -3317,31 +3340,58 @@ function approveMember(memberUid) {
     .then(function (snap) {
       if (snap.exists && snap.data().normalizedName) {
         db.collection('groups')
-          .doc(currentGroup)
+          .doc(group)
           .collection('identities')
           .doc(snap.data().normalizedName)
-          .update({ approved: true });
+          .update({ approved: true })
+          .catch(function (err) {
+            console.error('Approve: identity sync failed:', err);
+          });
       }
-      clearMembersCache(currentGroup);
-      loadMembersList(true);
+      patchMembersCacheAndRender(group, function (members) {
+        return members.map(function (m) {
+          if ((m._id || m.uid) === memberUid) {
+            return Object.assign({}, m, { approved: true, removalRequested: false });
+          }
+          return m;
+        });
+      });
+    })
+    .catch(function (err) {
+      console.error('Approve member failed:', err);
+      alert('Unable to approve this member right now.');
     });
 }
 
-// Helper: delete ALL member docs for a given normalizedName, then set identity approved:false
-function deleteAllSessionsForPerson(normalized) {
-  return db
-    .collection('groups')
-    .doc(currentGroup)
-    .collection('members')
-    .where('normalizedName', '==', normalized)
-    .get()
-    .then(function (snap) {
-      var deletes = [];
-      snap.forEach(function (d) {
-        deletes.push(d.ref.delete());
-      });
-      return Promise.all(deletes);
-    })
+// Deletes primaryUid's member doc directly (always correct — it's the row
+// being acted on), then best-effort cleans up any OTHER member docs for the
+// same person still sitting in the local members cache (leftover from a
+// device migration, etc.), then marks the identity not approved. This used
+// to run a where('normalizedName','==',...) query, but the v3 members-list
+// hardening denies client list queries on this collection
+// (allow list: if false in firestore.rules) — deletes by a known uid are
+// still allowed for admins, so this uses the cache (already loaded to
+// render the panel) instead of a live query. Returns the list of uids that
+// were actually deleted, so callers can patch their own cached copy.
+function deleteAllSessionsForPerson(normalized, primaryUid) {
+  var uids = {};
+  if (primaryUid) uids[primaryUid] = true;
+
+  var cache = getMembersCache(currentGroup);
+  if (cache && Array.isArray(cache.members)) {
+    cache.members.forEach(function (m) {
+      if (m.normalizedName === normalized) {
+        uids[m._id || m.uid] = true;
+      }
+    });
+  }
+
+  var uidList = Object.keys(uids);
+  var deletes = uidList.map(function (uid) {
+    return db.collection('groups').doc(currentGroup).collection('members').doc(uid).delete();
+  });
+
+  return Promise.all(deletes)
     .then(function () {
       return db
         .collection('groups')
@@ -3349,12 +3399,16 @@ function deleteAllSessionsForPerson(normalized) {
         .collection('identities')
         .doc(normalized)
         .update({ approved: false });
+    })
+    .then(function () {
+      return uidList;
     });
 }
 
 // Deny: delete ALL UID sessions for this person + mark identity not approved
 function denyMember(memberUid) {
   var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(memberUid);
+  var group = currentGroup;
 
   memberRef
     .get()
@@ -3362,14 +3416,19 @@ function denyMember(memberUid) {
       var normalized = snap.exists ? snap.data().normalizedName : null;
 
       if (!normalized) {
-        return memberRef.delete();
+        return memberRef.delete().then(function () {
+          return [memberUid];
+        });
       }
 
-      return deleteAllSessionsForPerson(normalized);
+      return deleteAllSessionsForPerson(normalized, memberUid);
     })
-    .then(function () {
-      clearMembersCache(currentGroup);
-      loadMembersList(true);
+    .then(function (deletedUids) {
+      patchMembersCacheAndRender(group, function (members) {
+        return members.filter(function (m) {
+          return deletedUids.indexOf(m._id || m.uid) === -1;
+        });
+      });
     })
     .catch(function (err) {
       console.error('Deny member failed:', err);
@@ -3418,16 +3477,20 @@ function removeMember(memberUid, isSelf) {
     .then(function (snap) {
       var normalized = snap.exists ? snap.data().normalizedName : null;
       if (normalized) {
-        return deleteAllSessionsForPerson(normalized);
+        return deleteAllSessionsForPerson(normalized, memberUid);
       } else {
-        return memberRef.delete();
+        return memberRef.delete().then(function () {
+          return [memberUid];
+        });
       }
     })
-    .then(function () {
-      clearMembersCache(leavingGroup);
-
+    .then(function (deletedUids) {
       if (!isSelf) {
-        loadMembersList(true);
+        patchMembersCacheAndRender(leavingGroup, function (members) {
+          return members.filter(function (m) {
+            return deletedUids.indexOf(m._id || m.uid) === -1;
+          });
+        });
       }
     })
     .catch(function (err) {
@@ -3441,14 +3504,21 @@ function removeMember(memberUid, isSelf) {
 
 function clearRemovalFlag(memberUid) {
   var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(memberUid);
+  var group = currentGroup;
   memberRef
     .update({
       removalRequested: false,
       removalRequestedAt: firebase.firestore.FieldValue.delete()
     })
     .then(function () {
-      clearMembersCache(currentGroup);
-      loadMembersList(true);
+      patchMembersCacheAndRender(group, function (members) {
+        return members.map(function (m) {
+          if ((m._id || m.uid) === memberUid) {
+            return Object.assign({}, m, { removalRequested: false });
+          }
+          return m;
+        });
+      });
     })
     .catch(function (err) {
       console.error('Failed to clear removal flag:', err);
