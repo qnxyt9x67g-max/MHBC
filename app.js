@@ -899,10 +899,9 @@ function selectGroup(groupId, groupName) {
           saveUser(currentUser);
           setLastGroup(groupId);
           checkApprovalAndEnter();
-        } else if (migrationInProgress || restoreInProgress) {
-          // Covers both an in-session migrateAllGroupsV2 (migrationInProgress)
-          // and a background restoreSessionV2 on app open (restoreInProgress)
-          // — either can still be filling in mhbc_cg_users for this room.
+        } else if (migrationInProgress) {
+          // Covers an in-session migrateAllGroupsV2 that may still be
+          // filling in mhbc_cg_users for this room.
           var attempts = 0;
           migrationPollInterval = setInterval(function () {
             attempts++;
@@ -914,7 +913,7 @@ function selectGroup(groupId, groupName) {
               currentMemberKey = recheck.normalizedName;
               setLastGroup(groupId);
               checkApprovalAndEnter();
-            } else if ((!migrationInProgress && !restoreInProgress) || attempts >= 10) {
+            } else if ((!migrationInProgress) || attempts >= 10) {
               clearInterval(migrationPollInterval);
               migrationPollInterval = null;
               showLoginScreen(groupId, groupName);
@@ -962,11 +961,6 @@ function showReturningUserMessage() {
 var loginInProgress = false;
 var migrationInProgress = false;
 var migrationPollInterval = null;
-// True while restoreSessionV2 is in flight on app open (see
-// auth.onAuthStateChanged). checkApprovalAndEnter() polls instead of
-// immediately clearing cached room data if this is set, so a normal-speed
-// restore never looks like a "you're not a member here" wipe.
-var restoreInProgress = false;
 
 function submitLogin() {
   if (loginInProgress) return;
@@ -1494,16 +1488,6 @@ function checkApprovalAndEnter(attempt) {
       } else if (snap.exists) {
         document.getElementById('cg-pending-title').textContent = currentGroupName;
         showCGScreen('pending');
-      } else if (restoreInProgress && attempt < 10) {
-        // A background restoreSessionV2 call is still in flight (see
-        // auth.onAuthStateChanged) — this room's member doc may simply not
-        // exist YET under the new uid. Poll briefly instead of treating
-        // this the same as "never was a member here" and wiping the
-        // cached room out from under a restore that just hasn't landed.
-        setTimeout(function () {
-          if (token !== navToken) return;
-          checkApprovalAndEnter(attempt + 1);
-        }, 500);
       } else {
         clearUnreadCount(currentGroup);
         clearSavedUser(currentGroup);
@@ -1662,7 +1646,6 @@ function refreshCurrentMembersBadge() {
 // chat either way; if the refresh call itself fails (offline, etc.) the
 // existing token is still used, same as before this existed.
 function refreshTokenThenEnterChat() {
-  requestRestoreTokenQuietly();
 
   if (auth && auth.currentUser) {
     auth.currentUser
@@ -3659,51 +3642,6 @@ function getLastGroup() {
   return localStorage.getItem('mhbc_cg_last_group');
 }
 
-
-function requestRestoreTokenQuietly() {
-  if (!currentUID) return;
-  try {
-    var ensureRestoreToken = firebase.functions().httpsCallable('ensureRestoreTokenV2');
-    ensureRestoreToken({})
-      .then(function (res) {
-        if (res.data && res.data.refreshed && res.data.uid && res.data.restoreToken) {
-          saveRestoreCredential(res.data.uid, res.data.restoreToken);
-        }
-      })
-      .catch(function (err) {
-        console.log('Restore-token refresh skipped:', err && err.message);
-      });
-  } catch (e) {}
-}
-
-// ---- DEVICE RESTORE CREDENTIAL ----
-// A high-entropy secret minted server-side by ensureRestoreTokenV2, stored
-// here alongside the uid it was issued for. Lets restoreSessionV2 prove
-// "this device really did previously hold an approved session as oldUid"
-// without ever asking for a password again — see index.js for why this is
-// safe (rotating, server-random, never derived from anything guessable like
-// a display name). Separate key from mhbc_cg_users since it's keyed by uid,
-// not by room.
-function getRestoreCredential() {
-  var raw = localStorage.getItem('mhbc_restore_credential');
-  if (!raw) return null;
-  try {
-    var parsed = JSON.parse(raw);
-    if (parsed && parsed.uid && parsed.token) return parsed;
-    return null;
-  } catch (e) {
-    return null;
-  }
-}
-
-function saveRestoreCredential(uid, token) {
-  if (!uid || !token) return;
-  localStorage.setItem('mhbc_restore_credential', JSON.stringify({ uid: uid, token: token }));
-}
-
-function clearRestoreCredential() {
-  localStorage.removeItem('mhbc_restore_credential');
-}
 function getMembersCacheKey(groupId) {
   return ROOM_MEMBERS_CACHE_PREFIX + groupId;
 }
@@ -4637,83 +4575,8 @@ window.onload = function () {
         }
       }
 
-      // ---- SILENT SESSION RESTORE ----
-      // This used to silently call migrateAllGroupsV2 here with no
-      // password, trusting locally-cached room names alone — that was the
-      // unauthenticated-migration hole (see index.js). It was removed
-      // rather than patched around, since a display name alone proves
-      // nothing.
-      //
-      // This replaces it with a version backed by an actual credential: a
-      // high-entropy secret (see ensureRestoreTokenV2 / restoreSessionV2 in
-      // index.js) minted for whichever uid this device was last known to
-      // hold, and kept in localStorage alongside that uid. If Firebase Auth
-      // hands back a DIFFERENT uid than the one that secret was issued for —
-      // long absence, storage partially cleared, or an Auth SDK version
-      // change behaving differently with existing persisted state — this
-      // proves the old uid was really this device's before trusting it for
-      // anything, instead of taking the client's word for it.
-      var restoreCred = getRestoreCredential();
+      applyCachedSessionVars();
 
-      if (restoreCred && restoreCred.uid !== currentUID) {
-        restoreInProgress = true;
-        var restoreSession = firebase.functions().httpsCallable('restoreSessionV2');
-        restoreSession({ oldUid: restoreCred.uid, restoreToken: restoreCred.token })
-          .then(function (res) {
-            var groupNames = {
-              c101: 'C101',
-              narthex: 'Narthex',
-              fellowship1: 'Fellowship Hall 1st Floor',
-              fellowship2: 'Fellowship Hall 2nd Floor',
-              trac: 'T.R.A.C.'
-            };
-            if (res.data && Array.isArray(res.data.results)) {
-              res.data.results.forEach(function (r) {
-                if (r.status === 'migrated' && r.displayName && r.normalizedName) {
-                  saveUser({
-                    group: r.groupId,
-                    groupName: groupNames[r.groupId] || r.groupId,
-                    name: r.displayName,
-                    normalizedName: r.normalizedName,
-                    isAdmin: r.isAdmin === true
-                  });
-                }
-              });
-            }
-            if (res.data && res.data.uid && res.data.restoreToken) {
-              saveRestoreCredential(res.data.uid, res.data.restoreToken);
-            }
-            console.log('Silent session restore succeeded:', res.data);
-          })
-          .catch(function (err) {
-            var code = err && err.code;
-            if (code === 'not-found' || code === 'permission-denied') {
-              // Stale or invalid credential (e.g. already used/rotated
-              // elsewhere, or this really is a brand-new device) —
-              // retrying it on the next app open won't help.
-              clearRestoreCredential();
-            }
-            // resource-exhausted (rare lockout) or a network error: leave
-            // the credential in place and just try again next time.
-            console.log('Silent session restore skipped:', code, err && err.message);
-          })
-          .finally(function () {
-            restoreInProgress = false;
-            // Re-derive from local cache now that restoreSessionV2 (if it
-            // succeeded) has had a chance to update it above — same lookup
-            // the non-restore path below always did.
-            applyCachedSessionVars();
-          });
-      } else {
-        applyCachedSessionVars();
-
-        // Keep this device's recovery secret alive while the session stays
-        // stable, so it's ready if the uid ever does change later. Cheap on
-        // a normal open — the callable does one read and returns
-        // {refreshed:false} with no write unless this is the first time or
-        // the existing secret is within ~30 days of its ~9-month expiry.
-        requestRestoreTokenQuietly();
-      }
     } else {
       authReady = false;
       auth.signInAnonymously().catch(function (err) {
