@@ -1,5 +1,5 @@
-importScripts('https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/12.17.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/12.17.1/firebase-messaging-compat.js');
 
 firebase.initializeApp({
   apiKey: 'AIzaSyBYt5RR0YGB9u9n7QgvAGXnvmrb7-xTg-Y',
@@ -13,7 +13,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // MHBC Service Worker — caching + background notifications
-const CACHE = 'mhbc119';
+const CACHE = 'mhbc120';
 
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './manifest.json'];
 
