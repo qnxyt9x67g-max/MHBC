@@ -1087,7 +1087,9 @@ function submitLogin() {
                         memberRef.update({
                           lastLoginAt: Date.now(),
                           removalRequested: false,
-                          removalRequestedAt: firebase.firestore.FieldValue.delete()
+                          removalRequestedAt: firebase.firestore.FieldValue.delete(),
+                          lastMemberSelfWriteAt: firebase.firestore.FieldValue.serverTimestamp(),
+                          lastMutatedBy: currentUID
                         });
 
                         var memberData = memberSnap.data();
@@ -1455,7 +1457,9 @@ function checkApprovalAndEnter() {
             .doc(currentUID)
             .update({
               removalRequested: false,
-              removalRequestedAt: firebase.firestore.FieldValue.delete()
+              removalRequestedAt: firebase.firestore.FieldValue.delete(),
+              lastMemberSelfWriteAt: firebase.firestore.FieldValue.serverTimestamp(),
+              lastMutatedBy: currentUID
             })
             .catch(function () {});
         }
@@ -1831,7 +1835,7 @@ function sendInlineReply(parentId) {
   var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(currentUID);
   var batch = db.batch();
   batch.set(docRef, msgData);
-  batch.update(memberRef, { lastMessageAt: nowTs });
+  batch.update(memberRef, { lastMessageAt: nowTs, lastMutatedBy: currentUID });
 
   batch.commit().catch(function (err) {
     console.error('SEND REPLY FAILED:', err);
@@ -2057,7 +2061,10 @@ function editMessage(msgId) {
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
           lastEditedBy: currentUID
         });
-        batch.update(memberRef, { lastMessageAt: firebase.firestore.FieldValue.serverTimestamp() });
+        batch.update(memberRef, {
+          lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+          lastMutatedBy: currentUID
+        });
 
         batch
           .commit()
@@ -2916,7 +2923,7 @@ function sendMessage() {
   var memberRef = db.collection('groups').doc(currentGroup).collection('members').doc(currentUID);
   var batch = db.batch();
   batch.set(docRef, msgData);
-  batch.update(memberRef, { lastMessageAt: nowTs });
+  batch.update(memberRef, { lastMessageAt: nowTs, lastMutatedBy: currentUID });
 
   batch.commit().catch(function (err) {
     console.error('SEND MESSAGE FAILED:', err);
@@ -2948,7 +2955,7 @@ function leaveChat() {
 function markAsRead() {
   if (!currentUID || !currentGroup) return;
 
-  // 👇 LOCAL guard (prevents unnecessary writes while actively in chat)
+  // LOCAL guard (prevents unnecessary callable traffic while actively in chat)
   var localUnread = unreadCountsByGroup[currentGroup] || 0;
 
   if (localUnread <= 0) {
@@ -2958,41 +2965,11 @@ function markAsRead() {
 
   setUnreadCount(currentGroup, 0);
 
-  const userRef = db.collection('users').doc(currentUID);
-
-  userRef.get().then((doc) => {
-    if (!doc.exists) return;
-
-    let data = doc.data() || {};
-    let unread = data.unread || {};
-    let pending = data.pending || {};
-
-    // 👇 FIRESTORE guard (prevents duplicate writes)
-    if ((Number(unread[currentGroup]) || 0) <= 0) {
-      return;
-    }
-
-    unread[currentGroup] = 0;
-
-    let totalUnread = 0;
-    Object.values(unread).forEach((v) => (totalUnread += Number(v) || 0));
-
-    let totalPending = 0;
-    Object.values(pending).forEach((v) => (totalPending += Number(v) || 0));
-
-    let badgeTotal = totalUnread + totalPending;
-
-    userRef.set(
-      {
-        unread: unread,
-        totalUnread: totalUnread,
-        totalPending: totalPending,
-        badgeTotal: badgeTotal
-      },
-      { merge: true }
-    );
-
-    updateAppBadge(badgeTotal);
+  // Server-side clear via rate-limited callable (client can no longer write
+  // unread / badgeTotal on users/{uid} — see firestore.rules).
+  var updateState = firebase.functions().httpsCallable('updateClientUserStateV2');
+  updateState({ clearUnreadGroupId: currentGroup }).catch(function (err) {
+    console.warn('markAsRead callable failed:', err && err.message);
   });
 }
 function showChurchAlertButtonIfAdmin() {
@@ -3015,16 +2992,12 @@ function showMembersPanel() {
   }
 
   if (currentUID && currentUser && currentUser.isAdmin && currentGroup) {
-    var ackedNow = Date.now();
-
-    var updateObj = {
-      pendingAcknowledgedAt: ackedNow,
-      ['pending.' + currentGroup]: 0
-    };
-
-    db.collection('users').doc(currentUID).update(updateObj);
-
     pendingCountsByGroup[currentGroup] = 0;
+    // Server-side pending ack (client can no longer write pending / pendingAcknowledgedAt)
+    var updateState = firebase.functions().httpsCallable('updateClientUserStateV2');
+    updateState({ ackPendingGroupId: currentGroup }).catch(function (err) {
+      console.warn('ackPending callable failed:', err && err.message);
+    });
   }
 
   // Force-refresh is no longer automatic on every open — the 15s admin /
@@ -3332,7 +3305,8 @@ function approveMember(memberUid) {
     .update({
       approved: true,
       removalRequested: false,
-      removalRequestedAt: firebase.firestore.FieldValue.delete()
+      removalRequestedAt: firebase.firestore.FieldValue.delete(),
+      lastMutatedBy: currentUID
     })
     .then(function () {
       return memberRef.get();
@@ -3343,7 +3317,7 @@ function approveMember(memberUid) {
           .doc(group)
           .collection('identities')
           .doc(snap.data().normalizedName)
-          .update({ approved: true })
+          .update({ approved: true, lastUpdatedBy: currentUID })
           .catch(function (err) {
             console.error('Approve: identity sync failed:', err);
           });
@@ -3398,7 +3372,7 @@ function deleteAllSessionsForPerson(normalized, primaryUid) {
         .doc(currentGroup)
         .collection('identities')
         .doc(normalized)
-        .update({ approved: false });
+        .update({ approved: false, lastUpdatedBy: currentUID });
     })
     .then(function () {
       return uidList;
@@ -3449,7 +3423,9 @@ function removeMember(memberUid, isSelf) {
     memberRef
       .update({
         removalRequested: true,
-        removalRequestedAt: Date.now()
+        removalRequestedAt: Date.now(),
+        lastMemberSelfWriteAt: firebase.firestore.FieldValue.serverTimestamp(),
+        lastMutatedBy: currentUID
       })
       .then(function () {
         clearMembersCache(leavingGroup);
@@ -3508,7 +3484,8 @@ function clearRemovalFlag(memberUid) {
   memberRef
     .update({
       removalRequested: false,
-      removalRequestedAt: firebase.firestore.FieldValue.delete()
+      removalRequestedAt: firebase.firestore.FieldValue.delete(),
+      lastMutatedBy: currentUID
     })
     .then(function () {
       patchMembersCacheAndRender(group, function (members) {
@@ -3566,56 +3543,37 @@ function submitChangePassword() {
     errEl.textContent = 'New password must be different from current password.';
     return;
   }
-  if (!currentMemberKey) {
+  if (!currentGroup) {
     errEl.textContent = 'Session error. Please log in again.';
     return;
   }
 
-  var identityRef = db
-    .collection('groups')
-    .doc(currentGroup)
-    .collection('identities')
-    .doc(currentMemberKey);
-
-  identityRef
-    .get()
-    .then(function (snap) {
-      if (!snap.exists) {
-        errEl.textContent = 'Identity not found. Please log in again.';
-        return;
-      }
-      var identity = snap.data();
-
-      hashInput(currentPw, identity.passwordSalt).then(function (enteredHash) {
-        if (enteredHash !== identity.passwordHash) {
-          errEl.textContent = 'Current password is incorrect.';
-          return;
-        }
-
-        // Current password verified — generate new salt and hash
-        var newSalt = generateSalt();
-        hashInput(newPw, newSalt).then(function (newHash) {
-          identityRef
-            .update({
-              passwordSalt: newSalt,
-              passwordHash: newHash
-            })
-            .then(function () {
-              okEl.textContent = 'Password changed successfully!';
-              // Clear fields
-              ['cg-cp-current', 'cg-cp-new', 'cg-cp-confirm'].forEach(function (id) {
-                var el = document.getElementById(id);
-                if (el) el.value = '';
-              });
-            })
-            .catch(function (err) {
-              errEl.textContent = 'Error saving password: ' + err.message;
-            });
-        });
+  // Server-side verify + update (changePasswordV2). Client never reads or
+  // writes passwordHash/passwordSalt. Failed attempts use the same
+  // identity lockout as login; successes are rate-limited hourly.
+  var changePassword = firebase.functions().httpsCallable('changePasswordV2');
+  changePassword({
+    groupId: currentGroup,
+    currentPassword: currentPw,
+    newPassword: newPw
+  })
+    .then(function () {
+      okEl.textContent = 'Password changed successfully!';
+      ['cg-cp-current', 'cg-cp-new', 'cg-cp-confirm'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.value = '';
       });
     })
     .catch(function (err) {
-      errEl.textContent = 'Error reading identity: ' + err.message;
+      var code = err && err.code;
+      var msg = (err && err.message) || 'Unable to change password.';
+      if (code === 'resource-exhausted' || (msg && msg.indexOf('Too many') !== -1)) {
+        errEl.textContent = msg;
+      } else if (code === 'permission-denied' || (msg && msg.indexOf('Incorrect password') !== -1)) {
+        errEl.textContent = 'Current password is incorrect.';
+      } else {
+        errEl.textContent = msg;
+      }
     });
 }
 
@@ -4049,7 +4007,11 @@ function checkLiveBadge() {
 function openChurchAlerts() {
   showPage('church-alerts');
   if (currentUID) {
-    db.collection('users').doc(currentUID).update({ hasUnreadAlert: false });
+    // Server-side alert badge clear (client can no longer write hasUnreadAlert)
+    var updateState = firebase.functions().httpsCallable('updateClientUserStateV2');
+    updateState({ clearHasUnreadAlert: true }).catch(function (err) {
+      console.warn('clearHasUnreadAlert callable failed:', err && err.message);
+    });
   }
 
   const container = document.getElementById('church-alert-content');
