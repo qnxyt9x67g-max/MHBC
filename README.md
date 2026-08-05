@@ -23,7 +23,7 @@ Approved membership and admin status for security rules are mirrored in Auth cus
 
 All badge counts (unread messages + pending approvals) are managed server-side by Cloud Functions. Clients only read the final computed values — keeping badge-related Firestore costs near zero.
 
-Client writes to a user's own `users/{uid}` doc (badge-clearing, token registration) are restricted by Firestore rules to an explicit field whitelist. Since Firestore evaluates that whitelist against the *entire resulting document*, not just the fields being written, any new field added to `users/{uid}` anywhere in the codebase — client or Cloud Function — must also be added to that whitelist, or every future client write to that document will start silently failing.
+Client writes to a user's own `users/{uid}` doc are restricted by Firestore rules to an explicit field whitelist (primarily FCM token registration). Badge clears and related user-state updates go through server-side callables rather than direct client field writes. Since Firestore evaluates that whitelist against the *entire resulting document*, not just the fields being written, any new field added to `users/{uid}` that clients must write — client or Cloud Function — must also be added to that whitelist, or every future client write to that document will start silently failing.
 
 ### Messages & Offline Support
 
@@ -35,7 +35,7 @@ Powered by FCM through a service worker (`sw.js`). Background badge updates and 
 
 ### Abuse & Cost Protection
 
-The app includes layered safeguards — spanning Firestore security rules, Cloud Functions, Auth custom claims, and a billing-level kill switch — against spam, account abuse, scripted client abuse, and runaway Firebase costs. Sensitive paths (login, migration, room entry, members directory, and high-volume writes) are enforced server-side so client-only checks cannot be bypassed. Specifics are intentionally not documented here; see `DEPLOY_GUIDE.md` (not committed to this public repo) if you need the details.
+The app includes layered safeguards — spanning Firestore security rules, Cloud Functions, Auth custom claims, concurrent instance limits, and a billing-level kill switch — against spam, account abuse, scripted client abuse, and runaway Firebase costs. Sensitive paths (login, password changes, migration, room entry, members directory, badge updates, and high-volume writes) are enforced server-side so client-only checks cannot be bypassed. Specifics are intentionally not documented here; see the private deploy guide (not committed to this public repo) if you need the details.
 
 ## Emergency and Alternate Builds
 
@@ -72,12 +72,16 @@ Deploy **both** the emergency `index.html` and emergency `app.js` together for t
 | `migrateAllGroupsV2`           | Callable                  | Migrate all groups + tokens |
 | `migrateTokenV2`               | Callable                  | Migrate FCM token to new UID |
 | `getChurchAlertV2`             | HTTP request               | Public read-only endpoint for the latest church alert (used by the GitHub Pages front end) |
-| `spamTrapV2`                   | New identity document      | Abuse protection for account/identity creation |
-| `messageSpamTrapV2`            | Message create/edit        | Abuse protection for chat volume |
-| `alertSpamTrapV2`              | New church alert           | Abuse protection for church-alert volume |
-| `globalSpamTrapV2`             | New `users/{uid}` document | Abuse protection for app |
+| `spamTrapV2`                   | New identity document      | Abuse protection |
+| `messageSpamTrapV2`            | Message create/edit        | Abuse protection |
+| `alertSpamTrapV2`              | New church alert           | Abuse protection |
+| `globalSpamTrapV2`             | New `users/{uid}` document | Abuse protection |
+| `memberMutationSpamTrapV2`     | Member document change     | Abuse protection |
+| `identityUpdateSpamTrapV2`     | Identity document change   | Abuse protection |
 | `enterChatSessionV2`           | Callable                  | Server-side room entry / session grant |
 | `getMembersListV2`             | Callable                  | Server-side members directory (rate-limited) |
+| `changePasswordV2`             | Callable                  | Server-side password change |
+| `updateClientUserStateV2`      | Callable                  | Server-side badge / user-state updates |
 | `stopBillingV2`                | Pub/Sub (billing alert)    | Emergency billing kill switch |
 
 ## Files
