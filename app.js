@@ -233,9 +233,11 @@ function initFirebase() {
     if (firebase.appCheck) {
       var appCheck = firebase.appCheck();
       appCheck.activate(
-        '6Ld3PmstAAAAAHQK7P-u8QKlbRqVmuF5U029GsL9',
-        true // auto-refresh tokens
-      );
+  new firebase.appCheck.ReCaptchaEnterpriseProvider(
+    '6LdsonktAAAAAGtz_KLu0cSCd88NQ7oo1WaS-A9E'
+  ),
+  true // auto-refresh tokens
+);
     }
   } catch (e) {
     console.warn('App Check activate skipped:', e && e.message);
