@@ -234,7 +234,7 @@ function initFirebase() {
       var appCheck = firebase.appCheck();
       appCheck.activate(
   new firebase.appCheck.ReCaptchaEnterpriseProvider(
-    '6LdsonktAAAAAGtz_KLu0cSCd88NQ7oo1WaS-A9E'
+    '6LdsonktAAAAAGtz_KLu0cSCd88NQ7ooiWaS-A9E'
   ),
   true // auto-refresh tokens
 );
