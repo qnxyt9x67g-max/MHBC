@@ -1,7 +1,7 @@
 // MHBC Service Worker — app-shell caching only.
 // Firebase Cloud Messaging removed along with the rest of the Firebase
 // backend; C.A.R.E. Group chat now happens in Facebook Groups.
-const CACHE = 'mhbc124';
+const CACHE = 'mhbc125';
 
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './manifest.json'];
 
@@ -16,6 +16,18 @@ self.addEventListener('activate', (event) => {
       .keys()
       .then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
+      .then(() => {
+        // Belt-and-suspenders: clear any stale home screen badge left over
+        // from the old Firebase push system, in case this SW update runs
+        // before app.js gets a chance to. Support for the Badging API
+        // inside a service worker varies by browser, so this is a backup
+        // to the clearStaleAppBadge() call in app.js, not the primary fix.
+        if ('clearAppBadge' in navigator) {
+          return navigator.clearAppBadge().catch(() => {});
+        } else if ('setAppBadge' in navigator) {
+          return navigator.setAppBadge(0).catch(() => {});
+        }
+      })
   );
 });
 
