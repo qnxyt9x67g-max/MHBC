@@ -1,19 +1,7 @@
-importScripts('https://www.gstatic.com/firebasejs/12.17.1/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/12.17.1/firebase-messaging-compat.js');
-
-firebase.initializeApp({
-  apiKey: 'AIzaSyBYt5RR0YGB9u9n7QgvAGXnvmrb7-xTg-Y',
-  authDomain: 'mhbc-app.firebaseapp.com',
-  projectId: 'mhbc-app',
-  storageBucket: 'mhbc-app.firebasestorage.app',
-  messagingSenderId: '482094427911',
-  appId: '1:482094427911:web:7ed5ec06b716ae66a4dfa2'
-});
-
-const messaging = firebase.messaging();
-
-// MHBC Service Worker — caching + background notifications
-const CACHE = 'mhbc123';
+// MHBC Service Worker — app-shell caching only.
+// Firebase Cloud Messaging removed along with the rest of the Firebase
+// backend; C.A.R.E. Group chat now happens in Facebook Groups.
+const CACHE = 'mhbc124';
 
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './manifest.json'];
 
@@ -33,9 +21,6 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (e) => {
   // Only intercept same-origin requests (the app shell: HTML/CSS/JS/manifest).
-  // Everything else — Firestore, Auth, FCM, etc. — bypasses the service
-  // worker entirely so those SDKs handle their own network requests
-  // untouched.
   if (!e.request.url.startsWith(self.location.origin)) {
     return;
   }
@@ -55,25 +40,4 @@ self.addEventListener('fetch', (e) => {
       })
       .catch(() => caches.match(e.request))
   );
-});
-
-function updateClosedAppBadge(badgeCount) {
-  badgeCount = parseInt(badgeCount || '0', 10) || 0;
-
-  if (badgeCount > 0 && 'setAppBadge' in navigator) {
-    return navigator.setAppBadge(badgeCount).catch(function () {});
-  }
-
-  if (badgeCount <= 0 && 'clearAppBadge' in navigator) {
-    return navigator.clearAppBadge().catch(function () {});
-  }
-
-  return Promise.resolve();
-}
-
-messaging.onBackgroundMessage(function (payload) {
-  const badgeCount = (payload.data && payload.data.badge) || '0';
-
-  // Update iPhone/Mac installed-app badge while app is closed/backgrounded.
-  return updateClosedAppBadge(badgeCount);
 });
