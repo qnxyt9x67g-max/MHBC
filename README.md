@@ -1,97 +1,62 @@
 # MHBC App
 
-Private community app for members of **Maxwell Hill Baptist Church**, Beckley, WV.  
+Private community app for members of **Maxwell Hill Baptist Church**, Beckley, WV.
 Installed as a Progressive Web App (PWA) on iOS and Android.
 
 ## What It Does
 
-Members join one or more **C.A.R.E. Groups** (small groups), each with its own private chat room. The app includes threaded replies, message editing/deletion, a live members directory, church-wide alerts, push notifications, and Home Screen icon badges for unread counts.
+Members join one or more **C.A.R.E. Groups** (small groups). Tapping a group opens a
+simple screen with a link to that group's private Facebook Group (where the actual
+chat happens) and a link to that group's Praises & Prayer Requests sheet. The app also
+has a live-service badge, Bible reader, giving links, and general church info.
 
 **Rooms:** C101 · Narthex · Fellowship Hall 1st Floor · Fellowship Hall 2nd Floor · T.R.A.C.
 
 ## Architecture
 
-### Auth & Identity
+This is now a fully static site — no backend, no database, no accounts. C.A.R.E. Group
+chat, membership, and moderation are handled entirely by Facebook Groups instead of a
+custom Firebase backend.
 
-Firebase Anonymous Auth provides a trusted device/session UID. A separate name + password system (stored in Firestore) handles human identity, account recovery, and portability across devices. Passwords are salted (SHA-256) and verified entirely server-side by the `verifyLoginV2` Cloud Function — the client sends the plaintext password over HTTPS and never reads a stored hash or salt directly. Repeated failed attempts trigger a server-enforced lockout (10 attempts / 15 minutes, tracked on the identity doc) in addition to a client-side guard. Admin status is assigned manually in the Firebase console.
+`app.js` just handles page navigation, the Bible reader, the install QR code, the
+live-service badge (a plain day/time check, no server involved), and opening the right
+external link (Facebook group, prayer sheet, YouTube, giving portal, etc.) for whatever
+was tapped.
 
-Switching to a new device migrates a member's existing room membership(s) rather than creating a duplicate — an explicit login on one room verifies the password once and restores every other approved room automatically in the same step.
+`sw.js` is a minimal service worker that caches the app shell (HTML/CSS/JS/manifest)
+for offline/fast reloads. It no longer does anything Firebase- or push-notification-related.
 
-Approved membership and admin status for security rules are mirrored in Auth custom claims (kept in sync when member documents change), so routine permission checks do not require extra Firestore reads on every request.
-
-### Badges & Notifications
-
-All badge counts (unread messages + pending approvals) are managed server-side by Cloud Functions. Clients only read the final computed values — keeping badge-related Firestore costs near zero.
-
-Client writes to a user's own `users/{uid}` doc are restricted by Firestore rules to an explicit field whitelist (primarily FCM token registration). Badge clears and related user-state updates go through server-side callables rather than direct client field writes. Since Firestore evaluates that whitelist against the *entire resulting document*, not just the fields being written, any new field added to `users/{uid}` that clients must write — client or Cloud Function — must also be added to that whitelist, or every future client write to that document will start silently failing.
-
-### Messages & Offline Support
-
-Each room uses a hybrid cache: up to 500 recent messages stored in `localStorage` + live `onSnapshot` listeners. Switching rooms is instant if cached data is available. Entering a room goes through a short server-side session step so access stays tied to an approved, rate-aware open — message delivery itself remains realtime.
-
-### Push Notifications
-
-Powered by FCM through a service worker (`sw.js`). Background badge updates and notifications are handled by Cloud Functions sending data payloads.
-
-### Abuse & Cost Protection
-
-The app includes layered safeguards — spanning Firestore security rules, Cloud Functions, Auth custom claims, concurrent instance limits, and a billing-level kill switch — against spam, account abuse, scripted client abuse, and runaway Firebase costs. Sensitive paths (login, password changes, migration, room entry, members directory, badge updates, and high-volume writes) are enforced server-side so client-only checks cannot be bypassed. Specifics are intentionally not documented here; see the private deploy guide (not committed to this public repo) if you need the details.
-
-## Emergency and Alternate Builds
-
-To quickly respond to maintenance, outages, or special events, several pre-built emergency variants are maintained. These are **not** deployed by default; swap them in place of the normal files only when needed.
-
-**Frontend Shell (`index.html` variants)**
-- `Index_html_emergency_shutdown.html` — Dims the Church Alerts quick-access button and the C.A.R.E. Groups bottom-nav button (`data-maintenance` + reduced opacity). Pair with the matching `app.js` variant so taps show a short “Temporarily unavailable” toast and do not open those screens.
-
-**Frontend Logic (`app.js` variants)**
-- `app_js_emergency_shutdown.js` — On Church Alerts, C.A.R.E. nav, and room-select taps: shows a “Temporarily unavailable” toast and does not open those features. LIVE service badge still follows the normal schedule.
-- `app_js_no_live_service.js` — Forces the LIVE badge off (and clears live styling on Watch / YouTube / Facebook). Chat, alerts, and the rest of the app work normally.
-- `app_js_emergency_shutdown_and_no_live_service.js` — Both of the above together.
-
-Deploy **both** the emergency `index.html` and emergency `app.js` together for the client-side Care Groups / Church Alerts lockout. The HTML dims the buttons; the JS blocks navigation and shows the toast.
-
-**Firestore rules variant**
-- `Emergency_shut_down_Firestore_rules.txt` — Optional tighter rules for a deeper lockout at the database layer. Use only if you also need server-side denial of the corresponding writes/reads; otherwise the HTML + `app.js` pair is enough for the UI lockout described above.
-
-**Backend Functions (`index.js` variants)**
-- `index_js_emergency_shutdown.js` — Global kill switch (disables all triggers)
-- `index_js_no_service_reminders.js` — Keeps chat & alerts active but disables automated reminders
-
-## Cloud Functions
-
-| Function                        | Trigger                  | Purpose |
-|--------------------------------|---------------------------|-------|
-| `onNewMessageV2`               | New message document      | Update unread counts and send push notifications |
-| `onMemberRequestChangedV2`     | Member document change    | Manage pending approvals and send admin notifications |
-| `onChurchAlertCreatedV2`       | New church alert          | Broadcast alert and update badges |
-| `sundayServiceReminderV2`      | Cron (Sun 9:00 AM ET)     | Pre-service reminder |
-| `wednesdayServiceReminderV2`   | Cron (Wed 6:30 PM ET)     | Pre-service reminder |
-| `verifyLoginV2`                | Callable                  | Server-side room + personal password verification and lockout |
-| `migrateUidV2`                 | Callable                  | Migrate single group membership (kept deployed for compatibility; not currently called by the login flow, which now uses `migrateAllGroupsV2` alone) |
-| `migrateAllGroupsV2`           | Callable                  | Migrate all groups + tokens |
-| `migrateTokenV2`               | Callable                  | Migrate FCM token to new UID |
-| `getChurchAlertV2`             | HTTP request               | Public read-only endpoint for the latest church alert (used by the GitHub Pages front end) |
-| `spamTrapV2`                   | New identity document      | Abuse protection |
-| `messageSpamTrapV2`            | Message create/edit        | Abuse protection |
-| `alertSpamTrapV2`              | New church alert           | Abuse protection |
-| `globalSpamTrapV2`             | New `users/{uid}` document | Abuse protection |
-| `memberMutationSpamTrapV2`     | Member document change     | Abuse protection |
-| `identityUpdateSpamTrapV2`     | Identity document change   | Abuse protection |
-| `enterChatSessionV2`           | Callable                  | Server-side room entry / session grant |
-| `getMembersListV2`             | Callable                  | Server-side members directory (rate-limited) |
-| `changePasswordV2`             | Callable                  | Server-side password change |
-| `updateClientUserStateV2`      | Callable                  | Server-side badge / user-state updates |
-| `stopBillingV2`                | Pub/Sub (billing alert)    | Emergency billing kill switch |
+Church Alerts is currently a "Coming soon" placeholder — not wired to anything yet.
 
 ## Files
 
-| File                | Purpose |
-|---------------------|---------|
-| `index.html`        | Main app shell |
-| `app.js`            | Core client logic |
-| `styles.css`        | All styling |
-| `sw.js`             | Service worker (caching + background FCM) |
-| `manifest.json`     | PWA configuration |
-| `index.js`          | Cloud Functions (backend logic) |
-| `firestore.rules`   | Security rules |
+| File            | Purpose                                    |
+| ---------------- | ------------------------------------------ |
+| `index.html`     | Main app shell                             |
+| `app.js`         | All client logic                           |
+| `styles.css`     | All styling                                |
+| `sw.js`          | Service worker (app-shell caching only)    |
+| `manifest.json`  | PWA configuration                          |
+
+## No Longer Used
+
+These files belonged to the old Firebase-backed chat/login/notifications system and can
+be deleted from the repo — there's nothing in the new app that reads them:
+
+- `index.js` (Cloud Functions)
+- `firestore.rules`
+- `Spam_resistance_deploy_guide.md` (a.k.a. `DEPLOY_GUIDE.md`)
+- `backfill_approved_claims.js` (one-off migration script, if still present)
+- Emergency/alternate build variants, since they were all built on top of the old
+  Firebase-dependent `index.html` / `app.js` / `index.js`:
+  - `Index_html_emergency_shutdown.html`
+  - `app_js_emergency_shutdown.js`
+  - `app_js_no_live_service.js`
+  - `app_js_emergency_shutdown_and_no_live_service.js`
+  - `Emergency_shut_down_Firestore_rules.txt`
+  - `index_js_emergency_shutdown.js`
+  - `index_js_no_service_reminders.js`
+
+Any Firebase project resources (Firestore database, Cloud Functions, Authentication,
+Cloud Messaging, App Check, the billing kill switch) can also be torn down in the
+Firebase console once this is deployed, since nothing in the app talks to Firebase anymore.
