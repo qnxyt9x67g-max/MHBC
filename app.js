@@ -202,6 +202,21 @@ function tryGenerateQR() {
   }
 }
 
+// ---- CLEAR STALE HOME SCREEN BADGE ----
+// The old Firebase-based system set (and cleared) the home screen icon
+// badge server-side via Cloud Functions. That backend is gone, so any
+// unread count a member had showing on their icon before the cutover
+// will never get zeroed out on its own. Proactively clear it every time
+// the app opens. Safe to call even where the Badging API isn't supported
+// (iOS 16.4+ and Chromium browsers support it for installed PWAs).
+function clearStaleAppBadge() {
+  if ('clearAppBadge' in navigator) {
+    navigator.clearAppBadge().catch(function () {});
+  } else if ('setAppBadge' in navigator) {
+    navigator.setAppBadge(0).catch(function () {});
+  }
+}
+
 // ---- LIVE SERVICE BADGE ----
 function checkLiveBadge() {
   var now = new Date();
@@ -356,6 +371,7 @@ window.onload = function () {
     });
   }
 
+  clearStaleAppBadge();
   checkLiveBadge();
   setInterval(checkLiveBadge, 60000);
   tryGenerateQR();
