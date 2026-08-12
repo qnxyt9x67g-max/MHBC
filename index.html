@@ -131,11 +131,9 @@
             <span>Church Directory</span>
           </button>
 
-          <!-- CHURCH ALERTS -->
-          <button class="quick-btn" data-action="church-alerts" id="church-alerts-quick-btn">
-            <span class="quick-icon">📣</span>
-            <span>Church Alerts</span>
-            <span class="quick-btn-badge" id="badge-church-alerts" style="display: none">1</span>
+          <button class="quick-btn" data-url="https://maxwellhillbaptistchurch.com">
+            <span class="quick-icon">🌐</span>
+            <span>Church Website</span>
           </button>
         </div>
 
@@ -153,10 +151,6 @@
             <div class="install-row">
               🖥️ <strong>PC (Chrome/Edge):</strong> Click the install icon in the address bar or menu then "Install App"
             </div>
-            <div class="install-row">
-              🔔 After installing, tap "More" then "Enable Notifications" to stay connected!
-            </div>
-
             <a class="install-link" href="https://app.maxwellhillbaptistchurch.com/" target="_blank"
               >https://app.maxwellhillbaptistchurch.com/</a
             >
@@ -426,142 +420,62 @@
             <button class="cg-group-btn" data-group="c101" data-name="C101">
               <span class="cg-group-icon">🏫</span>
               <span class="cg-group-name">C101</span>
-              <span class="cg-badge" id="badge-c101" style="display: none"></span>
               <span class="cg-arrow">›</span>
             </button>
             <button class="cg-group-btn" data-group="narthex" data-name="Narthex">
               <span class="cg-group-icon">⛪</span>
               <span class="cg-group-name">Narthex</span>
-              <span class="cg-badge" id="badge-narthex" style="display: none"></span>
               <span class="cg-arrow">›</span>
             </button>
             <button class="cg-group-btn" data-group="fellowship1" data-name="Fellowship Hall 1st Floor">
               <span class="cg-group-icon">🏠</span>
               <span class="cg-group-name">Fellowship Hall 1st Floor</span>
-              <span class="cg-badge" id="badge-fellowship1" style="display: none"></span>
               <span class="cg-arrow">›</span>
             </button>
             <button class="cg-group-btn" data-group="fellowship2" data-name="Fellowship Hall 2nd Floor">
               <span class="cg-group-icon">🏠</span>
               <span class="cg-group-name">Fellowship Hall 2nd Floor</span>
-              <span class="cg-badge" id="badge-fellowship2" style="display: none"></span>
               <span class="cg-arrow">›</span>
             </button>
             <button class="cg-group-btn" data-group="trac" data-name="T.R.A.C.">
               <span class="cg-group-icon">🎓</span>
               <span class="cg-group-name">T.R.A.C.</span>
-              <span class="cg-badge" id="badge-trac" style="display: none"></span>
               <span class="cg-arrow">›</span>
             </button>
           </div>
-          <div class="cg-info-note">
-            Each group requires a room password. Your name and password are saved on this device after first login.
-          </div>
+          <div class="cg-info-note">Tap a group to open its private Facebook group.</div>
         </div>
 
-        <!-- SCREEN 2: LOGIN -->
-        <div id="cg-login-screen" style="display: none">
+        <!-- SCREEN 2: ROOM DETAIL -->
+        <div id="cg-room-screen" style="display: none">
           <div class="cg-login-header">
             <button class="cg-back-btn" id="cg-back-to-select">← Back</button>
-            <div class="cg-login-title" id="cg-login-title">C101</div>
-          </div>
-          <div class="cg-login-box">
-            <div class="cg-login-label">Room Password</div>
-            <div class="cg-input-wrap">
-              <input type="password" class="cg-input" id="cg-room-password" name="room-password" placeholder="Enter room password" autocomplete="new-password" readonly data-1p-ignore data-lpignore="true" data-bwignore="true" />
-              <button class="cg-eye-btn" id="cg-eye-room">👀</button>
-            </div>
-            <div class="cg-login-label">Your Full Name</div>
-            <input type="text" class="cg-input" id="cg-user-name" name="username" placeholder="e.g. John Smith" autocomplete="username" />
-            <div class="cg-login-label">Your Password</div>
-            <div class="cg-input-wrap">
-              <input type="password" class="cg-input" id="cg-user-pin" name="user-password" placeholder="Individual password" autocomplete="current-password" />
-              <button class="cg-eye-btn" id="cg-eye-pin">👀</button>
-            </div>
-            <div class="cg-login-note">
-                            First time? Create a password you'll remember. Returning? Enter your existing password. Forgot password? Text <a href="tel:3046853130" style="color: #c9a84c; text-decoration: none;">(304) 685-3130</a> and ask for a reset!
-            </div>
-            <button class="cg-login-btn" id="cg-login-submit">Log In</button>
-            <div class="cg-login-error" id="cg-login-error"></div>
-          </div>
-        </div>
-
-        <!-- SCREEN 3: PENDING APPROVAL -->
-        <div id="cg-pending-screen" style="display: none">
-          <div class="cg-login-header">
-            <button class="cg-back-btn" id="cg-back-to-select-pending">← Back</button>
-            <div class="cg-login-title" id="cg-pending-title">C101</div>
-          </div>
-          <div class="cg-pending-box">
-            <div class="cg-pending-icon">⏳</div>
-            <div class="cg-pending-msg" id="cg-pending-msg">
-              Your request to join has been sent! Your group leader will approve you shortly.
-            </div>
-            <button class="cg-login-btn" id="cg-check-btn">Check Again</button>
-            <button class="cg-start-over-btn" id="cg-start-over-btn">Start Over</button>
-          </div>
-        </div>
-
-        <!-- SCREEN 4: CHAT -->
-        <div id="cg-chat-screen" style="display: none">
-          <div class="cg-chat-header">
-            <button class="cg-back-btn" id="cg-leave-chat">← Back</button>
-            <button id="cg-prayer-btn" class="cg-members-btn">Praises &amp; Prayer Requests</button>
-
-            <button id="cg-members-btn" class="cg-members-btn">
-              Members
-              <span id="members-badge" style="display: none"></span>
-            </button>
-          </div>
-          <div class="cg-messages" id="cg-messages">
-            <div class="cg-loading">Loading messages...</div>
-          </div>
-        </div>
-
-        <!-- SCREEN 5: MEMBERS -->
-        <div id="cg-members-screen" style="display: none">
-          <button id="church-alert-btn" class="cg-admin-alert-btn" style="display: none">📣 Send Church Alert</button>
-
-          <div class="cg-members-header">
-            <button class="cg-back-btn" id="cg-back-to-chat-members">← Back to Chat</button>
-            <span class="cg-members-title">MEMBERS</span>
-            <button class="cg-change-pw-btn" id="cg-change-pw-btn">Change<br />Password</button>
+            <div class="cg-login-title" id="cg-room-title">C101</div>
           </div>
 
-          <div id="members-list">
-            <div class="cg-loading">Loading...</div>
+          <div class="section-label">FACEBOOK GROUP</div>
+          <div class="yt-launch-card" id="cg-room-fb-launch" style="border-color: rgba(24, 119, 242, 0.4); background: #0a0a1a">
+            <div class="yt-launch-icon">
+              <img src="Facebook_Logo_Primary.png" width="52" height="52" alt="Facebook" />
+            </div>
+            <div class="yt-launch-text">
+              <div class="yt-launch-title" id="cg-room-fb-title">C101</div>
+              <div class="yt-launch-sub" id="cg-room-fb-sub">Tap to open C101's Private Facebook Group</div>
+            </div>
+            <div class="yt-launch-arrow">›</div>
           </div>
-        </div>
 
-        <!-- SCREEN 6: CHANGE PASSWORD -->
-        <div id="cg-changepassword-screen" style="display: none">
-          <div class="cg-login-header">
-            <button class="cg-back-btn" id="cg-back-to-members-from-cp">← Back</button>
-            <div class="cg-login-title">Change Password</div>
+          <div class="section-label">PRAISES &amp; PRAYER REQUESTS</div>
+          <div class="yt-launch-card" id="cg-room-prayer-launch" style="border-color: rgba(201, 168, 76, 0.4); background: #0a0a1a">
+            <div class="yt-launch-icon" style="font-size: 32px">🙏</div>
+            <div class="yt-launch-text">
+              <div class="yt-launch-title">Praises &amp; Prayer Requests</div>
+              <div class="yt-launch-sub">Tap to open this group's list</div>
+            </div>
+            <div class="yt-launch-arrow">›</div>
           </div>
-          <div class="cg-login-box">
-            <div class="cg-login-label">Current Password</div>
-            <div class="cg-input-wrap">
-              <input type="password" class="cg-input" id="cg-cp-current" placeholder="Enter current password" />
-              <button class="cg-eye-btn" id="cg-cp-eye-current">👀</button>
-            </div>
-            <div class="cg-login-label">New Password</div>
-            <div class="cg-input-wrap">
-              <input type="password" class="cg-input" id="cg-cp-new" placeholder="Enter new password" />
-              <button class="cg-eye-btn" id="cg-cp-eye-new">👀</button>
-            </div>
-            <div class="cg-login-label">Confirm New Password</div>
-            <div class="cg-input-wrap">
-              <input type="password" class="cg-input" id="cg-cp-confirm" placeholder="Confirm new password" />
-              <button class="cg-eye-btn" id="cg-cp-eye-confirm">👀</button>
-            </div>
-            <div class="cg-cp-btn-row">
-              <button class="cg-cancel-btn" id="cg-cp-cancel">Cancel</button>
-              <button class="cg-login-btn cg-cp-confirm-btn" id="cg-cp-submit">Confirm</button>
-            </div>
-            <div class="cg-login-error" id="cg-cp-error"></div>
-            <div class="cg-cp-success" id="cg-cp-success"></div>
-          </div>
+
+          <div class="footer-note">© Maxwell Hill Baptist Church · Beckley, WV</div>
         </div>
       </div>
 
@@ -613,25 +527,25 @@
             ><span class="link-arrow">›</span>
           </a>
           <a class="link-row" href="https://maxwellhillbaptistchurch.com/c-a-r-e-groups/" target="_blank">
-  <span class="link-icon gold">🤝</span><span class="link-label">C.A.R.E. Groups Info</span
-  ><span class="link-arrow">›</span>
-</a>
-<a class="link-row" href="https://maxwellhillbaptistchurch.com/nursery/" target="_blank">
-  <span class="link-icon gold">🍼</span><span class="link-label">Nursery</span
-  ><span class="link-arrow">›</span>
-</a>
-<a class="link-row" href="https://maxwellhillbaptistchurch.com/toddlers/" target="_blank">
-  <span class="link-icon gold">👶</span><span class="link-label">Toddlers</span
-  ><span class="link-arrow">›</span>
-</a>
-<a class="link-row" href="https://maxwellhillbaptistchurch.com/elementary/" target="_blank">
-  <span class="link-icon gold">🎒</span><span class="link-label">Elementary</span
-  ><span class="link-arrow">›</span>
-</a>
-<a class="link-row" href="https://maxwellhillbaptistchurch.com/trac/" target="_blank">
-  <span class="link-icon gold">🎓</span><span class="link-label">TRAC Youth Ministry</span
-  ><span class="link-arrow">›</span>
-</a>
+            <span class="link-icon gold">🤝</span><span class="link-label">C.A.R.E. Groups Info</span
+            ><span class="link-arrow">›</span>
+          </a>
+          <a class="link-row" href="https://maxwellhillbaptistchurch.com/nursery/" target="_blank">
+            <span class="link-icon gold">🍼</span><span class="link-label">Nursery</span
+            ><span class="link-arrow">›</span>
+          </a>
+          <a class="link-row" href="https://maxwellhillbaptistchurch.com/toddlers/" target="_blank">
+            <span class="link-icon gold">👶</span><span class="link-label">Toddlers</span
+            ><span class="link-arrow">›</span>
+          </a>
+          <a class="link-row" href="https://maxwellhillbaptistchurch.com/elementary/" target="_blank">
+            <span class="link-icon gold">🎒</span><span class="link-label">Elementary</span
+            ><span class="link-arrow">›</span>
+          </a>
+          <a class="link-row" href="https://maxwellhillbaptistchurch.com/trac/" target="_blank">
+            <span class="link-icon gold">🎓</span><span class="link-label">TRAC Youth Ministry</span
+            ><span class="link-arrow">›</span>
+          </a>
         </div>
         <div class="section-label">RESOURCES</div>
         <div class="link-list">
@@ -652,16 +566,6 @@
             <span class="link-label">Church Calendar</span>
             <span class="link-arrow">›</span>
           </a>
-          <div class="link-row" id="enableChurchNotificationsRow">
-            <span class="link-icon">🔔</span>
-            <span class="link-label">Enable Notifications</span>
-            <span class="link-arrow">›</span>
-          </div>
-          <div class="link-row" id="manageNotificationsRow">
-            <span class="link-icon">⚙️</span>
-            <span class="link-label">Manage Notifications</span>
-            <span class="link-arrow">›</span>
-          </div>
         </div>
         <div class="section-label">CONTACT</div>
         <div class="contact-card">
@@ -675,50 +579,6 @@
           >
         </div>
         <div class="footer-note">© Maxwell Hill Baptist Church · Beckley, WV<br />Built with ♥ for the MHBC family</div>
-      </div>
-      <!-- MANAGE NOTIFICATIONS SCREEN -->
-      <div class="page" id="page-manage-notifications">
-        <div style="padding: 14px 18px 0">
-          <button class="cg-back-btn" id="manage-notifications-back">← Back</button>
-        </div>
-        <div class="page-title-bar"><h2 class="page-title">Manage Notifications</h2></div>
-        <div class="section-label">📱 IPHONE / IOS</div>
-        <div class="contact-card" style="margin: 0 14px 14px">
-          <ol style="margin: 0; padding-left: 20px; line-height: 1.9; font-size: 14px; color: var(--text)">
-            <li>Open the <strong>Settings</strong> app.</li>
-            <li>Scroll down and tap <strong>Notifications</strong>.</li>
-            <li>Scroll down and tap <strong>MHBC</strong> in the list of apps.</li>
-            <li>Adjust your preferences (sounds, banners, badges, and more).</li>
-          </ol>
-          <div class="contact-row" style="font-style: italic; color: var(--gold-light); line-height: 1.5; margin-top: 10px">
-            Tip: You can leave Badges and Banners turned on and simply disable Sounds and Vibration if you'd prefer
-            quieter alerts.
-          </div>
-        </div>
-        <div class="section-label">🤖 ANDROID</div>
-        <div class="contact-card" style="margin: 0 14px 14px">
-          <ol style="margin: 0; padding-left: 20px; line-height: 1.9; font-size: 14px; color: var(--text)">
-            <li>Open the <strong>Settings</strong> app.</li>
-            <li>Tap <strong>Apps</strong> (or <strong>Apps &amp; notifications</strong>).</li>
-            <li>
-              Tap <strong>MHBC</strong> in the list. If it isn't listed separately, check under the browser you used
-              to install the app — usually <strong>Chrome</strong>.
-            </li>
-            <li>Tap <strong>Notifications</strong> and adjust your preferences.</li>
-          </ol>
-          <div class="contact-row" style="font-style: italic; color: var(--gold-light); line-height: 1.5; margin-top: 10px">
-            Tip: You can leave Badges and Banners turned on and simply disable Sounds and Vibration if you'd prefer
-            quieter alerts.
-          </div>
-        </div>
-        <div class="footer-note">Notification delivery is controlled by your device's system settings, not the app itself.</div>
-      </div>
-      <!-- CHURCH ALERTS SCREEN -->
-      <div class="page" id="page-church-alerts">
-        <div class="page-title-bar">
-          <h2 class="page-title">Church Alerts</h2>
-        </div>
-        <div id="church-alert-content" style="padding: 14px"></div>
       </div>
     </div>
     <!-- end page-wrapper -->
@@ -738,10 +598,7 @@
         <span class="nav-label">Bible</span>
       </button>
       <button class="nav-btn" data-page="care">
-        <span class="nav-icon" style="position: relative"
-          >💬
-          <span class="nav-badge" id="nav-badge-care" style="display: none"></span>
-        </span>
+        <span class="nav-icon">💬</span>
         <span class="nav-label-stacked"><span>C.A.R.E.</span><span>Groups</span></span>
       </button>
       <button class="nav-btn" data-page="more">
@@ -750,39 +607,8 @@
       </button>
     </nav>
 
-    <!-- INPUT BAR -->
-    <div class="cg-input-bar" id="cg-input-bar" style="display: none">
-      <div class="cg-reply-bar" id="cg-reply-bar" style="display: none">
-        <span class="cg-reply-label" id="cg-reply-label">Replying to...</span>
-        <button class="cg-reply-cancel" id="cg-reply-cancel">✕</button>
-      </div>
-      <div class="cg-input-row">
-        <textarea class="cg-msg-input" id="cg-msg-input" placeholder="Type a message..." rows="1"></textarea>
-
-        <button class="cg-send-btn" id="cg-send-btn">Send</button>
-      </div>
-    </div>
-    <div id="church-alert-modal" class="church-alert-modal" style="display: none">
-      <div class="church-alert-box">
-        <h3>Send Church Alert</h3>
-
-        <input id="church-alert-title" type="text" placeholder="Alert title" />
-
-        <textarea id="church-alert-body" placeholder="Alert message"></textarea>
-
-        <button id="church-alert-send">Send Alert</button>
-        <button id="church-alert-cancel">Cancel</button>
-      </div>
-    </div>
     <div class="toast" id="app-toast"></div>
-    <script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-messaging-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-functions-compat.js"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-app-check-compat.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
