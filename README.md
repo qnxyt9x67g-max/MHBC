@@ -23,6 +23,19 @@ live-service badge (a plain day/time check, no server involved), and opening the
 external link (Facebook group, prayer sheet, YouTube, giving portal, etc.) for whatever
 was tapped.
 
+### Canceling a service (snow day, etc.)
+
+Near the top of `app.js` there's a manual override flag:
+
+```js
+var LIVE_SERVICE_ENABLED = true;
+```
+
+If a service is canceled, edit this file in GitHub and change it to `false`. That
+stops the "live now" badge/pulse from showing during the normal service window, no
+matter what the day/time schedule says. Change it back to `true` once services
+resume as normal.
+
 `sw.js` is a minimal service worker that caches the app shell (HTML/CSS/JS/manifest)
 for offline/fast reloads. It no longer does anything Firebase- or push-notification-related.
 
