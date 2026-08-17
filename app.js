@@ -8,6 +8,14 @@
 // QR code, the live-service badge, and opening the right external links.
 // ============================================================
 
+// ---- LIVE SERVICE MANUAL OVERRIDE ----
+// Normally the "live now" badge/pulse turns on automatically based on the
+// day/time schedule below (see checkLiveBadge). If a service is canceled
+// (snow day, etc.), set this to false and the badge/pulse will stay off
+// no matter what the schedule says — even during the normal live window.
+// Set it back to true once services resume as normal.
+var LIVE_SERVICE_ENABLED = true;
+
 // ---- C.A.R.E. GROUP LINKS ----
 // Facebook group link + prayer/praise request sheet for each room.
 var ROOM_FB_LINKS = {
@@ -253,8 +261,9 @@ function checkLiveBadge() {
   var totalMins = hour * 60 + minute;
 
   var isServiceLive =
-    (day === 0 && totalMins >= 565 && totalMins <= 660) || // Sun 9:25–11:00
-    (day === 3 && totalMins >= 1135 && totalMins <= 1200); // Wed 6:55–8:00
+    LIVE_SERVICE_ENABLED &&
+    ((day === 0 && totalMins >= 565 && totalMins <= 660) || // Sun 9:25–11:00
+      (day === 3 && totalMins >= 1135 && totalMins <= 1200)); // Wed 6:55–8:00
 
   var badge = document.getElementById('liveBadge');
   if (badge) badge.style.display = isServiceLive ? 'flex' : 'none';
