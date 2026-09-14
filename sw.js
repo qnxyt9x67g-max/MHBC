@@ -1,7 +1,7 @@
 // MHBC Service Worker — app-shell caching only.
 // Firebase Cloud Messaging removed along with the rest of the Firebase
 // backend; C.A.R.E. Group chat now happens in Facebook Groups.
-const CACHE = 'mhbc126';
+const CACHE = 'mhbc127';
 
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './manifest.json'];
 
