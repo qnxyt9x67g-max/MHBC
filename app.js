@@ -23,7 +23,7 @@ var ROOM_FB_LINKS = {
   narthex: 'https://www.facebook.com/share/g/19Au7VGq6W/?mibextid=wwXIfr',
   fellowship1: 'https://www.facebook.com/share/g/1DkToTXiyq/?mibextid=wwXIfr',
   fellowship2: 'https://www.facebook.com/share/g/1Hq4o6F4hE/?mibextid=wwXIfr',
-  trac: 'https://www.facebook.com/share/g/196S56mPhH/?mibextid=wwXIfr'
+  musicroom: 'https://www.facebook.com/groups/1696813788441499/?ref=share&mibextid=wwXIfr&rdid=I4wLq3TqorNEK1AX&share_url=https%253A%252F%252Fwww.facebook.com%252Fshare%252Fg%252F1F4Qp2QKLe%252F%253Fmibextid%253DwwXIfr'
 };
 
 var PRAYER_LINKS = {
@@ -34,7 +34,7 @@ var PRAYER_LINKS = {
     'https://docs.google.com/spreadsheets/d/1Dw8g6q_dE-3ObNr5jbddJ5CIqnzo1NtbU3ZGjoTn1Ws/edit?usp=drivesdk',
   fellowship2:
     'https://docs.google.com/spreadsheets/d/1dVE3TlLK3svbtA2Qp-wxnQJE_ztXLwBzvCW32F0pDI8/edit?usp=drivesdk',
-  trac: 'https://docs.google.com/spreadsheets/d/1UlIxBJS2ZZlX5QnsjGIckcULLsZ6r7U6mNtaDVe3udQ/edit?usp=drivesdk'
+  musicroom: 'https://docs.google.com/spreadsheets/d/1UlIxBJS2ZZlX5QnsjGIckcULLsZ6r7U6mNtaDVe3udQ/edit?usp=drivesdk'
 };
 
 var currentRoomId = null;
@@ -49,8 +49,47 @@ function showToast(msg) {
   }, 2500);
 }
 
-function showComingSoon() {
-  showToast('Coming soon! 🎵');
+
+// ---- CHURCH DIRECTORY (my UCD app) ----
+function openChurchDirectory() {
+  var ua = navigator.userAgent || navigator.vendor || window.opera;
+  var isIOS =
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var isMac = /Macintosh|Mac OS X/.test(ua) && !isIOS;
+  var isAndroid = /Android/i.test(ua);
+  var isWindows = /Windows/i.test(ua);
+
+  var appScheme = 'com.ucdir.mobileapp://';
+  var appStore = 'https://apps.apple.com/app/universal-church-directory/id1005590097';
+  var playStore =
+    'https://play.google.com/store/apps/details?id=com.pivotcreates.universalchurchdirectory';
+  var webDirectory = 'https://directory.ucdir.com/';
+
+  // iPhone / iPad / Mac → try the app, fall back to App Store
+  if (isIOS || isMac) {
+    window.location.href = appScheme;
+    setTimeout(function () {
+      if (!document.hidden) {
+        window.location.href = appStore;
+      }
+    }, 1500);
+    return;
+  }
+
+  // Android → try the app, fall back to Play Store
+  if (isAndroid) {
+    window.location.href = appScheme;
+    setTimeout(function () {
+      if (!document.hidden) {
+        window.location.href = playStore;
+      }
+    }, 1500);
+    return;
+  }
+
+  // Windows (and everything else) → web directory
+  window.open(webDirectory, '_blank');
 }
 
 // ---- PAGE NAVIGATION ----
@@ -319,8 +358,13 @@ window.onload = function () {
       var action = this.getAttribute('data-action');
       var url = this.getAttribute('data-url');
 
-      if (action) showPage(action);
-      else if (url) window.open(url, '_blank');
+      if (action === 'directory') {
+        openChurchDirectory();
+      } else if (action) {
+        showPage(action);
+      } else if (url) {
+        window.open(url, '_blank');
+      }
     });
   });
 
