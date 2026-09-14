@@ -67,15 +67,16 @@ function openChurchDirectory() {
   var webDirectory = 'https://directory.ucdir.com/';
 
   // Shared helper: try the custom scheme, then fall back to a store URL if
-  // we're still on this page after a couple seconds. We deliberately do NOT
-  // listen for 'blur' here — on iOS, the native "Safari cannot open the
-  // page because the address is invalid" alert (shown when myUCD isn't
-  // installed) ALSO fires a window blur event, which was wrongly read as
-  // "the app opened" and canceled the store fallback before it ever ran.
-  // 'visibilitychange' (document.hidden) and 'pagehide' don't fire for that
-  // alert, only when the app actually opens and Safari backgrounds, so
-  // they're the reliable signals to cancel on.
-  function tryAppThenStore(storeUrl) {
+  // we're still on this page after a couple seconds. 'visibilitychange' and
+  // 'pagehide' are always the cancel signals. 'blur' is a THIRD, optional
+  // signal — pass useBlurSignal=true on platforms where losing window focus
+  // reliably means "the app opened" (e.g. Mac, where switching to the
+  // native app blurs Safari with no false positives). Leave it false on
+  // platforms like iOS, where the native "Safari cannot open the page
+  // because the address is invalid" alert (shown when myUCD isn't
+  // installed) ALSO fires blur — which would wrongly cancel the fallback
+  // for the exact case it's supposed to catch.
+  function tryAppThenStore(storeUrl, useBlurSignal) {
     var timer = setTimeout(function () {
       if (!document.hidden) {
         window.location.href = storeUrl;
@@ -86,6 +87,7 @@ function openChurchDirectory() {
       clearTimeout(timer);
       document.removeEventListener('visibilitychange', onVis);
       window.removeEventListener('pagehide', cancel);
+      if (useBlurSignal) window.removeEventListener('blur', cancel);
     }
 
     function onVis() {
@@ -94,25 +96,32 @@ function openChurchDirectory() {
 
     document.addEventListener('visibilitychange', onVis);
     window.addEventListener('pagehide', cancel, { once: true });
+    if (useBlurSignal) window.addEventListener('blur', cancel, { once: true });
 
     window.location.href = appScheme;
   }
 
-  // iPhone / iPad → try app, then fall back to App Store
+  // iPhone / iPad → try app, then fall back to App Store.
+  // No blur signal — see note above.
   if (isIOS) {
-    tryAppThenStore(appStore);
+    tryAppThenStore(appStore, false);
     return;
   }
 
-  // Mac → try app, fall back to App Store
+  // Mac → try app, fall back to App Store.
+  // Blur signal on — this is what correctly detected "already installed"
+  // here before.
   if (isMac) {
-    tryAppThenStore(appStore);
+    tryAppThenStore(appStore, true);
     return;
   }
 
-  // Android → try app, fall back to Play Store
+  // Android → try app, fall back to Play Store.
+  // Untested — defaulting to the same blur signal as Mac. If Android shows
+  // its own "can't open app" prompt the way iOS does, this branch would
+  // need the blur signal turned off too, same fix as iOS.
   if (isAndroid) {
-    tryAppThenStore(playStore);
+    tryAppThenStore(playStore, true);
     return;
   }
 
