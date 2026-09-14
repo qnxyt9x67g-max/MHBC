@@ -67,15 +67,18 @@ function openChurchDirectory() {
   var webDirectory = 'https://directory.ucdir.com/';
 
   // How long to wait for the app to open before giving up and sending the
-  // user to the store. Was 2000ms (safe but sluggish), tried 800ms (snappy
-  // but tight). 1000ms is the middle ground — still nearly twice as fast
-  // as the original, with more headroom for a slower launch (especially on
-  // Android, which is untested) before it risks a false trip to the store.
+  // user to the store. 1000ms works well on iOS/Android, where the OS
+  // resolves the scheme (success or failure) almost instantly. Mac gets its
+  // own, longer delay below — a native app's cold-launch there can take a
+  // bit longer than mobile's OS-level handoff, and 1000ms was occasionally
+  // outrunning a slow myUCD launch and sending people to the App Store even
+  // though the app was about to open fine.
   var STORE_FALLBACK_DELAY_MS = 1000;
+  var MAC_STORE_FALLBACK_DELAY_MS = 1500;
 
   // Shared helper: try the custom scheme, then fall back to a store URL if
-  // we're still on this page after STORE_FALLBACK_DELAY_MS. 'visibilitychange'
-  // and 'pagehide' are always the cancel signals. 'blur' is a THIRD, optional
+  // we're still on this page after delayMs. 'visibilitychange' and
+  // 'pagehide' are always the cancel signals. 'blur' is a THIRD, optional
   // signal — pass useBlurSignal=true on platforms where losing window focus
   // reliably means "the app opened" (e.g. Mac, where switching to the
   // native app blurs Safari with no false positives). Leave it false on
@@ -83,12 +86,12 @@ function openChurchDirectory() {
   // because the address is invalid" alert (shown when myUCD isn't
   // installed) ALSO fires blur — which would wrongly cancel the fallback
   // for the exact case it's supposed to catch.
-  function tryAppThenStore(storeUrl, useBlurSignal) {
+  function tryAppThenStore(storeUrl, useBlurSignal, delayMs) {
     var timer = setTimeout(function () {
       if (!document.hidden) {
         window.location.href = storeUrl;
       }
-    }, STORE_FALLBACK_DELAY_MS);
+    }, delayMs);
 
     function cancel() {
       clearTimeout(timer);
@@ -111,15 +114,15 @@ function openChurchDirectory() {
   // iPhone / iPad → try app, then fall back to App Store.
   // No blur signal — see note above.
   if (isIOS) {
-    tryAppThenStore(appStore, false);
+    tryAppThenStore(appStore, false, STORE_FALLBACK_DELAY_MS);
     return;
   }
 
   // Mac → try app, fall back to App Store.
   // Blur signal on — this is what correctly detected "already installed"
-  // here before.
+  // here before. Longer delay — see note above.
   if (isMac) {
-    tryAppThenStore(appStore, true);
+    tryAppThenStore(appStore, true, MAC_STORE_FALLBACK_DELAY_MS);
     return;
   }
 
@@ -128,7 +131,7 @@ function openChurchDirectory() {
   // its own "can't open app" prompt the way iOS does, this branch would
   // need the blur signal turned off too, same fix as iOS.
   if (isAndroid) {
-    tryAppThenStore(playStore, true);
+    tryAppThenStore(playStore, true, STORE_FALLBACK_DELAY_MS);
     return;
   }
 
