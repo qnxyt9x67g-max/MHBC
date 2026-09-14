@@ -66,47 +66,48 @@ function openChurchDirectory() {
     'https://play.google.com/store/apps/details?id=com.pivotcreates.universalchurchdirectory';
   var webDirectory = 'https://directory.ucdir.com/';
 
-    // iPhone / iPad / Mac → try the app, fall back to App Store only if it didn't open
-  if (isIOS || isMac) {
-    var appOpened = false;
+  // iPhone / iPad → try app, then fall back to App Store
+  // (the “address is invalid” dialog is unavoidable when the app is missing)
+  if (isIOS) {
+    var storeTimer = setTimeout(function () {
+      window.location.href = appStore;
+    }, 2000);
 
-    function markOpened() {
-      appOpened = true;
-      window.removeEventListener('blur', markOpened);
-      window.removeEventListener('pagehide', markOpened);
-      document.removeEventListener('visibilitychange', onVisibility);
+    function cancelStore() {
+      clearTimeout(storeTimer);
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('pagehide', cancelStore);
+      window.removeEventListener('blur', cancelStore);
     }
 
-    function onVisibility() {
-      if (document.hidden) markOpened();
+    function onVis() {
+      if (document.hidden) cancelStore();
     }
 
-    window.addEventListener('blur', markOpened);
-    window.addEventListener('pagehide', markOpened);
-    document.addEventListener('visibilitychange', onVisibility);
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('pagehide', cancelStore);
+    window.addEventListener('blur', cancelStore);
 
     window.location.href = appScheme;
-
-    setTimeout(function () {
-      window.removeEventListener('blur', markOpened);
-      window.removeEventListener('pagehide', markOpened);
-      document.removeEventListener('visibilitychange', onVisibility);
-
-      if (!appOpened && !document.hidden) {
-        window.location.href = appStore;
-      }
-    }, 2000);
     return;
   }
 
-  // Android → try the app, fall back to Play Store
-  if (isAndroid) {
-    window.location.href = appScheme;
-    setTimeout(function () {
+  // Mac → try app, fall back to App Store (works cleanly on Mac)
+  if (isMac) {
+    var storeTimerMac = setTimeout(function () {
       if (!document.hidden) {
-        window.location.href = playStore;
+        window.location.href = appStore;
       }
-    }, 1500);
+    }, 2000);
+
+    window.addEventListener('blur', function () {
+      clearTimeout(storeTimerMac);
+    }, { once: true });
+    window.addEventListener('pagehide', function () {
+      clearTimeout(storeTimerMac);
+    }, { once: true });
+
+    window.location.href = appScheme;
     return;
   }
 
