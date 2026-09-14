@@ -23,7 +23,7 @@ var ROOM_FB_LINKS = {
   narthex: 'https://www.facebook.com/share/g/19Au7VGq6W/?mibextid=wwXIfr',
   fellowship1: 'https://www.facebook.com/share/g/1DkToTXiyq/?mibextid=wwXIfr',
   fellowship2: 'https://www.facebook.com/share/g/1Hq4o6F4hE/?mibextid=wwXIfr',
-  room: 'https://www.facebook.com/share/g/185NBEvPWX/?mibextid=wwXIfr'
+  musicroom: 'https://www.facebook.com/share/g/185NBEvPWX/?mibextid=wwXIfr'
 };
 
 var PRAYER_LINKS = {
