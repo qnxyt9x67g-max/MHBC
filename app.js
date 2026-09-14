@@ -23,7 +23,7 @@ var ROOM_FB_LINKS = {
   narthex: 'https://www.facebook.com/share/g/19Au7VGq6W/?mibextid=wwXIfr',
   fellowship1: 'https://www.facebook.com/share/g/1DkToTXiyq/?mibextid=wwXIfr',
   fellowship2: 'https://www.facebook.com/share/g/1Hq4o6F4hE/?mibextid=wwXIfr',
-  musicroom: 'https://www.facebook.com/groups/1696813788441499/?ref=share&mibextid=wwXIfr&rdid=I4wLq3TqorNEK1AX&share_url=https%253A%252F%252Fwww.facebook.com%252Fshare%252Fg%252F1F4Qp2QKLe%252F%253Fmibextid%253DwwXIfr'
+  room: 'https://www.facebook.com/share/g/185NBEvPWX/?mibextid=wwXIfr'
 };
 
 var PRAYER_LINKS = {
@@ -34,7 +34,7 @@ var PRAYER_LINKS = {
     'https://docs.google.com/spreadsheets/d/1Dw8g6q_dE-3ObNr5jbddJ5CIqnzo1NtbU3ZGjoTn1Ws/edit?usp=drivesdk',
   fellowship2:
     'https://docs.google.com/spreadsheets/d/1dVE3TlLK3svbtA2Qp-wxnQJE_ztXLwBzvCW32F0pDI8/edit?usp=drivesdk',
-  musicroom: 'https://docs.google.com/spreadsheets/d/1UlIxBJS2ZZlX5QnsjGIckcULLsZ6r7U6mNtaDVe3udQ/edit?usp=drivesdk'
+  room: 'https://docs.google.com/spreadsheets/d/1UlIxBJS2ZZlX5QnsjGIckcULLsZ6r7U6mNtaDVe3udQ/edit?usp=drivesdk'
 };
 
 var currentRoomId = null;
