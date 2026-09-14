@@ -66,14 +66,36 @@ function openChurchDirectory() {
     'https://play.google.com/store/apps/details?id=com.pivotcreates.universalchurchdirectory';
   var webDirectory = 'https://directory.ucdir.com/';
 
-  // iPhone / iPad / Mac → try the app, fall back to App Store
+    // iPhone / iPad / Mac → try the app, fall back to App Store only if it didn't open
   if (isIOS || isMac) {
+    var appOpened = false;
+
+    function markOpened() {
+      appOpened = true;
+      window.removeEventListener('blur', markOpened);
+      window.removeEventListener('pagehide', markOpened);
+      document.removeEventListener('visibilitychange', onVisibility);
+    }
+
+    function onVisibility() {
+      if (document.hidden) markOpened();
+    }
+
+    window.addEventListener('blur', markOpened);
+    window.addEventListener('pagehide', markOpened);
+    document.addEventListener('visibilitychange', onVisibility);
+
     window.location.href = appScheme;
+
     setTimeout(function () {
-      if (!document.hidden) {
+      window.removeEventListener('blur', markOpened);
+      window.removeEventListener('pagehide', markOpened);
+      document.removeEventListener('visibilitychange', onVisibility);
+
+      if (!appOpened && !document.hidden) {
         window.location.href = appStore;
       }
-    }, 1500);
+    }, 2000);
     return;
   }
 
