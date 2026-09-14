@@ -66,9 +66,16 @@ function openChurchDirectory() {
     'https://play.google.com/store/apps/details?id=com.pivotcreates.universalchurchdirectory';
   var webDirectory = 'https://directory.ucdir.com/';
 
+  // How long to wait for the app to open before giving up and sending the
+  // user to the store. Was 2000ms (safe but sluggish), tried 800ms (snappy
+  // but tight). 1000ms is the middle ground — still nearly twice as fast
+  // as the original, with more headroom for a slower launch (especially on
+  // Android, which is untested) before it risks a false trip to the store.
+  var STORE_FALLBACK_DELAY_MS = 1000;
+
   // Shared helper: try the custom scheme, then fall back to a store URL if
-  // we're still on this page after a couple seconds. 'visibilitychange' and
-  // 'pagehide' are always the cancel signals. 'blur' is a THIRD, optional
+  // we're still on this page after STORE_FALLBACK_DELAY_MS. 'visibilitychange'
+  // and 'pagehide' are always the cancel signals. 'blur' is a THIRD, optional
   // signal — pass useBlurSignal=true on platforms where losing window focus
   // reliably means "the app opened" (e.g. Mac, where switching to the
   // native app blurs Safari with no false positives). Leave it false on
@@ -81,7 +88,7 @@ function openChurchDirectory() {
       if (!document.hidden) {
         window.location.href = storeUrl;
       }
-    }, 2000);
+    }, STORE_FALLBACK_DELAY_MS);
 
     function cancel() {
       clearTimeout(timer);
