@@ -34,7 +34,7 @@ var PRAYER_LINKS = {
     'https://docs.google.com/spreadsheets/d/1Dw8g6q_dE-3ObNr5jbddJ5CIqnzo1NtbU3ZGjoTn1Ws/edit?usp=drivesdk',
   fellowship2:
     'https://docs.google.com/spreadsheets/d/1dVE3TlLK3svbtA2Qp-wxnQJE_ztXLwBzvCW32F0pDI8/edit?usp=drivesdk',
-  room: 'https://docs.google.com/spreadsheets/d/1UlIxBJS2ZZlX5QnsjGIckcULLsZ6r7U6mNtaDVe3udQ/edit?usp=drivesdk'
+  musicroom: 'https://docs.google.com/spreadsheets/d/1UlIxBJS2ZZlX5QnsjGIckcULLsZ6r7U6mNtaDVe3udQ/edit?usp=drivesdk'
 };
 
 var currentRoomId = null;
@@ -66,48 +66,53 @@ function openChurchDirectory() {
     'https://play.google.com/store/apps/details?id=com.pivotcreates.universalchurchdirectory';
   var webDirectory = 'https://directory.ucdir.com/';
 
-  // iPhone / iPad → try app, then fall back to App Store
-  // (the “address is invalid” dialog is unavoidable when the app is missing)
-  if (isIOS) {
-    var storeTimer = setTimeout(function () {
-      window.location.href = appStore;
-    }, 2000);
-
-    function cancelStore() {
-      clearTimeout(storeTimer);
-      document.removeEventListener('visibilitychange', onVis);
-      window.removeEventListener('pagehide', cancelStore);
-      window.removeEventListener('blur', cancelStore);
-    }
-
-    function onVis() {
-      if (document.hidden) cancelStore();
-    }
-
-    document.addEventListener('visibilitychange', onVis);
-    window.addEventListener('pagehide', cancelStore);
-    window.addEventListener('blur', cancelStore);
-
-    window.location.href = appScheme;
-    return;
-  }
-
-  // Mac → try app, fall back to App Store (works cleanly on Mac)
-  if (isMac) {
-    var storeTimerMac = setTimeout(function () {
+  // Shared helper: try the custom scheme, then fall back to a store URL if
+  // we're still on this page after a couple seconds. We deliberately do NOT
+  // listen for 'blur' here — on iOS, the native "Safari cannot open the
+  // page because the address is invalid" alert (shown when myUCD isn't
+  // installed) ALSO fires a window blur event, which was wrongly read as
+  // "the app opened" and canceled the store fallback before it ever ran.
+  // 'visibilitychange' (document.hidden) and 'pagehide' don't fire for that
+  // alert, only when the app actually opens and Safari backgrounds, so
+  // they're the reliable signals to cancel on.
+  function tryAppThenStore(storeUrl) {
+    var timer = setTimeout(function () {
       if (!document.hidden) {
-        window.location.href = appStore;
+        window.location.href = storeUrl;
       }
     }, 2000);
 
-    window.addEventListener('blur', function () {
-      clearTimeout(storeTimerMac);
-    }, { once: true });
-    window.addEventListener('pagehide', function () {
-      clearTimeout(storeTimerMac);
-    }, { once: true });
+    function cancel() {
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('pagehide', cancel);
+    }
+
+    function onVis() {
+      if (document.hidden) cancel();
+    }
+
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('pagehide', cancel, { once: true });
 
     window.location.href = appScheme;
+  }
+
+  // iPhone / iPad → try app, then fall back to App Store
+  if (isIOS) {
+    tryAppThenStore(appStore);
+    return;
+  }
+
+  // Mac → try app, fall back to App Store
+  if (isMac) {
+    tryAppThenStore(appStore);
+    return;
+  }
+
+  // Android → try app, fall back to Play Store
+  if (isAndroid) {
+    tryAppThenStore(playStore);
     return;
   }
 
