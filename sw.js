@@ -1,9 +1,14 @@
 // MHBC Service Worker — app-shell caching only.
 // Firebase Cloud Messaging removed along with the rest of the Firebase
 // backend; C.A.R.E. Group chat now happens in Facebook Groups.
-const CACHE = 'mhbc128';
+const CACHE = 'mhbc129';
 
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './manifest.json'];
+
+// Third-party hosts we're also allowed to cache at runtime (fonts + QR lib).
+// Font Awesome was removed from index.html — it wasn't used anywhere and
+// was just adding a dead render-blocking request on every load.
+const RUNTIME_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com', 'cdnjs.cloudflare.com'];
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
@@ -32,24 +37,34 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Only intercept same-origin requests (the app shell: HTML/CSS/JS/manifest).
-  if (!e.request.url.startsWith(self.location.origin)) {
-    return;
-  }
+  if (e.request.method !== 'GET') return;
 
+  var url = new URL(e.request.url);
+  var isSameOrigin = url.origin === self.location.origin;
+  var isRuntimeCDN = RUNTIME_HOSTS.indexOf(url.hostname) !== -1;
+
+  if (!isSameOrigin && !isRuntimeCDN) return;
+
+  // Stale-while-revalidate: answer from cache immediately when we have it
+  // (near-instant open, no network round trip in the way), and refresh the
+  // cache from the network in the background for next time. Falls back to
+  // the network when nothing is cached yet (first-ever load).
   e.respondWith(
-    fetch(e.request)
-      .then((response) => {
-        var copy = response.clone();
-
-        caches.open(CACHE).then((cache) => {
-          if (e.request.method === 'GET') {
-            cache.put(e.request, copy);
+    caches.match(e.request).then((cached) => {
+      var network = fetch(e.request)
+        .then((response) => {
+          // Cross-origin, no-cors requests (fonts/CDN) come back "opaque"
+          // (status 0) and can't be inspected — cache those too, just skip
+          // real same-origin error responses.
+          if (response && (response.ok || response.type === 'opaque')) {
+            var copy = response.clone();
+            caches.open(CACHE).then((cache) => cache.put(e.request, copy));
           }
-        });
+          return response;
+        })
+        .catch(() => cached);
 
-        return response;
-      })
-      .catch(() => caches.match(e.request))
+      return cached || network;
+    })
   );
 });
