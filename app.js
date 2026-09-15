@@ -16,6 +16,14 @@
 // Set it back to true once services resume as normal.
 var LIVE_SERVICE_ENABLED = true;
 
+// ---- UNSCHEDULED LIVE SERVICE MANUAL OVERRIDE ----
+// For a live service that ISN'T on the normal schedule (a special event,
+// funeral, etc.). Set this to true and the badge/pulse will turn on
+// immediately, regardless of the day/time schedule below and regardless
+// of LIVE_SERVICE_ENABLED. Set it back to false as soon as that service
+// ends — it does not turn itself off.
+var UNSCHEDULED_LIVE_SERVICE = false;
+
 // ---- C.A.R.E. GROUP LINKS ----
 // Facebook group link + prayer/praise request sheet for each room.
 var ROOM_FB_LINKS = {
@@ -347,9 +355,10 @@ function checkLiveBadge() {
   var totalMins = hour * 60 + minute;
 
   var isServiceLive =
-    LIVE_SERVICE_ENABLED &&
-    ((day === 0 && totalMins >= 565 && totalMins <= 660) || // Sun 9:25–11:00
-      (day === 3 && totalMins >= 1135 && totalMins <= 1200)); // Wed 6:55–8:00
+    UNSCHEDULED_LIVE_SERVICE ||
+    (LIVE_SERVICE_ENABLED &&
+      ((day === 0 && totalMins >= 565 && totalMins <= 660) || // Sun 9:25–11:00
+        (day === 3 && totalMins >= 1135 && totalMins <= 1200))); // Wed 6:55–8:00
 
   var badge = document.getElementById('liveBadge');
   if (badge) badge.style.display = isServiceLive ? 'flex' : 'none';
