@@ -36,6 +36,20 @@ stops the "live now" badge/pulse from showing during the normal service window, 
 matter what the day/time schedule says. Change it back to `true` once services
 resume as normal.
 
+### Going live for an unscheduled service (special event, funeral, etc.)
+
+Right below that is a second manual override flag:
+
+```js
+var UNSCHEDULED_LIVE_SERVICE = false;
+```
+
+For a live service that isn't on the normal Sun/Wed schedule, edit this file in
+GitHub and change it to `true`. That turns on the "live now" badge/pulse
+immediately, no matter what the day/time schedule says (and regardless of
+`LIVE_SERVICE_ENABLED`). It does not turn itself off — change it back to `false`
+as soon as that service ends.
+
 `sw.js` is a minimal service worker that caches the app shell (HTML/CSS/JS/manifest)
 for offline/fast reloads. It no longer does anything Firebase- or push-notification-related.
 
